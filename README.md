@@ -15,6 +15,8 @@ A Model Context Protocol (MCP) server that provides access to Wahoo SYSTM calend
   - Equipment requirements
   - TSS (Training Stress Score) and IF (Intensity Factor)
 - **Rider Profile**: Access your 4DP profile values
+- **Fitness Test History**: View all completed Full Frontal and Half Monty tests with 4DP results
+- **Fitness Test Details**: Get second-by-second data and complete analysis for any fitness test
 
 ## Installation
 
@@ -312,6 +314,70 @@ Remove/cancel a scheduled workout from your calendar.
 - Agenda ID
 - Confirmation message
 
+#### 9. `get_fitness_test_history`
+
+Get your fitness test history from Wahoo SYSTM. Returns all completed Full Frontal and Half Monty tests with 4DP values, LTHR, rider type, TSS, and test dates. Results are sorted by date (most recent first).
+
+**Parameters:**
+- `page` (number, optional): Page number for pagination (default: 1)
+- `page_size` (number, optional): Number of results per page (default: 15)
+
+**Example:**
+```json
+{
+  "page": 1,
+  "page_size": 10
+}
+```
+
+**Returns:**
+- Total test count
+- List of fitness tests with:
+  - Test ID (for use with `get_fitness_test_details`)
+  - Name (Full Frontal or Half Monty)
+  - Completion date
+  - Duration
+  - Distance
+  - TSS and Intensity Factor
+  - **4DP Test Results**:
+    - NM (5s power): value (W), score, status
+    - AC (1m power): value (W), score, status
+    - MAP (5m power): value (W), score, status
+    - FTP (20m power): value (W), score, status
+  - Lactate Threshold Heart Rate (LTHR)
+  - Rider Type (with name, icon, description)
+
+#### 10. `get_fitness_test_details`
+
+Get detailed information about a specific fitness test activity. Returns second-by-second power, cadence, and heart rate data, power curve bests, test notes, profile used during test, and complete 4DP results with rider type analysis.
+
+**Parameters:**
+- `activity_id` (string): The activity ID of the fitness test (obtained from `get_fitness_test_history`)
+
+**Example:**
+```json
+{
+  "activity_id": "abc123xyz"
+}
+```
+
+**Returns:**
+- Test name and completion date
+- Duration, distance, TSS, Intensity Factor
+- Test notes/commentary
+- **Complete 4DP Test Results**:
+  - NM, AC, MAP, FTP with values, scores, and status
+  - LTHR (Lactate Threshold Heart Rate)
+  - Rider Type classification with description
+- **Profile Used During Test**:
+  - FTP, MAP, AC, NM values used
+- **Activity Data** (second-by-second arrays):
+  - Power data
+  - Cadence data
+  - Heart rate data
+- **Power Curve Bests**: Top efforts across various durations (5s, 1m, 5m, 20m, etc.)
+- Post-test analysis and recommendations
+
 ## Example Conversations with Claude
 
 ### Checking Your Calendar
@@ -559,6 +625,76 @@ Heart Rate Zones:
 Last Test: Full Frontal on October 28, 2025
 
 (These might be Tadej Pogačar's numbers... but we can all dream of yellow jerseys! 🚴‍♂️)
+```
+
+### Viewing Your Fitness Test History
+
+**You:**
+```
+Show me my fitness test history
+```
+
+**Claude:** *[calls get_fitness_test_history]*
+```
+You have completed 1 fitness test:
+
+Full Frontal (October 28, 2025)
+  Duration: 1h 10m
+  TSS: 95
+
+  4DP Results:
+    NM (5s): 1350W (Score: 1.15) [Good]
+    AC (1m): 612W (Score: 0.92) [Excellent]
+    MAP (5m): 495W (Score: 0.88) [Excellent]
+    FTP (20m): 419W (Score: 0.85) [Excellent]
+
+  LTHR: 178 bpm
+  Rider Type: All-Rounder
+    "You're the complete package - powerful on the climbs, dangerous in the sprint,
+    and relentless in the time trial."
+```
+
+**You:**
+```
+Give me the detailed analysis of that Full Frontal test
+```
+
+**Claude:** *[calls get_fitness_test_details with activity_id]*
+```
+Full Frontal - October 28, 2025
+
+Test Duration: 1h 10m
+TSS: 95, Intensity Factor: 0.82
+
+4DP Test Results:
+  NM (5s): 1350W (Score: 1.15) [Good]
+  AC (1m): 612W (Score: 0.92) [Excellent]
+  MAP (5m): 495W (Score: 0.88) [Excellent]
+  FTP (20m): 419W (Score: 0.85) [Excellent]
+
+LTHR: 178 bpm
+Rider Type: All-Rounder
+
+Profile Used During Test:
+  FTP: 403W, MAP: 478W, AC: 591W, NM: 1303W
+
+Activity Data (4,200 samples):
+  Power: 287W avg, 1350W max
+  Cadence: 88 rpm avg, 156 rpm max
+  Heart Rate: 156 bpm avg, 185 bpm max
+
+Power Bests:
+  1. 5s: 1350W
+  2. 1m: 612W
+  3. 5m: 495W
+  4. 20m: 419W
+  [... more durations]
+
+Analysis:
+Your test shows excellent improvements across all energy systems. Your FTP increased
+by 4%, indicating strong aerobic development. The higher AC and MAP values suggest
+you're building strong anaerobic capacity. Focus on maintaining these gains with
+targeted threshold and VO2 max work.
 ```
 
 ## Development

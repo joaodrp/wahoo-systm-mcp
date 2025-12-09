@@ -576,4 +576,124 @@ describe('WahooClient', () => {
       await client.removeWorkout(agendaId);
     });
   });
+
+  describe('getFitnessTestHistory()', () => {
+    test('should throw error when not authenticated', async () => {
+      const client = new WahooClient();
+      await assert.rejects(
+        () => client.getFitnessTestHistory(),
+        /Not authenticated/
+      );
+    });
+
+    test('should get fitness test history', async () => {
+      if (skipIfNoCredentials('fitness test history test')) return;
+
+      const client = await createAuthenticatedClient();
+      const result = await client.getFitnessTestHistory();
+
+      assert.ok(result);
+      assert.ok(typeof result.total === 'number');
+      assert.ok(Array.isArray(result.activities));
+
+      // If there are any tests, validate the structure
+      if (result.activities.length > 0) {
+        const test = result.activities[0];
+        assert.ok(typeof test.id === 'string');
+        assert.ok(typeof test.name === 'string');
+        assert.ok(typeof test.completedDate === 'string');
+        assert.ok(typeof test.durationSeconds === 'number');
+        assert.ok(typeof test.tss === 'number');
+
+        // Validate 4DP data if present
+        if (test.testResults) {
+          assert.ok(typeof test.testResults.power5s.value === 'number');
+          assert.ok(typeof test.testResults.power1m.value === 'number');
+          assert.ok(typeof test.testResults.power5m.value === 'number');
+          assert.ok(typeof test.testResults.power20m.value === 'number');
+          assert.ok(typeof test.testResults.lactateThresholdHeartRate === 'number');
+          assert.ok(typeof test.testResults.riderType.name === 'string');
+        }
+      }
+    });
+
+    test('should support pagination', async () => {
+      if (skipIfNoCredentials('fitness test pagination test')) return;
+
+      const client = await createAuthenticatedClient();
+      const result = await client.getFitnessTestHistory({
+        page: 1,
+        pageSize: 5
+      });
+
+      assert.ok(result);
+      assert.ok(result.activities.length <= 5);
+    });
+  });
+
+  describe('getFitnessTestDetails()', () => {
+    test('should throw error when not authenticated', async () => {
+      const client = new WahooClient();
+      await assert.rejects(
+        () => client.getFitnessTestDetails('some-activity-id'),
+        /Not authenticated/
+      );
+    });
+
+    test('should get fitness test details', async () => {
+      if (skipIfNoCredentials('fitness test details test')) return;
+
+      const client = await createAuthenticatedClient();
+
+      // First get test history to get an activity ID
+      const history = await client.getFitnessTestHistory();
+
+      if (history.activities.length === 0) {
+        console.log('Skipping fitness test details test - no test history available');
+        return;
+      }
+
+      const activityId = history.activities[0].id;
+      const details = await client.getFitnessTestDetails(activityId);
+
+      // Validate basic structure
+      assert.ok(details);
+      assert.strictEqual(details.id, activityId);
+      assert.ok(typeof details.name === 'string');
+      assert.ok(typeof details.completedDate === 'string');
+      assert.ok(typeof details.durationSeconds === 'number');
+      assert.ok(typeof details.tss === 'number');
+
+      // Validate 4DP test results
+      assert.ok(details.testResults);
+      assert.ok(typeof details.testResults.power5s.value === 'number');
+      assert.ok(typeof details.testResults.power5s.graphValue === 'number');
+      assert.ok(typeof details.testResults.power5s.status === 'string');
+      assert.ok(typeof details.testResults.power1m.value === 'number');
+      assert.ok(typeof details.testResults.power5m.value === 'number');
+      assert.ok(typeof details.testResults.power20m.value === 'number');
+      assert.ok(typeof details.testResults.lactateThresholdHeartRate === 'number');
+      assert.ok(typeof details.testResults.riderType.name === 'string');
+
+      // Validate profile used during test
+      assert.ok(details.profile);
+      assert.ok(typeof details.profile.ftp === 'number');
+      assert.ok(typeof details.profile.map === 'number');
+      assert.ok(typeof details.profile.ac === 'number');
+      assert.ok(typeof details.profile.nm === 'number');
+
+      // Validate activity data arrays
+      assert.ok(Array.isArray(details.power));
+      assert.ok(Array.isArray(details.cadence));
+      assert.ok(Array.isArray(details.heartRate));
+      assert.ok(details.power.length > 0);
+
+      // Validate power bests
+      assert.ok(Array.isArray(details.powerBests));
+      assert.ok(details.powerBests.length > 0);
+      const best = details.powerBests[0];
+      assert.ok(typeof best.duration === 'number');
+      assert.ok(typeof best.value === 'number');
+    });
+  });
 });
