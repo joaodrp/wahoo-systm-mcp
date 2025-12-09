@@ -1,7 +1,7 @@
 import './setup.js';
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { WahooClient } from '../wahoo-client.js';
+import { WahooClient } from '../client.js';
 import { getCredentialsFrom1Password } from '../onepassword.js';
 
 describe('Integration Tests', () => {

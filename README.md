@@ -6,6 +6,7 @@ A Model Context Protocol (MCP) server that provides access to Wahoo SYSTM calend
 
 - **Authentication**: Securely authenticate with your Wahoo SYSTM account
 - **Calendar Access**: Retrieve planned workouts for any date range
+- **Library Browsing**: Browse and search the complete Wahoo SYSTM workout library with filters for sport, level, duration, and channel
 - **Workout Details**: Get comprehensive workout information including:
   - Workout intervals and structure
   - Power zones (FTP, MAP, AC, NM)
@@ -124,12 +125,54 @@ Get planned workouts from your calendar for a date range.
   - Status
   - Plan information
 
-#### 2. `get_workout_details`
+#### 2. `get_workouts`
+
+Get workouts from the Wahoo SYSTM library with filtering and sorting.
+
+**Parameters:**
+- `sport` (string, optional): Filter by sport (e.g., "Cycling", "Running", "Strength", "Yoga", "Swimming")
+- `min_duration` (number, optional): Minimum duration in hours (e.g., 0.5 for 30 minutes)
+- `max_duration` (number, optional): Maximum duration in hours (e.g., 2 for 2 hours)
+- `min_tss` (number, optional): Minimum Training Stress Score (e.g., 20 for easy, 100+ for hard)
+- `max_tss` (number, optional): Maximum Training Stress Score
+- `sort_by` (string, optional): Sort by "name", "duration", or "tss" (default: "name")
+- `sort_direction` (string, optional): Sort direction "asc" or "desc" (default: "asc")
+- `limit` (number, optional): Maximum number of results to return (default: 50)
+
+**Example:**
+```json
+{
+  "sport": "Cycling",
+  "max_duration": 1,
+  "min_tss": 30,
+  "max_tss": 60,
+  "sort_by": "tss",
+  "sort_direction": "asc",
+  "limit": 10
+}
+```
+
+**Returns:**
+- Total workout count
+- List of workouts with:
+  - Workout ID (for use with `get_workout_details`)
+  - Name
+  - Sport/workout type
+  - Channel/series
+  - Level/intensity
+  - Category
+  - Duration (seconds and formatted)
+  - Description excerpt
+  - TSS and Intensity Factor
+  - 4DP ratings (NM, AC, MAP, FTP)
+  - Tags
+
+#### 3. `get_workout_details`
 
 Get comprehensive details about a specific workout.
 
 **Parameters:**
-- `workout_id` (string): The workout ID from `get_calendar`
+- `workout_id` (string): The workout ID from `get_calendar` or `get_workouts`
 
 **Example:**
 ```json
@@ -147,7 +190,7 @@ Get comprehensive details about a specific workout.
 - Metrics (TSS, Intensity Factor, 4DP ratings)
 - Complete interval structure with power zones
 
-#### 3. `get_rider_profile`
+#### 4. `get_rider_profile`
 
 Get your 4DP profile values.
 
@@ -159,7 +202,9 @@ Get your 4DP profile values.
 - AC (Anaerobic Capacity)
 - NM (Neuromuscular Power)
 
-## Example Conversation with Claude
+## Example Conversations with Claude
+
+### Checking Your Calendar
 
 **You:**
 ```
@@ -171,10 +216,10 @@ What workouts do I have planned for this week?
 Let me check your calendar for this week. You have the following workouts planned:
 
 December 9, 2025:
-- ALL Access EF 1: Tempo Blocks (Cycling, 1.2h)
+- ALL Access EF 1: Tempo Blocks (Cycling, 1h 9m)
   Description: Saddle up for the high-energy atmosphere of the EF men's & women's
-  team training camp! Warm up with Jonathan Vaughters and meet the team over some
-  golf practice. Push through 5 tempo blocks on the stunning roads of Girona.
+  team training camp! Warm up with Jonathan Vaughters setting expectations and
+  emphasizing the purpose of the camp: growth, improvement...
 ```
 
 **You:**
@@ -188,20 +233,59 @@ ALL Access EF 1: Tempo Blocks is a 1h 9m cycling workout with:
 
 Training Stress Score: 50
 Intensity Factor: 0.66
-4DP Focus: FTP ✭✭✭✩✩ (minimal NM, AC, MAP work)
 
-This is a tempo session designed to give your body a decent aerobic workload without
-adding significant fatigue. Perfect for base training.
+Saddle up for the high-energy atmosphere of the EF men's & women's team training
+camp! This tempo session is designed to give your body a decent aerobic workload.
 
-Structure:
-- Warm Up: 15 minutes progressive (55% → 100% FTP)
-- Main Effort: 5 sets of 4 minutes @ 80% FTP (RPE 5) with 4-minute recovery between sets
-- Extra Volume: 30 minutes @ 60% FTP
-- Cool Down: 5 minutes @ 50% FTP
-
-At no point should you feel you are anywhere near your limits - this keeps your fatigue
-level steady or brings it down.
+[Full interval structure details]
 ```
+
+### Finding Workouts in the Library
+
+**You:**
+```
+Show me some easy cycling workouts under 1 hour with TSS between 30 and 50, sorted by difficulty
+```
+
+**Claude:** *[calls get_workouts]*
+```
+I found 82 cycling workouts under 1 hour with TSS 30-50. Here are the first 10 (easiest first):
+
+1. Cadence Drills (Builds/Holds/Single Leg) (55m)
+   TSS: 30
+   This workout combines several technique driven intervals to improve your overall form
+
+2. Kayabike (45m)
+   TSS: 30
+   Film (2016): The life of a group of kids and their BMX coach training in a South African township
+
+3. Primers (44m)
+   TSS: 42
+   Whether you have a 4DP fitness test coming up or a group ride you want to smash
+
+[...and 79 more workouts]
+```
+
+**You:**
+```
+Tell me more about Primers
+```
+
+**Claude:** *[calls get_workout_details using workout_id from browse results]*
+```
+Primers is a 44-minute cycling workout with:
+
+Training Stress Score: 42
+Intensity Factor: 0.76
+
+Whether you have a 4DP® fitness test coming up, a group ride you want to smash,
+that event you have been training all winter for, or even just a fun route you
+want to have a great ride on, this is the workout for you...
+
+[Full interval structure details]
+```
+
+### Viewing Your Profile
 
 **You:**
 ```
@@ -215,6 +299,8 @@ Your 4DP Profile:
 - MAP: 495W (Maximal Aerobic Power)
 - AC: 612W (Anaerobic Capacity)
 - NM: 1350W (Neuromuscular Power)
+
+(Okay, maybe these are Tadej Pogačar's numbers... but we can dream! 🚴‍♂️)
 ```
 
 ## Development
@@ -225,12 +311,12 @@ Your 4DP Profile:
 wahoo-systm-mcp/
 ├── src/
 │   ├── index.ts           # MCP server implementation
-│   ├── wahoo-client.ts    # Wahoo SYSTM API client
+│   ├── client.ts          # Wahoo SYSTM API client
 │   ├── types.ts           # TypeScript type definitions
 │   ├── onepassword.ts     # 1Password integration
 │   └── test/              # Test suite
 │       ├── setup.ts
-│       ├── wahoo-client.test.ts
+│       ├── client.test.ts
 │       ├── onepassword.test.ts
 │       └── integration.test.ts
 ├── build/                 # Compiled JavaScript (generated)

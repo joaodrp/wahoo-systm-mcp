@@ -7,7 +7,7 @@ import {
   ListToolsRequestSchema,
   Tool
 } from '@modelcontextprotocol/sdk/types.js';
-import { WahooClient } from './wahoo-client.js';
+import { WahooClient } from './client.js';
 import { getCredentialsFrom1Password } from './onepassword.js';
 
 const server = new Server(
@@ -103,6 +103,50 @@ const tools: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {},
+      required: []
+    }
+  },
+  {
+    name: 'get_workouts',
+    description: 'Get workouts from the Wahoo SYSTM library. Filter by sport, duration, and TSS. Sort by name, duration, or TSS. Returns a list of workouts with their metadata.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sport: {
+          type: 'string',
+          description: 'Filter by sport/workout type (e.g., Cycling, Running, Strength, Yoga, Swimming)'
+        },
+        min_duration: {
+          type: 'number',
+          description: 'Minimum workout duration in hours (e.g., 0.5 for 30 minutes)'
+        },
+        max_duration: {
+          type: 'number',
+          description: 'Maximum workout duration in hours (e.g., 2 for 2 hours)'
+        },
+        min_tss: {
+          type: 'number',
+          description: 'Minimum Training Stress Score (e.g., 20 for easy, 100+ for hard)'
+        },
+        max_tss: {
+          type: 'number',
+          description: 'Maximum Training Stress Score'
+        },
+        sort_by: {
+          type: 'string',
+          enum: ['name', 'duration', 'tss'],
+          description: 'Sort workouts by: name (default), duration, or tss'
+        },
+        sort_direction: {
+          type: 'string',
+          enum: ['asc', 'desc'],
+          description: 'Sort direction: asc (default) or desc'
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results to return (default: 50)'
+        }
+      },
       required: []
     }
   }
@@ -237,6 +281,87 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                   ac: 'Anaerobic Capacity (watts)',
                   nm: 'Neuromuscular Power (watts)'
                 }
+              }, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'get_workouts': {
+        if (!isAuthenticated) {
+          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+        }
+
+        const filters: {
+          sport?: string;
+          minDuration?: number;
+          maxDuration?: number;
+          minTss?: number;
+          maxTss?: number;
+          sortBy?: 'name' | 'duration' | 'tss';
+          sortDirection?: 'asc' | 'desc';
+        } = {};
+
+        if (args && typeof args === 'object') {
+          const params = args as Record<string, unknown>;
+          if (typeof params.sport === 'string') filters.sport = params.sport;
+          if (typeof params.min_duration === 'number') filters.minDuration = params.min_duration;
+          if (typeof params.max_duration === 'number') filters.maxDuration = params.max_duration;
+          if (typeof params.min_tss === 'number') filters.minTss = params.min_tss;
+          if (typeof params.max_tss === 'number') filters.maxTss = params.max_tss;
+          if (typeof params.sort_by === 'string' && ['name', 'duration', 'tss'].includes(params.sort_by)) {
+            filters.sortBy = params.sort_by as 'name' | 'duration' | 'tss';
+          }
+          if (typeof params.sort_direction === 'string' && ['asc', 'desc'].includes(params.sort_direction)) {
+            filters.sortDirection = params.sort_direction as 'asc' | 'desc';
+          }
+        }
+
+        const library = await wahooClient.getWorkoutLibrary(filters);
+
+        // Apply limit
+        const limit = (args && typeof args === 'object' && typeof (args as Record<string, unknown>).limit === 'number')
+          ? (args as Record<string, unknown>).limit as number
+          : 50;
+        const limitedLibrary = library.slice(0, limit);
+
+        // Format the response
+        const formattedWorkouts = limitedLibrary.map(item => {
+          const durationHours = item.duration / 3600;
+          const hours = Math.floor(durationHours);
+          const minutes = Math.round((durationHours - hours) * 60);
+
+          return {
+            id: item.id,
+            workout_id: item.workoutId,
+            name: item.name,
+            sport: item.workoutType,
+            channel: item.channel,
+            level: item.level || item.intensity || 'N/A',
+            category: item.category,
+            duration_seconds: item.duration,
+            duration_formatted: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+            description: item.descriptions?.[0]?.body?.substring(0, 400) + '...' || '',
+            tss: item.metrics?.tss,
+            intensity_factor: item.metrics?.intensityFactor,
+            ratings_4dp: item.metrics?.ratings ? {
+              ftp: item.metrics.ratings.ftp,
+              map: item.metrics.ratings.map,
+              ac: item.metrics.ratings.ac,
+              nm: item.metrics.ratings.nm
+            } : null,
+            tags: item.tags
+          };
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                total_found: library.length,
+                returned: formattedWorkouts.length,
+                workouts: formattedWorkouts
               }, null, 2)
             }
           ]

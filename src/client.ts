@@ -4,7 +4,9 @@ import type {
   WahooAuthResponse,
   RiderProfile,
   UserPlanItem,
-  WorkoutDetails
+  WorkoutDetails,
+  LibraryResponse,
+  LibraryContent
 } from './types.js';
 
 const WAHOO_API_URL = 'https://api.thesufferfest.com/graphql';
@@ -222,6 +224,153 @@ export class WahooClient {
     }
 
     return response.data.workouts[0];
+  }
+
+  async getWorkoutLibrary(filters?: {
+    sport?: string;
+    channel?: string;
+    level?: string;
+    minDuration?: number;
+    maxDuration?: number;
+    minTss?: number;
+    maxTss?: number;
+    sortBy?: 'name' | 'duration' | 'tss' | 'level';
+    sortDirection?: 'asc' | 'desc';
+  }): Promise<LibraryContent[]> {
+    this.ensureAuthenticated();
+
+    const query = `
+      query library($locale: Locale!, $queryParams: QueryParams, $appInformation: AppInformation!) {
+        library(locale: $locale, queryParams: $queryParams, appInformation: $appInformation) {
+          content {
+            id
+            name
+            mediaType
+            channel
+            workoutType
+            category
+            level
+            duration
+            workoutId
+            videoId
+            bannerImage
+            posterImage
+            defaultImage
+            intensity
+            tags
+            descriptions {
+              title
+              body
+            }
+            metrics {
+              tss
+              intensityFactor
+              ratings {
+                nm
+                ac
+                map
+                ftp
+              }
+            }
+          }
+          sports {
+            id
+            workoutType
+            name
+            description
+          }
+          channels {
+            id
+            name
+            description
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      locale: 'en',
+      queryParams: {
+        limit: 3000
+      },
+      appInformation: {
+        platform: 'web',
+        version: APP_VERSION
+      }
+    };
+
+    const response = await this.callAPI<LibraryResponse>({
+      query,
+      variables,
+      operationName: 'library'
+    });
+
+    let content = response.data.library.content;
+
+    // Apply client-side filters
+    if (filters) {
+      if (filters.sport) {
+        content = content.filter(item =>
+          item.workoutType?.toLowerCase() === filters.sport?.toLowerCase()
+        );
+      }
+      if (filters.channel) {
+        content = content.filter(item =>
+          item.channel?.toLowerCase() === filters.channel?.toLowerCase()
+        );
+      }
+      if (filters.level) {
+        content = content.filter(item =>
+          item.level?.toLowerCase() === filters.level?.toLowerCase()
+        );
+      }
+      if (filters.minDuration !== undefined) {
+        const minSeconds = filters.minDuration * 3600;
+        content = content.filter(item => item.duration >= minSeconds);
+      }
+      if (filters.maxDuration !== undefined) {
+        const maxSeconds = filters.maxDuration * 3600;
+        content = content.filter(item => item.duration <= maxSeconds);
+      }
+      if (filters.minTss !== undefined) {
+        content = content.filter(item => (item.metrics?.tss ?? 0) >= filters.minTss!);
+      }
+      if (filters.maxTss !== undefined) {
+        content = content.filter(item => (item.metrics?.tss ?? 0) <= filters.maxTss!);
+      }
+    }
+
+    // Apply sorting
+    const sortBy = filters?.sortBy || 'name';
+    const sortDirection = filters?.sortDirection || 'asc';
+    const multiplier = sortDirection === 'asc' ? 1 : -1;
+
+    content.sort((a, b) => {
+      let compareValue = 0;
+
+      switch (sortBy) {
+        case 'name':
+          compareValue = a.name.localeCompare(b.name);
+          break;
+        case 'duration':
+          compareValue = a.duration - b.duration;
+          break;
+        case 'tss':
+          compareValue = (a.metrics?.tss ?? 0) - (b.metrics?.tss ?? 0);
+          break;
+        case 'level':
+          // Define level order: Basic < Intermediate < Advanced
+          const levelOrder: Record<string, number> = { 'basic': 1, 'intermediate': 2, 'advanced': 3 };
+          const aLevel = levelOrder[a.level?.toLowerCase()] ?? 0;
+          const bLevel = levelOrder[b.level?.toLowerCase()] ?? 0;
+          compareValue = aLevel - bLevel;
+          break;
+      }
+
+      return compareValue * multiplier;
+    });
+
+    return content;
   }
 
   getRiderProfile(): RiderProfile | null {
