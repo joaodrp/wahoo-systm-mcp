@@ -265,6 +265,38 @@ const tools: Tool[] = [
       },
       required: []
     }
+  },
+  {
+    name: 'get_fitness_test_history',
+    description: 'Get your fitness test history from Wahoo SYSTM. Returns all completed Full Frontal and Half Monty tests with 4DP values (NM, AC, MAP, FTP), LTHR, rider type, TSS, and test dates. Results are sorted by date (most recent first).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        page: {
+          type: 'number',
+          description: 'Page number for pagination (default: 1)'
+        },
+        page_size: {
+          type: 'number',
+          description: 'Number of results per page (default: 15)'
+        }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'get_fitness_test_details',
+    description: 'Get detailed information about a specific fitness test activity. Returns second-by-second power, cadence, and heart rate data, power curve bests, test notes, profile used during test, and complete 4DP results with rider type analysis.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        activity_id: {
+          type: 'string',
+          description: 'The activity ID of the fitness test (obtained from get_fitness_test_history)'
+        }
+      },
+      required: ['activity_id']
+    }
   }
 ];
 
@@ -755,6 +787,184 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 total_found: cyclingWorkouts.length,
                 returned: formattedWorkouts.length,
                 workouts: formattedWorkouts
+              }, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'get_fitness_test_history': {
+        if (!isAuthenticated) {
+          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+        }
+
+        const options: {
+          page?: number;
+          pageSize?: number;
+        } = {};
+
+        if (args && typeof args === 'object') {
+          const params = args as Record<string, unknown>;
+          if (typeof params.page === 'number') options.page = params.page;
+          if (typeof params.page_size === 'number') options.pageSize = params.page_size;
+        }
+
+        const result = await wahooClient.getFitnessTestHistory(options);
+
+        // Format the response
+        const formattedTests = result.activities.map(test => {
+          const testDate = new Date(test.completedDate);
+          const formattedDate = testDate.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+
+          const durationHours = test.durationSeconds / 3600;
+          const hours = Math.floor(durationHours);
+          const minutes = Math.round((durationHours - hours) * 60);
+
+          return {
+            id: test.id,
+            name: test.name,
+            completed_date: formattedDate,
+            duration: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+            tss: test.tss,
+            intensity_factor: test.intensityFactor,
+            fourDP: test.testResults ? {
+              nm: {
+                watts: test.testResults.power5s.value,
+                score: test.testResults.power5s.graphValue.toFixed(2)
+              },
+              ac: {
+                watts: test.testResults.power1m.value,
+                score: test.testResults.power1m.graphValue.toFixed(2)
+              },
+              map: {
+                watts: test.testResults.power5m.value,
+                score: test.testResults.power5m.graphValue.toFixed(2)
+              },
+              ftp: {
+                watts: test.testResults.power20m.value,
+                score: test.testResults.power20m.graphValue.toFixed(2)
+              }
+            } : null,
+            lthr: test.testResults ? Math.round(test.testResults.lactateThresholdHeartRate) : null,
+            rider_type: test.testResults?.riderType.name || null
+          };
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                total: result.total,
+                tests: formattedTests
+              }, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'get_fitness_test_details': {
+        if (!isAuthenticated) {
+          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+        }
+
+        if (!args || typeof args !== 'object') {
+          throw new Error('Invalid arguments');
+        }
+
+        const { activity_id } = args as { activity_id?: unknown };
+
+        if (typeof activity_id !== 'string') {
+          throw new Error('activity_id must be a string');
+        }
+
+        const testDetails = await wahooClient.getFitnessTestDetails(activity_id);
+
+        // Format the response
+        const testDate = new Date(testDetails.completedDate);
+        const formattedDate = testDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+
+        const durationHours = testDetails.durationSeconds / 3600;
+        const hours = Math.floor(durationHours);
+        const minutes = Math.round((durationHours - hours) * 60);
+
+        // Parse analysis JSON if it exists
+        let analysisData = null;
+        if (testDetails.analysis) {
+          try {
+            analysisData = JSON.parse(testDetails.analysis);
+          } catch (e) {
+            analysisData = 'Unable to parse analysis data';
+          }
+        }
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                id: testDetails.id,
+                name: testDetails.name,
+                completed_date: formattedDate,
+                duration: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+                tss: testDetails.tss,
+                intensity_factor: testDetails.intensityFactor,
+                notes: testDetails.notes || '',
+                fourDP: {
+                  nm: {
+                    watts: testDetails.testResults.power5s.value,
+                    score: testDetails.testResults.power5s.graphValue.toFixed(2),
+                    status: testDetails.testResults.power5s.status
+                  },
+                  ac: {
+                    watts: testDetails.testResults.power1m.value,
+                    score: testDetails.testResults.power1m.graphValue.toFixed(2),
+                    status: testDetails.testResults.power1m.status
+                  },
+                  map: {
+                    watts: testDetails.testResults.power5m.value,
+                    score: testDetails.testResults.power5m.graphValue.toFixed(2),
+                    status: testDetails.testResults.power5m.status
+                  },
+                  ftp: {
+                    watts: testDetails.testResults.power20m.value,
+                    score: testDetails.testResults.power20m.graphValue.toFixed(2),
+                    status: testDetails.testResults.power20m.status
+                  }
+                },
+                lthr: Math.round(testDetails.testResults.lactateThresholdHeartRate),
+                rider_type: {
+                  name: testDetails.testResults.riderType.name,
+                  description: testDetails.testResults.riderType.description
+                },
+                profile_used: testDetails.profile,
+                power_data: {
+                  length: testDetails.power.length,
+                  avg: testDetails.power.reduce((a, b) => a + b, 0) / testDetails.power.length,
+                  max: Math.max(...testDetails.power)
+                },
+                heart_rate_data: {
+                  length: testDetails.heartRate.length,
+                  avg: testDetails.heartRate.reduce((a, b) => a + b, 0) / testDetails.heartRate.length,
+                  max: Math.max(...testDetails.heartRate)
+                },
+                cadence_data: {
+                  length: testDetails.cadence.length,
+                  avg: testDetails.cadence.reduce((a, b) => a + b, 0) / testDetails.cadence.length
+                },
+                power_bests: testDetails.powerBests.map(best => ({
+                  duration_seconds: best.duration,
+                  power: best.value
+                })),
+                analysis: analysisData
               }, null, 2)
             }
           ]

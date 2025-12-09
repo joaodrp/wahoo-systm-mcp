@@ -233,3 +233,71 @@ export interface DeleteAgendaResponse {
     };
   };
 }
+
+export interface FitnessTestResult {
+  id: string;
+  name: string;
+  completedDate: string;
+  durationSeconds: number;
+  distanceKm: number;
+  tss: number;
+  intensityFactor: number;
+  testResults?: {
+    power5s: TestValue;
+    power1m: TestValue;
+    power5m: TestValue;
+    power20m: TestValue;
+    lactateThresholdHeartRate: number;
+    riderType: RiderTypeInfo;
+  };
+}
+
+export interface PowerBest {
+  duration: number;
+  value: number;
+}
+
+export interface FitnessTestDetails {
+  id: string;
+  name: string;
+  completedDate: string;
+  durationSeconds: number;
+  distanceKm: number;
+  tss: number;
+  intensityFactor: number;
+  notes: string;
+  testResults: {
+    power5s: TestValue;
+    power1m: TestValue;
+    power5m: TestValue;
+    power20m: TestValue;
+    lactateThresholdHeartRate: number;
+    riderType: RiderTypeInfo;
+  };
+  profile: {
+    ftp: number;
+    map: number;
+    ac: number;
+    nm: number;
+  };
+  power: number[];
+  cadence: number[];
+  heartRate: number[];
+  powerBests: PowerBest[];
+  analysis: string;
+}
+
+export interface SearchActivitiesResponse {
+  data: {
+    searchActivities: {
+      activities: FitnessTestResult[];
+      total: number;
+    };
+  };
+}
+
+export interface GetActivityResponse {
+  data: {
+    getActivity: FitnessTestDetails;
+  };
+}

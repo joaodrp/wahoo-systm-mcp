@@ -12,7 +12,11 @@ import type {
   LibraryContent,
   ScheduleWorkoutResponse,
   MoveAgendaResponse,
-  DeleteAgendaResponse
+  DeleteAgendaResponse,
+  FitnessTestResult,
+  FitnessTestDetails,
+  SearchActivitiesResponse,
+  GetActivityResponse
 } from './types.js';
 
 const WAHOO_API_URL = 'https://api.thesufferfest.com/graphql';
@@ -632,6 +636,167 @@ export class WahooClient {
       startTime: testData.startTime,
       endTime: testData.endTime
     };
+  }
+
+  async getFitnessTestHistory(options?: {
+    page?: number;
+    pageSize?: number;
+  }): Promise<{ activities: FitnessTestResult[]; total: number }> {
+    this.ensureAuthenticated();
+
+    // Hardcoded workout IDs for fitness tests in the SYSTM library
+    // dRcyg09t6K = Full Frontal (4DP Test)
+    // 0SmbqUIZZo = Half Monty
+    // These are the only two fitness test workouts in the library
+    const fitnessTestWorkoutIds = ['dRcyg09t6K', '0SmbqUIZZo'];
+
+    const query = `
+      query GetWorkoutActivities($workoutIds: [ID]!, $pageInformation: PageInformation!) {
+        getWorkoutActivities(workoutIds: $workoutIds, pageInformation: $pageInformation) {
+          activities {
+            id
+            name
+            completedDate
+            durationSeconds
+            distanceKm
+            tss
+            intensityFactor
+            testResults {
+              power5s {
+                status
+                graphValue
+                value
+              }
+              power1m {
+                status
+                graphValue
+                value
+              }
+              power5m {
+                status
+                graphValue
+                value
+              }
+              power20m {
+                status
+                graphValue
+                value
+              }
+              lactateThresholdHeartRate
+              riderType {
+                name
+                icon
+                description
+              }
+            }
+          }
+          count
+        }
+      }
+    `;
+
+    const variables = {
+      workoutIds: fitnessTestWorkoutIds,
+      pageInformation: {
+        page: options?.page || 1,
+        pageSize: options?.pageSize || 15
+      }
+    };
+
+    const response = await this.callAPI<{
+      data: {
+        getWorkoutActivities: {
+          activities: FitnessTestResult[];
+          count: number;
+        };
+      };
+    }>({
+      query,
+      variables,
+      operationName: 'GetWorkoutActivities'
+    });
+
+    return {
+      activities: response.data.getWorkoutActivities.activities,
+      total: response.data.getWorkoutActivities.count
+    };
+  }
+
+  async getFitnessTestDetails(activityId: string): Promise<FitnessTestDetails> {
+    this.ensureAuthenticated();
+
+    const query = `
+      query GetActivity($id: ID!) {
+        activity(id: $id) {
+          id
+          name
+          completedDate
+          durationSeconds
+          distanceKm
+          tss
+          intensityFactor
+          notes
+          testResults {
+            power5s {
+              status
+              graphValue
+              value
+            }
+            power1m {
+              status
+              graphValue
+              value
+            }
+            power5m {
+              status
+              graphValue
+              value
+            }
+            power20m {
+              status
+              graphValue
+              value
+            }
+            lactateThresholdHeartRate
+            riderType {
+              name
+              icon
+              description
+            }
+          }
+          profile {
+            ftp
+            map
+            ac
+            nm
+          }
+          power
+          cadence
+          heartRate
+          powerBests {
+            duration
+            value
+          }
+          analysis
+        }
+      }
+    `;
+
+    const variables = {
+      id: activityId
+    };
+
+    const response = await this.callAPI<{
+      data: {
+        activity: FitnessTestDetails;
+      };
+    }>({
+      query,
+      variables,
+      operationName: 'GetActivity'
+    });
+
+    return response.data.activity;
   }
 
   private calculateHeartRateZones(lthr: number): HeartRateZone[] {
