@@ -625,6 +625,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           intensity?: 'High' | 'Medium' | 'Low';
           sortBy?: 'name' | 'duration' | 'tss';
           sortDirection?: 'asc' | 'desc';
+          limit?: number;
         } = {};
 
         if (args && typeof args === 'object') {
@@ -647,18 +648,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           if (typeof params.sort_direction === 'string' && ['asc', 'desc'].includes(params.sort_direction)) {
             filters.sortDirection = params.sort_direction as 'asc' | 'desc';
           }
+          if (typeof params.limit === 'number') filters.limit = params.limit;
         }
 
         const cyclingWorkouts = await wahooClient.getCyclingWorkouts(filters);
 
-        // Apply limit
-        const limit = (args && typeof args === 'object' && typeof (args as Record<string, unknown>).limit === 'number')
-          ? (args as Record<string, unknown>).limit as number
-          : 50;
-        const limitedWorkouts = cyclingWorkouts.slice(0, limit);
-
         // Format the response (same as get_workouts)
-        const formattedWorkouts = limitedWorkouts.map(item => {
+        const formattedWorkouts = cyclingWorkouts.map(item => {
           const durationHours = item.duration / 3600;
           const hours = Math.floor(durationHours);
           const minutes = Math.round((durationHours - hours) * 60);

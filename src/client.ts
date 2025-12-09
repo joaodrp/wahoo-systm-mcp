@@ -387,6 +387,7 @@ export class WahooClient {
     intensity?: 'High' | 'Medium' | 'Low';
     sortBy?: 'name' | 'duration' | 'tss';
     sortDirection?: 'asc' | 'desc';
+    limit?: number;
   }): Promise<LibraryContent[]> {
     // Start with base cycling filters
     const baseFilters: any = {
@@ -432,7 +433,9 @@ export class WahooClient {
       });
     }
 
-    return workouts;
+    // Apply limit
+    const limit = filters?.limit ?? 50;
+    return workouts.slice(0, limit);
   }
 
   async scheduleWorkout(contentId: string, date: string, timeZone?: string): Promise<string> {
