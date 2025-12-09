@@ -21,10 +21,79 @@ export interface WahooAuthResponse {
 }
 
 export interface RiderProfile {
-  nm: number;  // Neuromuscular Power
-  ac: number;  // Anaerobic Capacity
-  map: number; // Maximal Aerobic Power
-  ftp: number; // Functional Threshold Power
+  nm: number;  // Neuromuscular Power (5s)
+  ac: number;  // Anaerobic Capacity (1m)
+  map: number; // Maximal Aerobic Power (5m)
+  ftp: number; // Functional Threshold Power (20m)
+}
+
+export interface TestValue {
+  status: string;
+  graphValue: number;
+  value: number;
+}
+
+export interface RiderTypeInfo {
+  name: string;
+  description: string;
+  icon: string;
+}
+
+export interface RiderWeaknessInfo {
+  name: string;
+  description: string;
+  weaknessSummary: string;
+  weaknessDescription: string;
+  strengthName: string;
+  strengthDescription: string;
+  strengthSummary: string;
+}
+
+export interface HeartRateZone {
+  zone: number;
+  name: string;
+  min: number;
+  max: number | null;
+}
+
+export interface EnhancedRiderProfile extends RiderProfile {
+  // Power values with scores
+  power5s: TestValue;
+  power1m: TestValue;
+  power5m: TestValue;
+  power20m: TestValue;
+
+  // Heart rate data
+  lactateThresholdHeartRate: number;
+  heartRateZones: HeartRateZone[];
+
+  // Rider characteristics
+  riderType: RiderTypeInfo;
+  riderWeakness: RiderWeaknessInfo;
+
+  // Test metadata
+  fitnessTestRidden: boolean;
+  startTime: string;
+  endTime: string;
+}
+
+export interface MostRecentTestResponse {
+  data: {
+    mostRecentTest: {
+      status: string;
+      message: string | null;
+      fitnessTestRidden: boolean;
+      riderType: RiderTypeInfo;
+      riderWeakness: RiderWeaknessInfo;
+      power5s: TestValue;
+      power1m: TestValue;
+      power5m: TestValue;
+      power20m: TestValue;
+      lactateThresholdHeartRate: number;
+      startTime: string;
+      endTime: string;
+    };
+  };
 }
 
 export interface WorkoutProspect {

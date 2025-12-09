@@ -3,6 +3,9 @@ import type {
   WahooCredentials,
   WahooAuthResponse,
   RiderProfile,
+  EnhancedRiderProfile,
+  HeartRateZone,
+  MostRecentTestResponse,
   UserPlanItem,
   WorkoutDetails,
   LibraryResponse,
@@ -536,6 +539,134 @@ export class WahooClient {
 
   getRiderProfile(): RiderProfile | null {
     return this.riderProfile;
+  }
+
+  async getEnhancedRiderProfile(): Promise<EnhancedRiderProfile | null> {
+    this.ensureAuthenticated();
+
+    const query = `
+      query MostRecentTest {
+        mostRecentTest {
+          status
+          message
+          fitnessTestRidden
+          riderType {
+            name
+            description
+            icon
+          }
+          riderWeakness {
+            name
+            description
+            weaknessSummary
+            weaknessDescription
+            strengthName
+            strengthDescription
+            strengthSummary
+          }
+          power5s {
+            status
+            graphValue
+            value
+          }
+          power1m {
+            status
+            graphValue
+            value
+          }
+          power5m {
+            status
+            graphValue
+            value
+          }
+          power20m {
+            status
+            graphValue
+            value
+          }
+          lactateThresholdHeartRate
+          startTime
+          endTime
+        }
+      }
+    `;
+
+    const response = await this.callAPI<MostRecentTestResponse>({
+      query,
+      variables: {},
+      operationName: 'MostRecentTest'
+    });
+
+    const testData = response.data.mostRecentTest;
+
+    if (!testData || testData.status !== 'ok') {
+      return null;
+    }
+
+    // Calculate HR zones from LTHR
+    const heartRateZones = this.calculateHeartRateZones(testData.lactateThresholdHeartRate);
+
+    return {
+      // Basic 4DP values
+      nm: testData.power5s.value,
+      ac: testData.power1m.value,
+      map: testData.power5m.value,
+      ftp: testData.power20m.value,
+
+      // Enhanced power data
+      power5s: testData.power5s,
+      power1m: testData.power1m,
+      power5m: testData.power5m,
+      power20m: testData.power20m,
+
+      // Heart rate data
+      lactateThresholdHeartRate: testData.lactateThresholdHeartRate,
+      heartRateZones,
+
+      // Rider characteristics
+      riderType: testData.riderType,
+      riderWeakness: testData.riderWeakness,
+
+      // Test metadata
+      fitnessTestRidden: testData.fitnessTestRidden,
+      startTime: testData.startTime,
+      endTime: testData.endTime
+    };
+  }
+
+  private calculateHeartRateZones(lthr: number): HeartRateZone[] {
+    return [
+      {
+        zone: 1,
+        name: 'Active Recovery',
+        min: 0,
+        max: Math.round(lthr * 0.68)
+      },
+      {
+        zone: 2,
+        name: 'Endurance',
+        min: Math.round(lthr * 0.68) + 1,
+        max: Math.round(lthr * 0.83)
+      },
+      {
+        zone: 3,
+        name: 'Tempo',
+        min: Math.round(lthr * 0.83) + 1,
+        max: Math.round(lthr * 0.94)
+      },
+      {
+        zone: 4,
+        name: 'Threshold',
+        min: Math.round(lthr * 0.94) + 1,
+        max: Math.round(lthr * 1.05)
+      },
+      {
+        zone: 5,
+        name: 'VO2 Max',
+        min: Math.round(lthr * 1.05) + 1,
+        max: null
+      }
+    ];
   }
 
   private ensureAuthenticated(): void {

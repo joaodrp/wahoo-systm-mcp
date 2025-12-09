@@ -227,15 +227,22 @@ Get comprehensive details about a specific workout.
 
 #### 5. `get_rider_profile`
 
-Get your 4DP profile values.
+Get your complete 4DP profile, rider type, strengths/weaknesses, and heart rate zones.
 
 **Parameters:** None
 
 **Returns:**
-- FTP (Functional Threshold Power)
-- MAP (Maximal Aerobic Power)
-- AC (Anaerobic Capacity)
-- NM (Neuromuscular Power)
+- **4DP Power Values** (with scores):
+  - NM (Neuromuscular Power - 5s max)
+  - AC (Anaerobic Capacity - 1m max)
+  - MAP (Maximal Aerobic Power - 5m max)
+  - FTP (Functional Threshold Power - 20m)
+- **Rider Type**: Classification (Sprinter, Pursuiter, Time Trialist, Climber, All-Rounder, Attacker, Rouleur) with description
+- **Strengths**: What you excel at
+- **Weaknesses**: What needs improvement
+- **LTHR**: Lactate Threshold Heart Rate
+- **Heart Rate Zones**: 5 training zones calculated from LTHR
+- **Test Info**: Last fitness test date and type
 
 #### 6. `schedule_workout`
 
@@ -524,12 +531,34 @@ What are my 4DP values?
 **Claude:** *[calls get_rider_profile]*
 ```
 Your 4DP Profile:
-- FTP: 419W (Functional Threshold Power)
-- MAP: 495W (Maximal Aerobic Power)
-- AC: 612W (Anaerobic Capacity)
-- NM: 1350W (Neuromuscular Power)
+  NM (Neuromuscular): 1350W (Score: 1.15)
+  AC (Anaerobic): 612W (Score: 0.92)
+  MAP (Max Aerobic): 495W (Score: 0.88)
+  FTP (Threshold): 419W (Score: 0.85)
 
-(Okay, maybe these are Tadej Pogačar's numbers... but we can dream! 🚴‍♂️)
+Rider Type: All-Rounder
+  "You're the complete package - powerful on the climbs, dangerous in the sprint,
+  and relentless in the time trial. Like a certain Slovenian superstar, you can
+  do it all. Just don't forget to let others win occasionally!"
+
+Strengths: Sustained Power
+  Your ability to maintain high power over long periods is exceptional!
+
+Weaknesses: Sprint Efforts
+  While your sprint is good, focusing on explosive efforts could make you even more dangerous.
+
+LTHR: 178 bpm
+
+Heart Rate Zones:
+  Zone 1 (Active Recovery): 0-121 bpm
+  Zone 2 (Endurance): 122-148 bpm
+  Zone 3 (Tempo): 149-167 bpm
+  Zone 4 (Threshold): 168-187 bpm
+  Zone 5 (VO2 Max): 188+ bpm
+
+Last Test: Full Frontal on October 28, 2025
+
+(These might be Tadej Pogačar's numbers... but we can all dream of yellow jerseys! 🚴‍♂️)
 ```
 
 ## Development

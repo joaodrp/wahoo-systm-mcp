@@ -383,19 +383,84 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
         }
 
-        const profile = wahooClient.getRiderProfile();
+        const enhancedProfile = await wahooClient.getEnhancedRiderProfile();
+
+        if (!enhancedProfile) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  error: 'No fitness test data available. Please complete a Full Frontal or Half Monty test in SYSTM.'
+                }, null, 2)
+              }
+            ]
+          };
+        }
+
+        // Format the test date
+        const testDate = new Date(enhancedProfile.startTime);
+        const formattedDate = testDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
 
         return {
           content: [
             {
               type: 'text',
               text: JSON.stringify({
-                profile: profile,
-                description: {
-                  ftp: 'Functional Threshold Power (watts)',
-                  map: 'Maximal Aerobic Power (watts)',
-                  ac: 'Anaerobic Capacity (watts)',
-                  nm: 'Neuromuscular Power (watts)'
+                fourDP: {
+                  nm: {
+                    watts: enhancedProfile.nm,
+                    score: enhancedProfile.power5s.graphValue.toFixed(2),
+                    description: 'Neuromuscular Power (5s max effort)'
+                  },
+                  ac: {
+                    watts: enhancedProfile.ac,
+                    score: enhancedProfile.power1m.graphValue.toFixed(2),
+                    description: 'Anaerobic Capacity (1m max effort)'
+                  },
+                  map: {
+                    watts: enhancedProfile.map,
+                    score: enhancedProfile.power5m.graphValue.toFixed(2),
+                    description: 'Maximal Aerobic Power (5m max effort)'
+                  },
+                  ftp: {
+                    watts: enhancedProfile.ftp,
+                    score: enhancedProfile.power20m.graphValue.toFixed(2),
+                    description: 'Functional Threshold Power (20m effort)'
+                  }
+                },
+                riderType: {
+                  name: enhancedProfile.riderType.name,
+                  description: enhancedProfile.riderType.description,
+                  icon: enhancedProfile.riderType.icon
+                },
+                strengths: {
+                  name: enhancedProfile.riderWeakness.strengthName,
+                  summary: enhancedProfile.riderWeakness.strengthSummary,
+                  description: enhancedProfile.riderWeakness.strengthDescription
+                },
+                weaknesses: {
+                  name: enhancedProfile.riderWeakness.name,
+                  summary: enhancedProfile.riderWeakness.weaknessSummary,
+                  description: enhancedProfile.riderWeakness.weaknessDescription
+                },
+                heartRate: {
+                  lthr: Math.round(enhancedProfile.lactateThresholdHeartRate),
+                  zones: enhancedProfile.heartRateZones.map(zone => ({
+                    zone: zone.zone,
+                    name: zone.name,
+                    range: zone.max
+                      ? `${zone.min}-${zone.max} bpm`
+                      : `${zone.min}+ bpm`
+                  }))
+                },
+                testInfo: {
+                  completed: enhancedProfile.fitnessTestRidden,
+                  date: formattedDate
                 }
               }, null, 2)
             }
