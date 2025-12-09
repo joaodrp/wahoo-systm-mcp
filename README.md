@@ -286,6 +286,25 @@ Reschedule an existing workout to a different date.
 - New date and timezone
 - Confirmation message
 
+#### 8. `remove_workout`
+
+Remove/cancel a scheduled workout from your calendar.
+
+**Parameters:**
+- `agenda_id` (string): The agenda ID of the scheduled workout to remove (from `schedule_workout` or `get_calendar`)
+
+**Example:**
+```json
+{
+  "agenda_id": "91xKHVU1lA_0"
+}
+```
+
+**Returns:**
+- Success status
+- Agenda ID
+- Confirmation message
+
 ## Example Conversations with Claude
 
 ### Checking Your Calendar
@@ -473,6 +492,26 @@ Let me reschedule it to Tuesday, December 17.
 
 "FTP and MAP Over-Unders 10/8" has been moved from Monday, December 16 to
 Tuesday, December 17, 2025.
+```
+
+### Removing a Workout
+
+**You:**
+```
+Actually, I need to cancel Tuesday's workout
+```
+
+**Claude:** *[calls get_calendar to find Tuesday's workout]*
+```
+I see you have "FTP and MAP Over-Unders 10/8" scheduled for Tuesday, December 17.
+Let me remove it from your calendar.
+```
+
+**Claude:** *[calls remove_workout with agenda_id]*
+```
+✓ Workout successfully removed!
+
+"FTP and MAP Over-Unders 10/8" has been removed from your calendar.
 ```
 
 ### Viewing Your Profile

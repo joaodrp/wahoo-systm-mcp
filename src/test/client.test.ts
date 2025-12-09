@@ -542,4 +542,38 @@ describe('WahooClient', () => {
       await client.rescheduleWorkout(agendaId, dayAfterStr, 'Europe/Lisbon');
     });
   });
+
+  describe('removeWorkout', () => {
+    test('should remove a scheduled workout', async () => {
+      if (skipIfNoCredentials('remove workout test')) return;
+
+      const client = await createAuthenticatedClient();
+
+      // Get a short workout to schedule
+      const workouts = await client.getCyclingWorkouts({
+        maxDuration: 30,
+        sortBy: 'duration',
+        sortDirection: 'asc'
+      });
+
+      assert.ok(workouts.length > 0);
+      const workout = workouts[0];
+
+      // Schedule it for tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = `${tomorrow.toISOString().split('T')[0]}T12:00:00.000Z`;
+
+      const agendaId = await client.scheduleWorkout(
+        workout.id,
+        tomorrowStr,
+        'Europe/Lisbon'
+      );
+
+      assert.ok(agendaId);
+
+      // Now remove it - should not throw
+      await client.removeWorkout(agendaId);
+    });
+  });
 });

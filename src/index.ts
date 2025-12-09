@@ -151,6 +151,20 @@ const tools: Tool[] = [
     }
   },
   {
+    name: 'remove_workout',
+    description: 'Remove/cancel a scheduled workout from your calendar. The agendaId can be obtained from schedule_workout or get_calendar results.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        agenda_id: {
+          type: 'string',
+          description: 'The agenda ID of the scheduled workout to remove (from schedule_workout or get_calendar)'
+        }
+      },
+      required: ['agenda_id']
+    }
+  },
+  {
     name: 'get_workouts',
     description: 'Get workouts from the Wahoo SYSTM library. Filter by sport, duration, and TSS. Sort by name, duration, or TSS. Returns a list of workouts with their metadata.',
     inputSchema: {
@@ -475,6 +489,39 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 new_date: new_date,
                 time_zone: tz || 'UTC',
                 message: `Workout successfully rescheduled to ${new_date}`
+              }, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'remove_workout': {
+        if (!isAuthenticated) {
+          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+        }
+
+        if (!args || typeof args !== 'object') {
+          throw new Error('Invalid arguments');
+        }
+
+        const { agenda_id } = args as {
+          agenda_id?: unknown;
+        };
+
+        if (typeof agenda_id !== 'string') {
+          throw new Error('agenda_id must be a string');
+        }
+
+        await wahooClient.removeWorkout(agenda_id);
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                success: true,
+                agenda_id: agenda_id,
+                message: `Workout successfully removed from calendar`
               }, null, 2)
             }
           ]

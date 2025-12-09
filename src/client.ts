@@ -8,7 +8,8 @@ import type {
   LibraryResponse,
   LibraryContent,
   ScheduleWorkoutResponse,
-  MoveAgendaResponse
+  MoveAgendaResponse,
+  DeleteAgendaResponse
 } from './types.js';
 
 const WAHOO_API_URL = 'https://api.thesufferfest.com/graphql';
@@ -501,6 +502,32 @@ export class WahooClient {
 
     if (response.data.moveAgenda.status !== 'Success') {
       throw new Error(`Failed to reschedule workout`);
+    }
+  }
+
+  async removeWorkout(agendaId: string): Promise<void> {
+    this.ensureAuthenticated();
+
+    const query = `
+      mutation DeleteAgenda($agendaId: ID!) {
+        deleteAgenda(agendaId: $agendaId) {
+          status
+        }
+      }
+    `;
+
+    const variables = {
+      agendaId
+    };
+
+    const response = await this.callAPI<DeleteAgendaResponse>({
+      query,
+      variables,
+      operationName: 'DeleteAgenda'
+    });
+
+    if (response.data.deleteAgenda.status !== 'Success') {
+      throw new Error(`Failed to remove workout`);
     }
   }
 
