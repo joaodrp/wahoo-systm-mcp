@@ -173,7 +173,7 @@ export class WahooClient {
     return response.data.userPlan;
   }
 
-  async getWorkoutDetails(workoutId: string): Promise<WorkoutDetails> {
+  async getWorkoutDetails(id: string): Promise<WorkoutDetails> {
     this.ensureAuthenticated();
 
     const query = `
@@ -219,18 +219,34 @@ export class WahooClient {
       }
     `;
 
-    const variables = {
-      id: workoutId
-    };
-
-    const response = await this.callAPI<{ data: { workouts: WorkoutDetails[] } }>({
+    // Try with the ID as-is first (assuming it's a workoutId)
+    let variables = { id };
+    let response = await this.callAPI<{ data: { workouts: WorkoutDetails[] } }>({
       query,
       variables,
       operationName: 'GetWorkouts'
     });
 
+    // If not found, it might be a content ID - look it up in the library
     if (!response.data.workouts || response.data.workouts.length === 0) {
-      throw new Error(`Workout with ID ${workoutId} not found`);
+      const library = await this.getWorkoutLibrary();
+      const content = library.find(item => item.id === id);
+
+      if (!content) {
+        throw new Error(`Workout with ID ${id} not found (tried both content ID and workout ID)`);
+      }
+
+      // Try again with the actual workoutId from the library
+      variables = { id: content.workoutId };
+      response = await this.callAPI<{ data: { workouts: WorkoutDetails[] } }>({
+        query,
+        variables,
+        operationName: 'GetWorkouts'
+      });
+
+      if (!response.data.workouts || response.data.workouts.length === 0) {
+        throw new Error(`Workout with ID ${id} not found`);
+      }
     }
 
     return response.data.workouts[0];

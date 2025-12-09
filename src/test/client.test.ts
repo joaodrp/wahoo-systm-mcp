@@ -142,6 +142,31 @@ describe('WahooClient', () => {
       assert.ok(typeof details.durationSeconds === 'number');
       assert.ok(typeof details.triggers === 'string');
     });
+
+    test('should accept both content ID and workout ID', async () => {
+      if (skipIfNoCredentials('workout details with content ID test')) return;
+
+      const client = await createAuthenticatedClient();
+
+      // Get a workout from the library
+      const library = await client.getWorkoutLibrary({ sport: 'Cycling' });
+      assert.ok(library.length > 0, 'Should have at least one cycling workout');
+
+      const workout = library[0];
+
+      // Test with workoutId (should work directly)
+      const detailsByWorkoutId = await client.getWorkoutDetails(workout.workoutId);
+      assert.ok(detailsByWorkoutId);
+      assert.strictEqual(detailsByWorkoutId.name, workout.name);
+
+      // Test with content ID (should look it up and still work)
+      const detailsByContentId = await client.getWorkoutDetails(workout.id);
+      assert.ok(detailsByContentId);
+      assert.strictEqual(detailsByContentId.name, workout.name);
+
+      // Both should return the same workout
+      assert.strictEqual(detailsByWorkoutId.id, detailsByContentId.id);
+    });
   });
 
   describe('getWorkoutLibrary()', () => {
