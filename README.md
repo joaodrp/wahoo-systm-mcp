@@ -6,6 +6,7 @@ A Model Context Protocol (MCP) server that provides access to Wahoo SYSTM calend
 
 - **Authentication**: Securely authenticate with your Wahoo SYSTM account
 - **Calendar Access**: Retrieve planned workouts for any date range
+- **Workout Scheduling**: Schedule workouts from the library to your calendar
 - **Library Browsing**: Browse and search the complete Wahoo SYSTM workout library with filters for sport, level, duration, and channel
 - **Workout Details**: Get comprehensive workout information including:
   - Workout intervals and structure
@@ -236,6 +237,31 @@ Get your 4DP profile values.
 - AC (Anaerobic Capacity)
 - NM (Neuromuscular Power)
 
+#### 6. `schedule_workout`
+
+Schedule a workout for a specific date on your calendar.
+
+**Parameters:**
+- `content_id` (string): The workout content ID from `get_workouts` or `get_cycling_workouts`
+- `date` (string): Date in YYYY-MM-DD format (e.g., "2025-12-15")
+- `time_zone` (string, optional): Timezone (e.g., "Europe/Lisbon", "America/New_York"). Defaults to UTC if not specified.
+
+**Example:**
+```json
+{
+  "content_id": "idi8fUK8Ew",
+  "date": "2025-12-15",
+  "time_zone": "Europe/Lisbon"
+}
+```
+
+**Returns:**
+- Success status
+- Agenda ID (unique identifier for the scheduled workout)
+- Scheduled date and timezone
+
+**Note:** The `content_id` is the `id` field from workout results, not the `workoutId`.
+
 ## Example Conversations with Claude
 
 ### Checking Your Calendar
@@ -375,6 +401,33 @@ This session delivers 40/20s micro intervals to build your MAP without completel
 emptying your tank. Perfect for building sustainable power at threshold.
 
 [Full interval structure details]
+```
+
+### Scheduling a Workout
+
+**You:**
+```
+Find me a short FTP workout under 45 minutes and schedule it for next Monday
+```
+
+**Claude:** *[calls get_cycling_workouts]*
+```
+I found several FTP-focused workouts under 45 minutes. Here's a good one:
+
+FTP and MAP Over-Unders 10/8 (31m)
+TSS: 43, Intensity: High
+4DP: FTP=5, MAP=2
+Category: Climbing
+
+This workout delivers classic over-under intervals to boost both FTP and MAP.
+```
+
+**Claude:** *[calls schedule_workout with content_id, date: "2025-12-16"]*
+```
+✓ Workout successfully scheduled!
+
+The workout "FTP and MAP Over-Unders 10/8" has been added to your calendar for
+Monday, December 16, 2025. You can view it in your SYSTM calendar.
 ```
 
 ### Viewing Your Profile

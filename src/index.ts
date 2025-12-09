@@ -107,6 +107,28 @@ const tools: Tool[] = [
     }
   },
   {
+    name: 'schedule_workout',
+    description: 'Schedule a workout for a specific date. The contentId can be obtained from get_workouts or get_cycling_workouts results.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        content_id: {
+          type: 'string',
+          description: 'The content ID of the workout to schedule (from get_workouts/get_cycling_workouts)'
+        },
+        date: {
+          type: 'string',
+          description: 'Date to schedule the workout in YYYY-MM-DD format (e.g., "2025-12-15")'
+        },
+        time_zone: {
+          type: 'string',
+          description: 'Optional timezone (e.g., "Europe/Lisbon", "America/New_York"). Defaults to UTC if not specified.'
+        }
+      },
+      required: ['content_id', 'date']
+    }
+  },
+  {
     name: 'get_workouts',
     description: 'Get workouts from the Wahoo SYSTM library. Filter by sport, duration, and TSS. Sort by name, duration, or TSS. Returns a list of workouts with their metadata.',
     inputSchema: {
@@ -339,6 +361,53 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                   ac: 'Anaerobic Capacity (watts)',
                   nm: 'Neuromuscular Power (watts)'
                 }
+              }, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'schedule_workout': {
+        if (!isAuthenticated) {
+          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+        }
+
+        if (!args || typeof args !== 'object') {
+          throw new Error('Invalid arguments');
+        }
+
+        const { content_id, date, time_zone } = args as {
+          content_id?: unknown;
+          date?: unknown;
+          time_zone?: unknown;
+        };
+
+        if (typeof content_id !== 'string') {
+          throw new Error('content_id must be a string');
+        }
+        if (typeof date !== 'string') {
+          throw new Error('date must be a string in YYYY-MM-DD format');
+        }
+
+        // Convert YYYY-MM-DD to ISO 8601 format
+        // The API expects a full ISO 8601 timestamp
+        const isoDate = `${date}T12:00:00.000Z`;
+
+        const tz = time_zone && typeof time_zone === 'string' ? time_zone : undefined;
+
+        const agendaId = await wahooClient.scheduleWorkout(content_id, isoDate, tz);
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                success: true,
+                agenda_id: agendaId,
+                content_id: content_id,
+                scheduled_date: date,
+                time_zone: tz || 'UTC',
+                message: `Workout successfully scheduled for ${date}`
               }, null, 2)
             }
           ]

@@ -138,3 +138,13 @@ export interface LibraryResponse {
     };
   };
 }
+
+export interface ScheduleWorkoutResponse {
+  data: {
+    addAgenda: {
+      status: string;
+      message: string | null;
+      agendaId: string;
+    };
+  };
+}

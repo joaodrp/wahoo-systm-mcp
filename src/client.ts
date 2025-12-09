@@ -6,7 +6,8 @@ import type {
   UserPlanItem,
   WorkoutDetails,
   LibraryResponse,
-  LibraryContent
+  LibraryContent,
+  ScheduleWorkoutResponse
 } from './types.js';
 
 const WAHOO_API_URL = 'https://api.thesufferfest.com/graphql';
@@ -430,6 +431,43 @@ export class WahooClient {
     }
 
     return workouts;
+  }
+
+  async scheduleWorkout(contentId: string, date: string, timeZone?: string): Promise<string> {
+    this.ensureAuthenticated();
+
+    const query = `
+      mutation AddUserPlanItem($contentId: ID!, $date: Date!, $timeZone: TimeZone!, $rank: Int) {
+        addAgenda(contentId: $contentId, date: $date, timeZone: $timeZone, rank: $rank) {
+          status
+          message
+          agendaId
+        }
+      }
+    `;
+
+    // Default timezone to UTC if not provided
+    const tz = timeZone || 'UTC';
+
+    // Default rank to 200 (seems to be the standard priority)
+    const variables = {
+      contentId,
+      date,
+      timeZone: tz,
+      rank: 200
+    };
+
+    const response = await this.callAPI<ScheduleWorkoutResponse>({
+      query,
+      variables,
+      operationName: 'AddUserPlanItem'
+    });
+
+    if (response.data.addAgenda.status !== 'Success') {
+      throw new Error(`Failed to schedule workout: ${response.data.addAgenda.message}`);
+    }
+
+    return response.data.addAgenda.agendaId;
   }
 
   getRiderProfile(): RiderProfile | null {
