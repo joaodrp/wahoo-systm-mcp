@@ -129,6 +129,28 @@ const tools: Tool[] = [
     }
   },
   {
+    name: 'reschedule_workout',
+    description: 'Reschedule an existing workout to a different date. The agendaId can be obtained from schedule_workout or get_calendar results.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        agenda_id: {
+          type: 'string',
+          description: 'The agenda ID of the scheduled workout (from schedule_workout or get_calendar)'
+        },
+        new_date: {
+          type: 'string',
+          description: 'New date to reschedule the workout to in YYYY-MM-DD format (e.g., "2025-12-16")'
+        },
+        time_zone: {
+          type: 'string',
+          description: 'Optional timezone (e.g., "Europe/Lisbon", "America/New_York"). Defaults to UTC if not specified.'
+        }
+      },
+      required: ['agenda_id', 'new_date']
+    }
+  },
+  {
     name: 'get_workouts',
     description: 'Get workouts from the Wahoo SYSTM library. Filter by sport, duration, and TSS. Sort by name, duration, or TSS. Returns a list of workouts with their metadata.',
     inputSchema: {
@@ -408,6 +430,51 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 scheduled_date: date,
                 time_zone: tz || 'UTC',
                 message: `Workout successfully scheduled for ${date}`
+              }, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'reschedule_workout': {
+        if (!isAuthenticated) {
+          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+        }
+
+        if (!args || typeof args !== 'object') {
+          throw new Error('Invalid arguments');
+        }
+
+        const { agenda_id, new_date, time_zone } = args as {
+          agenda_id?: unknown;
+          new_date?: unknown;
+          time_zone?: unknown;
+        };
+
+        if (typeof agenda_id !== 'string') {
+          throw new Error('agenda_id must be a string');
+        }
+
+        if (typeof new_date !== 'string') {
+          throw new Error('new_date must be a string in YYYY-MM-DD format');
+        }
+
+        // Convert YYYY-MM-DD to ISO 8601 format
+        const isoDate = `${new_date}T00:00:00.000Z`;
+        const tz = time_zone && typeof time_zone === 'string' ? time_zone : undefined;
+
+        await wahooClient.rescheduleWorkout(agenda_id, isoDate, tz);
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                success: true,
+                agenda_id: agenda_id,
+                new_date: new_date,
+                time_zone: tz || 'UTC',
+                message: `Workout successfully rescheduled to ${new_date}`
               }, null, 2)
             }
           ]

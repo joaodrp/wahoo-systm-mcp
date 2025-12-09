@@ -7,7 +7,8 @@ import type {
   WorkoutDetails,
   LibraryResponse,
   LibraryContent,
-  ScheduleWorkoutResponse
+  ScheduleWorkoutResponse,
+  MoveAgendaResponse
 } from './types.js';
 
 const WAHOO_API_URL = 'https://api.thesufferfest.com/graphql';
@@ -468,6 +469,39 @@ export class WahooClient {
     }
 
     return response.data.addAgenda.agendaId;
+  }
+
+  async rescheduleWorkout(agendaId: string, newDate: string, timeZone?: string): Promise<void> {
+    this.ensureAuthenticated();
+
+    const query = `
+      mutation MoveAgenda($agendaId: ID!, $date: Date!, $rank: Int, $timeZone: TimeZone) {
+        moveAgenda(agendaId: $agendaId, date: $date, rank: $rank, timeZone: $timeZone) {
+          status
+        }
+      }
+    `;
+
+    // Default timezone to UTC if not provided
+    const tz = timeZone || 'UTC';
+
+    // Default rank to 200 (seems to be the standard priority)
+    const variables = {
+      agendaId,
+      date: newDate,
+      rank: 200,
+      timeZone: tz
+    };
+
+    const response = await this.callAPI<MoveAgendaResponse>({
+      query,
+      variables,
+      operationName: 'MoveAgenda'
+    });
+
+    if (response.data.moveAgenda.status !== 'Success') {
+      throw new Error(`Failed to reschedule workout`);
+    }
   }
 
   getRiderProfile(): RiderProfile | null {

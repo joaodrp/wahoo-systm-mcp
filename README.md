@@ -262,6 +262,30 @@ Schedule a workout for a specific date on your calendar.
 
 **Note:** The `content_id` is the `id` field from workout results, not the `workoutId`.
 
+#### 7. `reschedule_workout`
+
+Reschedule an existing workout to a different date.
+
+**Parameters:**
+- `agenda_id` (string): The agenda ID of the scheduled workout (from `schedule_workout` or `get_calendar`)
+- `new_date` (string): New date to reschedule the workout to in YYYY-MM-DD format (e.g., "2025-12-16")
+- `time_zone` (string, optional): Timezone (e.g., "Europe/Lisbon", "America/New_York"). Defaults to UTC if not specified.
+
+**Example:**
+```json
+{
+  "agenda_id": "1LLFcfoVUb_0",
+  "new_date": "2025-12-16",
+  "time_zone": "Europe/Lisbon"
+}
+```
+
+**Returns:**
+- Success status
+- Agenda ID
+- New date and timezone
+- Confirmation message
+
 ## Example Conversations with Claude
 
 ### Checking Your Calendar
@@ -428,6 +452,27 @@ This workout delivers classic over-under intervals to boost both FTP and MAP.
 
 The workout "FTP and MAP Over-Unders 10/8" has been added to your calendar for
 Monday, December 16, 2025. You can view it in your SYSTM calendar.
+```
+
+### Rescheduling a Workout
+
+**You:**
+```
+I need to move Monday's workout to Tuesday instead
+```
+
+**Claude:** *[calls get_calendar to find Monday's workout]*
+```
+I see you have "FTP and MAP Over-Unders 10/8" scheduled for Monday, December 16.
+Let me reschedule it to Tuesday, December 17.
+```
+
+**Claude:** *[calls reschedule_workout with agenda_id, new_date: "2025-12-17"]*
+```
+✓ Workout successfully rescheduled!
+
+"FTP and MAP Over-Unders 10/8" has been moved from Monday, December 16 to
+Tuesday, December 17, 2025.
 ```
 
 ### Viewing Your Profile

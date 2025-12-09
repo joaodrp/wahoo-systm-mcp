@@ -470,4 +470,76 @@ describe('WahooClient', () => {
       }
     });
   });
+
+  describe('scheduleWorkout', () => {
+    test('should schedule a workout', async () => {
+      if (skipIfNoCredentials('schedule workout test')) return;
+
+      const client = await createAuthenticatedClient();
+
+      // Get a short workout to schedule
+      const workouts = await client.getCyclingWorkouts({
+        maxDuration: 30,
+        sortBy: 'duration',
+        sortDirection: 'asc'
+      });
+
+      assert.ok(workouts.length > 0);
+      const workout = workouts[0];
+
+      // Schedule it for tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dateStr = `${tomorrow.toISOString().split('T')[0]}T12:00:00.000Z`;
+
+      const agendaId = await client.scheduleWorkout(
+        workout.id,
+        dateStr,
+        'Europe/Lisbon'
+      );
+
+      assert.ok(agendaId);
+      assert.strictEqual(typeof agendaId, 'string');
+      assert.ok(agendaId.length > 0);
+    });
+  });
+
+  describe('rescheduleWorkout', () => {
+    test('should reschedule a workout', async () => {
+      if (skipIfNoCredentials('reschedule workout test')) return;
+
+      const client = await createAuthenticatedClient();
+
+      // Get a short workout to schedule
+      const workouts = await client.getCyclingWorkouts({
+        maxDuration: 30,
+        sortBy: 'duration',
+        sortDirection: 'asc'
+      });
+
+      assert.ok(workouts.length > 0);
+      const workout = workouts[0];
+
+      // Schedule it for tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = `${tomorrow.toISOString().split('T')[0]}T12:00:00.000Z`;
+
+      const agendaId = await client.scheduleWorkout(
+        workout.id,
+        tomorrowStr,
+        'Europe/Lisbon'
+      );
+
+      assert.ok(agendaId);
+
+      // Now reschedule it to the day after tomorrow
+      const dayAfter = new Date();
+      dayAfter.setDate(dayAfter.getDate() + 2);
+      const dayAfterStr = `${dayAfter.toISOString().split('T')[0]}T12:00:00.000Z`;
+
+      // Should not throw
+      await client.rescheduleWorkout(agendaId, dayAfterStr, 'Europe/Lisbon');
+    });
+  });
 });

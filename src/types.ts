@@ -148,3 +148,19 @@ export interface ScheduleWorkoutResponse {
     };
   };
 }
+
+export interface MoveAgendaResponse {
+  data: {
+    moveAgenda: {
+      status: string;
+    };
+  };
+}
+
+export interface DeleteAgendaResponse {
+  data: {
+    deleteAgenda: {
+      status: string;
+    };
+  };
+}
