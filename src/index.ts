@@ -149,6 +149,64 @@ const tools: Tool[] = [
       },
       required: []
     }
+  },
+  {
+    name: 'get_cycling_workouts',
+    description: 'Get cycling workouts with filters matching the SYSTM UI. Filter by channel, category, 4DP focus (NM/AC/MAP/FTP), duration range, and intensity. Returns cycling workouts with metadata.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        channel: {
+          type: 'string',
+          description: 'Filter by channel: The Sufferfest, Inspiration, Wahoo Fitness, A Week With, ProRides, On Location, NoVid, Fitness Test'
+        },
+        category: {
+          type: 'string',
+          description: 'Filter by category: Activation, Active Recovery, Climbing, Cool Down, Endurance, Fitness Test, Mixed, Overview, Racing, Speed, Sustained Efforts, Technique & Drills, The Knowledge'
+        },
+        four_dp_focus: {
+          type: 'string',
+          enum: ['NM', 'AC', 'MAP', 'FTP'],
+          description: 'Filter by 4DP focus - workouts that target this energy system (rating >= 4): NM (Neuromuscular), AC (Anaerobic Capacity), MAP (Maximal Aerobic Power), FTP (Functional Threshold Power)'
+        },
+        min_duration: {
+          type: 'number',
+          description: 'Minimum workout duration in hours (e.g., 0.5 for 30 minutes)'
+        },
+        max_duration: {
+          type: 'number',
+          description: 'Maximum workout duration in hours (e.g., 1.5 for 90 minutes)'
+        },
+        min_tss: {
+          type: 'number',
+          description: 'Minimum Training Stress Score'
+        },
+        max_tss: {
+          type: 'number',
+          description: 'Maximum Training Stress Score'
+        },
+        intensity: {
+          type: 'string',
+          enum: ['High', 'Medium', 'Low'],
+          description: 'Filter by intensity level'
+        },
+        sort_by: {
+          type: 'string',
+          enum: ['name', 'duration', 'tss'],
+          description: 'Sort workouts by: name (default), duration, or tss'
+        },
+        sort_direction: {
+          type: 'string',
+          enum: ['asc', 'desc'],
+          description: 'Sort direction: asc (default) or desc'
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results to return (default: 50)'
+        }
+      },
+      required: []
+    }
   }
 ];
 
@@ -360,6 +418,97 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               type: 'text',
               text: JSON.stringify({
                 total_found: library.length,
+                returned: formattedWorkouts.length,
+                workouts: formattedWorkouts
+              }, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'get_cycling_workouts': {
+        if (!isAuthenticated) {
+          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+        }
+
+        const filters: {
+          channel?: string;
+          category?: string;
+          fourDpFocus?: 'NM' | 'AC' | 'MAP' | 'FTP';
+          minDuration?: number;
+          maxDuration?: number;
+          minTss?: number;
+          maxTss?: number;
+          intensity?: 'High' | 'Medium' | 'Low';
+          sortBy?: 'name' | 'duration' | 'tss';
+          sortDirection?: 'asc' | 'desc';
+        } = {};
+
+        if (args && typeof args === 'object') {
+          const params = args as Record<string, unknown>;
+          if (typeof params.channel === 'string') filters.channel = params.channel;
+          if (typeof params.category === 'string') filters.category = params.category;
+          if (typeof params.four_dp_focus === 'string' && ['NM', 'AC', 'MAP', 'FTP'].includes(params.four_dp_focus)) {
+            filters.fourDpFocus = params.four_dp_focus as 'NM' | 'AC' | 'MAP' | 'FTP';
+          }
+          if (typeof params.min_duration === 'number') filters.minDuration = params.min_duration;
+          if (typeof params.max_duration === 'number') filters.maxDuration = params.max_duration;
+          if (typeof params.min_tss === 'number') filters.minTss = params.min_tss;
+          if (typeof params.max_tss === 'number') filters.maxTss = params.max_tss;
+          if (typeof params.intensity === 'string' && ['High', 'Medium', 'Low'].includes(params.intensity)) {
+            filters.intensity = params.intensity as 'High' | 'Medium' | 'Low';
+          }
+          if (typeof params.sort_by === 'string' && ['name', 'duration', 'tss'].includes(params.sort_by)) {
+            filters.sortBy = params.sort_by as 'name' | 'duration' | 'tss';
+          }
+          if (typeof params.sort_direction === 'string' && ['asc', 'desc'].includes(params.sort_direction)) {
+            filters.sortDirection = params.sort_direction as 'asc' | 'desc';
+          }
+        }
+
+        const cyclingWorkouts = await wahooClient.getCyclingWorkouts(filters);
+
+        // Apply limit
+        const limit = (args && typeof args === 'object' && typeof (args as Record<string, unknown>).limit === 'number')
+          ? (args as Record<string, unknown>).limit as number
+          : 50;
+        const limitedWorkouts = cyclingWorkouts.slice(0, limit);
+
+        // Format the response (same as get_workouts)
+        const formattedWorkouts = limitedWorkouts.map(item => {
+          const durationHours = item.duration / 3600;
+          const hours = Math.floor(durationHours);
+          const minutes = Math.round((durationHours - hours) * 60);
+
+          return {
+            id: item.id,
+            workout_id: item.workoutId,
+            name: item.name,
+            sport: item.workoutType,
+            channel: item.channel,
+            category: item.category,
+            intensity: item.intensity || 'N/A',
+            duration_seconds: item.duration,
+            duration_formatted: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+            description: item.descriptions?.[0]?.body?.substring(0, 400) + '...' || '',
+            tss: item.metrics?.tss,
+            intensity_factor: item.metrics?.intensityFactor,
+            ratings_4dp: item.metrics?.ratings ? {
+              ftp: item.metrics.ratings.ftp,
+              map: item.metrics.ratings.map,
+              ac: item.metrics.ratings.ac,
+              nm: item.metrics.ratings.nm
+            } : null,
+            tags: item.tags
+          };
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                total_found: cyclingWorkouts.length,
                 returned: formattedWorkouts.length,
                 workouts: formattedWorkouts
               }, null, 2)

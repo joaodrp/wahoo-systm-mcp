@@ -373,6 +373,65 @@ export class WahooClient {
     return content;
   }
 
+  async getCyclingWorkouts(filters?: {
+    channel?: string;
+    category?: string;
+    fourDpFocus?: 'NM' | 'AC' | 'MAP' | 'FTP';
+    minDuration?: number;
+    maxDuration?: number;
+    minTss?: number;
+    maxTss?: number;
+    intensity?: 'High' | 'Medium' | 'Low';
+    sortBy?: 'name' | 'duration' | 'tss';
+    sortDirection?: 'asc' | 'desc';
+  }): Promise<LibraryContent[]> {
+    // Start with base cycling filters
+    const baseFilters: any = {
+      sport: 'Cycling',
+      sortBy: filters?.sortBy,
+      sortDirection: filters?.sortDirection
+    };
+
+    if (filters?.minDuration) baseFilters.minDuration = filters.minDuration;
+    if (filters?.maxDuration) baseFilters.maxDuration = filters.maxDuration;
+    if (filters?.minTss) baseFilters.minTss = filters.minTss;
+    if (filters?.maxTss) baseFilters.maxTss = filters.maxTss;
+
+    let workouts = await this.getWorkoutLibrary(baseFilters);
+
+    // Apply cycling-specific filters
+    if (filters?.channel) {
+      workouts = workouts.filter(w =>
+        w.channel?.toLowerCase().includes(filters.channel!.toLowerCase())
+      );
+    }
+
+    if (filters?.category) {
+      workouts = workouts.filter(w =>
+        w.category?.toLowerCase() === filters.category!.toLowerCase()
+      );
+    }
+
+    if (filters?.intensity) {
+      workouts = workouts.filter(w =>
+        w.intensity?.toLowerCase() === filters.intensity!.toLowerCase()
+      );
+    }
+
+    // 4DP Focus filter - workouts with high rating (>= 4) in the specified energy system
+    // This matches the SYSTM UI behavior: FTP filter shows 155 workouts (78 with rating=5 + 77 with rating=4)
+    // MAP shows 89 workouts (45 rating=5 + 44 rating=4), etc.
+    if (filters?.fourDpFocus) {
+      const focus = filters.fourDpFocus.toLowerCase();
+      workouts = workouts.filter(w => {
+        const rating = w.metrics?.ratings?.[focus as keyof typeof w.metrics.ratings];
+        return rating !== undefined && rating >= 4;
+      });
+    }
+
+    return workouts;
+  }
+
   getRiderProfile(): RiderProfile | null {
     return this.riderProfile;
   }

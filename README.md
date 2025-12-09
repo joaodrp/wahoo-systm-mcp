@@ -167,7 +167,41 @@ Get workouts from the Wahoo SYSTM library with filtering and sorting.
   - 4DP ratings (NM, AC, MAP, FTP)
   - Tags
 
-#### 3. `get_workout_details`
+#### 3. `get_cycling_workouts`
+
+Get cycling workouts with filters matching the SYSTM UI. Specialized tool for browsing cycling workouts with cycling-specific filters.
+
+**Parameters:**
+- `channel` (string, optional): Filter by channel (e.g., "The Sufferfest", "Inspiration", "Wahoo Fitness", "A Week With", "ProRides", "On Location", "NoVid", "Fitness Test")
+- `category` (string, optional): Filter by category (e.g., "Endurance", "Speed", "Climbing", "Sustained Efforts", "Mixed", "Technique & Drills", "Racing", "Active Recovery", "Activation", "The Knowledge", "Overview", "Cool Down", "Fitness Test")
+- `four_dp_focus` (string, optional): Filter by 4DP focus - shows workouts with rating >= 4 in the specified energy system: "NM" (Neuromuscular), "AC" (Anaerobic Capacity), "MAP" (Maximal Aerobic Power), "FTP" (Functional Threshold Power)
+- `min_duration` (number, optional): Minimum duration in hours (e.g., 0.5 for 30 minutes)
+- `max_duration` (number, optional): Maximum duration in hours (e.g., 1.5 for 90 minutes)
+- `min_tss` (number, optional): Minimum Training Stress Score
+- `max_tss` (number, optional): Maximum Training Stress Score
+- `intensity` (string, optional): Filter by intensity level: "High", "Medium", or "Low"
+- `sort_by` (string, optional): Sort by "name", "duration", or "tss" (default: "name")
+- `sort_direction` (string, optional): Sort direction "asc" or "desc" (default: "asc")
+- `limit` (number, optional): Maximum number of results to return (default: 50)
+
+**Example:**
+```json
+{
+  "four_dp_focus": "FTP",
+  "max_duration": 1,
+  "min_tss": 40,
+  "max_tss": 60,
+  "intensity": "High",
+  "sort_by": "tss",
+  "sort_direction": "asc",
+  "limit": 10
+}
+```
+
+**Returns:**
+Same structure as `get_workouts` - total workout count and list of workouts with all metadata including 4DP ratings, TSS, duration, description, etc.
+
+#### 4. `get_workout_details`
 
 Get comprehensive details about a specific workout.
 
@@ -190,7 +224,7 @@ Get comprehensive details about a specific workout.
 - Metrics (TSS, Intensity Factor, 4DP ratings)
 - Complete interval structure with power zones
 
-#### 4. `get_rider_profile`
+#### 5. `get_rider_profile`
 
 Get your 4DP profile values.
 

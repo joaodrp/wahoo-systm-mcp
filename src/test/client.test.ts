@@ -335,4 +335,139 @@ describe('WahooClient', () => {
       }
     });
   });
+
+  describe('getCyclingWorkouts()', () => {
+    test('should throw error when not authenticated', async () => {
+      const client = new WahooClient();
+      await assert.rejects(
+        () => client.getCyclingWorkouts(),
+        /Not authenticated/
+      );
+    });
+
+    test('should get all cycling workouts', async () => {
+      if (skipIfNoCredentials('get all cycling workouts test')) return;
+
+      const client = await createAuthenticatedClient();
+      const workouts = await client.getCyclingWorkouts();
+
+      assert.ok(workouts.length > 0);
+      assert.strictEqual(workouts[0].workoutType, 'Cycling');
+    });
+
+    test('should filter by 4DP focus - FTP', async () => {
+      if (skipIfNoCredentials('FTP focus test')) return;
+
+      const client = await createAuthenticatedClient();
+      const workouts = await client.getCyclingWorkouts({ fourDpFocus: 'FTP' });
+
+      assert.ok(workouts.length > 0);
+      workouts.forEach(w => {
+        assert.ok(w.metrics?.ratings?.ftp !== undefined);
+        assert.ok(w.metrics.ratings.ftp >= 4, `Expected FTP rating >= 4, got ${w.metrics.ratings.ftp} for ${w.name}`);
+      });
+    });
+
+    test('should filter by 4DP focus - MAP', async () => {
+      if (skipIfNoCredentials('MAP focus test')) return;
+
+      const client = await createAuthenticatedClient();
+      const workouts = await client.getCyclingWorkouts({ fourDpFocus: 'MAP' });
+
+      assert.ok(workouts.length > 0);
+      workouts.forEach(w => {
+        assert.ok(w.metrics?.ratings?.map !== undefined);
+        assert.ok(w.metrics.ratings.map >= 4);
+      });
+    });
+
+    test('should filter by category', async () => {
+      if (skipIfNoCredentials('category filter test')) return;
+
+      const client = await createAuthenticatedClient();
+      const workouts = await client.getCyclingWorkouts({ category: 'Endurance' });
+
+      assert.ok(workouts.length > 0);
+      workouts.forEach(w => {
+        assert.strictEqual(w.category, 'Endurance');
+      });
+    });
+
+    test('should filter by intensity', async () => {
+      if (skipIfNoCredentials('intensity filter test')) return;
+
+      const client = await createAuthenticatedClient();
+      const workouts = await client.getCyclingWorkouts({ intensity: 'Low' });
+
+      assert.ok(workouts.length > 0);
+      workouts.forEach(w => {
+        assert.strictEqual(w.intensity, 'Low');
+      });
+    });
+
+    test('should filter by duration', async () => {
+      if (skipIfNoCredentials('duration filter test')) return;
+
+      const client = await createAuthenticatedClient();
+      const maxHours = 0.5;
+      const workouts = await client.getCyclingWorkouts({ maxDuration: maxHours });
+
+      assert.ok(workouts.length > 0);
+      workouts.forEach(w => {
+        assert.ok(w.duration <= maxHours * 3600);
+      });
+    });
+
+    test('should filter by TSS range', async () => {
+      if (skipIfNoCredentials('TSS filter test')) return;
+
+      const client = await createAuthenticatedClient();
+      const minTss = 40;
+      const maxTss = 60;
+      const workouts = await client.getCyclingWorkouts({ minTss, maxTss });
+
+      assert.ok(workouts.length > 0);
+      workouts.forEach(w => {
+        if (w.metrics?.tss !== undefined) {
+          assert.ok(w.metrics.tss >= minTss);
+          assert.ok(w.metrics.tss <= maxTss);
+        }
+      });
+    });
+
+    test('should combine multiple filters', async () => {
+      if (skipIfNoCredentials('combined cycling filters test')) return;
+
+      const client = await createAuthenticatedClient();
+      const workouts = await client.getCyclingWorkouts({
+        fourDpFocus: 'FTP',
+        maxDuration: 1,
+        minTss: 40,
+        maxTss: 60,
+        intensity: 'High',
+        sortBy: 'tss',
+        sortDirection: 'asc'
+      });
+
+      assert.ok(workouts.length > 0);
+
+      // Verify all filters
+      workouts.forEach(w => {
+        assert.ok(w.metrics?.ratings?.ftp && w.metrics.ratings.ftp >= 4);
+        assert.ok(w.duration <= 3600);
+        if (w.metrics?.tss) {
+          assert.ok(w.metrics.tss >= 40);
+          assert.ok(w.metrics.tss <= 60);
+        }
+        assert.strictEqual(w.intensity, 'High');
+      });
+
+      // Verify sorting
+      for (let i = 1; i < Math.min(5, workouts.length); i++) {
+        const currentTss = workouts[i].metrics?.tss ?? 0;
+        const previousTss = workouts[i - 1].metrics?.tss ?? 0;
+        assert.ok(currentTss >= previousTss);
+      }
+    });
+  });
 });
