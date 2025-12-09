@@ -225,8 +225,10 @@ describe('WahooClient', () => {
       });
 
       assert.ok(workouts.length > 0, 'Should find On Location workouts');
-      // All workouts should have a channel (though we can't easily verify the name without the mapping)
-      assert.ok(workouts.every(w => w.channel), 'All workouts should have channel data');
+      // All workouts should have the human-readable channel name, not the ID
+      workouts.forEach(w => {
+        assert.strictEqual(w.channel, 'On Location', 'Channel should be human-readable name');
+      });
     });
 
     test('should sort by name ascending', async () => {
@@ -403,9 +405,9 @@ describe('WahooClient', () => {
       const workouts = await client.getCyclingWorkouts({ channel: 'The Sufferfest' });
 
       assert.ok(workouts.length > 0, 'Should find The Sufferfest workouts');
-      // All workouts should have a channel
+      // All workouts should have the human-readable channel name, not the ID
       workouts.forEach(w => {
-        assert.ok(w.channel, 'Workout should have channel data');
+        assert.strictEqual(w.channel, 'The Sufferfest', 'Channel should be human-readable name');
       });
     });
 

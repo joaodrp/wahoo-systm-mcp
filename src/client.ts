@@ -389,6 +389,14 @@ export class WahooClient {
       return compareValue * multiplier;
     });
 
+    // Convert channel IDs to human-readable names before returning
+    // The API returns IDs like "0MEmGeS5js" but users expect names like "On Location"
+    const channelMap = new Map(response.data.library.channels.map(ch => [ch.id, ch.name]));
+    content = content.map(item => ({
+      ...item,
+      channel: item.channel ? (channelMap.get(item.channel) || item.channel) : item.channel
+    }));
+
     return content;
   }
 
