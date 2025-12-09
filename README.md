@@ -135,6 +135,7 @@ Get workouts from the Wahoo SYSTM library with filtering and sorting.
 
 **Parameters:**
 - `sport` (string, optional): Filter by sport (e.g., "Cycling", "Running", "Strength", "Yoga", "Swimming")
+- `search` (string, optional): Search for workouts by name (case-insensitive, partial match)
 - `min_duration` (number, optional): Minimum duration in minutes (e.g., 30 for 30 minutes)
 - `max_duration` (number, optional): Maximum duration in minutes (e.g., 120 for 2 hours)
 - `min_tss` (number, optional): Minimum Training Stress Score (e.g., 20 for easy, 100+ for hard)
@@ -179,6 +180,7 @@ Get cycling workouts with filters matching the SYSTM UI. Specialized tool for br
 - `channel` (string, optional): Filter by channel (e.g., "The Sufferfest", "Inspiration", "Wahoo Fitness", "A Week With", "ProRides", "On Location", "NoVid", "Fitness Test")
 - `category` (string, optional): Filter by category (e.g., "Endurance", "Speed", "Climbing", "Sustained Efforts", "Mixed", "Technique & Drills", "Racing", "Active Recovery", "Activation", "The Knowledge", "Overview", "Cool Down", "Fitness Test")
 - `four_dp_focus` (string, optional): Filter by 4DP focus - shows workouts with rating >= 4 in the specified energy system: "NM" (Neuromuscular), "AC" (Anaerobic Capacity), "MAP" (Maximal Aerobic Power), "FTP" (Functional Threshold Power)
+- `search` (string, optional): Search for workouts by name (case-insensitive, partial match)
 - `min_duration` (number, optional): Minimum duration in minutes (e.g., 30 for 30 minutes)
 - `max_duration` (number, optional): Maximum duration in minutes (e.g., 90 for 90 minutes)
 - `min_tss` (number, optional): Minimum Training Stress Score
@@ -518,6 +520,50 @@ This session delivers 40/20s micro intervals to build your MAP without completel
 emptying your tank. Perfect for building sustainable power at threshold.
 
 [Full interval structure details]
+```
+
+### Finding a Specific Workout
+
+**You:**
+```
+Find me the "Nine Hammers" workout
+```
+
+**Claude:** *[calls get_cycling_workouts with search: "Nine Hammers"]*
+```
+I found the Nine Hammers workout:
+
+Nine Hammers (58m)
+TSS: 80, Intensity: High
+4DP: NM=5, AC=5, MAP=3, FTP=2
+Category: Speed
+Channel: The Sufferfest
+
+This is the classic Nine Hammers - a brutal session featuring nine 1-minute maximum
+efforts designed to push your neuromuscular and anaerobic capacity to the limit.
+Each "hammer" is a full gas, all-out effort followed by recovery. This workout
+is legendary in the SYSTM community!
+```
+
+**You:**
+```
+What about tempo workouts?
+```
+
+**Claude:** *[calls get_cycling_workouts with search: "tempo"]*
+```
+I found 36 tempo workouts. Here are some popular ones:
+
+1. Tempo: 5 x 4 (90min, TSS: 63)
+   Five 4-minute tempo intervals with recovery
+
+2. Tempo Alternating: 2 x 15 (49min, TSS: 46)
+   Two 15-minute tempo blocks with varying cadence
+
+3. Tempo With Surges: 2 x 20 (57min, TSS: 66)
+   Tempo intervals with power surges to add intensity
+
+Would you like details on any of these?
 ```
 
 ### Scheduling a Workout

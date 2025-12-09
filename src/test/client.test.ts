@@ -258,6 +258,24 @@ describe('WahooClient', () => {
       });
     });
 
+    test('should search workouts by name', async () => {
+      if (skipIfNoCredentials('search test')) return;
+
+      const client = await createAuthenticatedClient();
+      const workouts = await client.getWorkoutLibrary({
+        sport: 'Cycling',
+        search: 'Hammer'
+      });
+
+      assert.ok(workouts.length > 0, 'Should find workouts with "Hammer" in name');
+      workouts.forEach(w => {
+        assert.ok(
+          w.name.toLowerCase().includes('hammer'),
+          `Workout "${w.name}" should contain "Hammer"`
+        );
+      });
+    });
+
     test('should sort by name ascending', async () => {
       if (skipIfNoCredentials('sort by name test')) return;
 
@@ -435,6 +453,21 @@ describe('WahooClient', () => {
       // All workouts should have the human-readable channel name, not the ID
       workouts.forEach(w => {
         assert.strictEqual(w.channel, 'The Sufferfest', 'Channel should be human-readable name');
+      });
+    });
+
+    test('should search cycling workouts by name', async () => {
+      if (skipIfNoCredentials('cycling search test')) return;
+
+      const client = await createAuthenticatedClient();
+      const workouts = await client.getCyclingWorkouts({ search: 'Violator' });
+
+      assert.ok(workouts.length > 0, 'Should find workouts with "Violator" in name');
+      workouts.forEach(w => {
+        assert.ok(
+          w.name.toLowerCase().includes('violator'),
+          `Workout "${w.name}" should contain "Violator"`
+        );
       });
     });
 

@@ -260,6 +260,7 @@ export class WahooClient {
     maxDuration?: number;
     minTss?: number;
     maxTss?: number;
+    search?: string;
     sortBy?: 'name' | 'duration' | 'tss' | 'level';
     sortDirection?: 'asc' | 'desc';
   }): Promise<LibraryContent[]> {
@@ -377,6 +378,12 @@ export class WahooClient {
       if (filters.maxTss !== undefined) {
         content = content.filter(item => (item.metrics?.tss ?? 0) <= filters.maxTss!);
       }
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        content = content.filter(item =>
+          item.name?.toLowerCase().includes(searchLower)
+        );
+      }
     }
 
     // Apply sorting
@@ -429,6 +436,7 @@ export class WahooClient {
     minTss?: number;
     maxTss?: number;
     intensity?: 'High' | 'Medium' | 'Low';
+    search?: string;
     sortBy?: 'name' | 'duration' | 'tss';
     sortDirection?: 'asc' | 'desc';
     limit?: number;
@@ -447,6 +455,9 @@ export class WahooClient {
 
     // Pass channel filter to getWorkoutLibrary for proper ID resolution
     if (filters?.channel) baseFilters.channel = filters.channel;
+
+    // Pass search filter to getWorkoutLibrary
+    if (filters?.search) baseFilters.search = filters.search;
 
     let workouts = await this.getWorkoutLibrary(baseFilters);
 

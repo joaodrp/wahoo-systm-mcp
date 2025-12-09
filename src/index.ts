@@ -174,6 +174,10 @@ const tools: Tool[] = [
           type: 'string',
           description: 'Filter by sport/workout type (e.g., Cycling, Running, Strength, Yoga, Swimming)'
         },
+        search: {
+          type: 'string',
+          description: 'Search for workouts by name (case-insensitive, partial match). Example: "Nine Hammers", "tempo", "Violator"'
+        },
         min_duration: {
           type: 'number',
           description: 'Minimum workout duration in minutes (e.g., 30 for 30 minutes)'
@@ -226,6 +230,10 @@ const tools: Tool[] = [
           type: 'string',
           enum: ['NM', 'AC', 'MAP', 'FTP'],
           description: 'Filter by 4DP focus - workouts that target this energy system (rating >= 4): NM (Neuromuscular), AC (Anaerobic Capacity), MAP (Maximal Aerobic Power), FTP (Functional Threshold Power)'
+        },
+        search: {
+          type: 'string',
+          description: 'Search for workouts by name (case-insensitive, partial match). Example: "Nine Hammers", "tempo", "Violator"'
         },
         min_duration: {
           type: 'number',
@@ -633,6 +641,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         const filters: {
           sport?: string;
+          search?: string;
           minDuration?: number;
           maxDuration?: number;
           minTss?: number;
@@ -644,6 +653,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args && typeof args === 'object') {
           const params = args as Record<string, unknown>;
           if (typeof params.sport === 'string') filters.sport = params.sport;
+          if (typeof params.search === 'string') filters.search = params.search;
           if (typeof params.min_duration === 'number') filters.minDuration = params.min_duration;
           if (typeof params.max_duration === 'number') filters.maxDuration = params.max_duration;
           if (typeof params.min_tss === 'number') filters.minTss = params.min_tss;
@@ -716,6 +726,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           channel?: string;
           category?: string;
           fourDpFocus?: 'NM' | 'AC' | 'MAP' | 'FTP';
+          search?: string;
           minDuration?: number;
           maxDuration?: number;
           minTss?: number;
@@ -733,6 +744,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           if (typeof params.four_dp_focus === 'string' && ['NM', 'AC', 'MAP', 'FTP'].includes(params.four_dp_focus)) {
             filters.fourDpFocus = params.four_dp_focus as 'NM' | 'AC' | 'MAP' | 'FTP';
           }
+          if (typeof params.search === 'string') filters.search = params.search;
           if (typeof params.min_duration === 'number') filters.minDuration = params.min_duration;
           if (typeof params.max_duration === 'number') filters.maxDuration = params.max_duration;
           if (typeof params.min_tss === 'number') filters.minTss = params.min_tss;
