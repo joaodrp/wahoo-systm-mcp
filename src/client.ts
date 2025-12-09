@@ -227,17 +227,19 @@ export class WahooClient {
       operationName: 'GetWorkouts'
     });
 
+    let libraryContent: LibraryContent | undefined;
+
     // If not found, it might be a content ID - look it up in the library
     if (!response.data.workouts || response.data.workouts.length === 0) {
       const library = await this.getWorkoutLibrary();
-      const content = library.find(item => item.id === id);
+      libraryContent = library.find(item => item.id === id);
 
-      if (!content) {
+      if (!libraryContent) {
         throw new Error(`Workout with ID ${id} not found (tried both content ID and workout ID)`);
       }
 
       // Try again with the actual workoutId from the library
-      variables = { id: content.workoutId };
+      variables = { id: libraryContent.workoutId };
       response = await this.callAPI<{ data: { workouts: WorkoutDetails[] } }>({
         query,
         variables,
@@ -249,7 +251,20 @@ export class WahooClient {
       }
     }
 
-    return response.data.workouts[0];
+    const workout = response.data.workouts[0];
+
+    // Fetch the library entry to get the descriptions field (only available in library endpoint)
+    if (!libraryContent) {
+      const library = await this.getWorkoutLibrary();
+      libraryContent = library.find(item => item.workoutId === workout.id);
+    }
+
+    // Merge descriptions from library into workout details
+    if (libraryContent?.descriptions) {
+      workout.descriptions = libraryContent.descriptions;
+    }
+
+    return workout;
   }
 
   async getWorkoutLibrary(filters?: {

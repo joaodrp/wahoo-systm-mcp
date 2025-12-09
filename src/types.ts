@@ -145,6 +145,10 @@ export interface WorkoutDetails {
     name: string;
     description: string;
   }>;
+  descriptions?: Array<{
+    title: string;
+    body: string;
+  }>;
   metrics: {
     intensityFactor: number;
     tss: number;

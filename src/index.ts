@@ -400,6 +400,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           level: workout.level,
           description: workout.details,
           short_description: workout.shortDescription,
+          descriptions: workout.descriptions,
           equipment: workout.equipment,
           metrics: {
             intensity_factor: workout.metrics.intensityFactor,

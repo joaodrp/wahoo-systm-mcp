@@ -169,6 +169,40 @@ describe('WahooClient', () => {
       // NOTE: We don't check name equality with library.name because the API
       // returns different names from library vs details endpoints (see Known Limitations)
     });
+
+    test('should include descriptions from library', async () => {
+      if (skipIfNoCredentials('workout details descriptions test')) return;
+
+      const client = await createAuthenticatedClient();
+
+      // Get a workout from the library that has descriptions
+      const library = await client.getWorkoutLibrary({ sport: 'Cycling' });
+      const workoutWithDesc = library.find(w => w.descriptions && w.descriptions.length > 0);
+
+      if (!workoutWithDesc) {
+        // If no workout has descriptions, skip this test
+        console.log('Skipping descriptions test - no workouts with descriptions found');
+        return;
+      }
+
+      // Get the workout details
+      const details = await client.getWorkoutDetails(workoutWithDesc.workoutId);
+
+      // Verify descriptions are included
+      assert.ok(details.descriptions, 'Should have descriptions array');
+      assert.ok(Array.isArray(details.descriptions), 'Descriptions should be an array');
+      assert.ok(details.descriptions.length > 0, 'Should have at least one description');
+
+      // Verify description structure
+      const desc = details.descriptions[0];
+      assert.ok(typeof desc.title === 'string', 'Description should have title');
+      assert.ok(typeof desc.body === 'string', 'Description should have body');
+      assert.ok(desc.body.length > 0, 'Description body should not be empty');
+
+      // Verify it matches the library description
+      assert.deepStrictEqual(details.descriptions, workoutWithDesc.descriptions,
+        'Descriptions from details should match library descriptions');
+    });
   });
 
   describe('getWorkoutLibrary()', () => {
