@@ -325,8 +325,17 @@ export class WahooClient {
         );
       }
       if (filters.channel) {
+        // Convert channel name to ID if needed
+        // The API stores channel as internal ID (e.g., "0MEmGeS5js")
+        // but users provide human-readable names (e.g., "On Location")
+        const channelLower = filters.channel.toLowerCase();
+        const channelMapping = response.data.library.channels.find(
+          ch => ch.name.toLowerCase() === channelLower || ch.id.toLowerCase() === channelLower
+        );
+        const channelId = channelMapping?.id.toLowerCase() || channelLower;
+
         content = content.filter(item =>
-          item.channel?.toLowerCase() === filters.channel?.toLowerCase()
+          item.channel?.toLowerCase() === channelId
         );
       }
       if (filters.level) {
@@ -408,14 +417,10 @@ export class WahooClient {
     if (filters?.minTss) baseFilters.minTss = filters.minTss;
     if (filters?.maxTss) baseFilters.maxTss = filters.maxTss;
 
-    let workouts = await this.getWorkoutLibrary(baseFilters);
+    // Pass channel filter to getWorkoutLibrary for proper ID resolution
+    if (filters?.channel) baseFilters.channel = filters.channel;
 
-    // Apply cycling-specific filters
-    if (filters?.channel) {
-      workouts = workouts.filter(w =>
-        w.channel?.toLowerCase().includes(filters.channel!.toLowerCase())
-      );
-    }
+    let workouts = await this.getWorkoutLibrary(baseFilters);
 
     if (filters?.category) {
       workouts = workouts.filter(w =>

@@ -215,6 +215,20 @@ describe('WahooClient', () => {
       ));
     });
 
+    test('should filter by channel using human-readable name', async () => {
+      if (skipIfNoCredentials('channel filter test')) return;
+
+      const client = await createAuthenticatedClient();
+      const workouts = await client.getWorkoutLibrary({
+        sport: 'Cycling',
+        channel: 'On Location'
+      });
+
+      assert.ok(workouts.length > 0, 'Should find On Location workouts');
+      // All workouts should have a channel (though we can't easily verify the name without the mapping)
+      assert.ok(workouts.every(w => w.channel), 'All workouts should have channel data');
+    });
+
     test('should sort by name ascending', async () => {
       if (skipIfNoCredentials('sort by name test')) return;
 
@@ -379,6 +393,19 @@ describe('WahooClient', () => {
       workouts.forEach(w => {
         assert.ok(w.metrics?.ratings?.map !== undefined);
         assert.ok(w.metrics.ratings.map >= 4);
+      });
+    });
+
+    test('should filter by channel using human-readable name', async () => {
+      if (skipIfNoCredentials('channel filter test')) return;
+
+      const client = await createAuthenticatedClient();
+      const workouts = await client.getCyclingWorkouts({ channel: 'The Sufferfest' });
+
+      assert.ok(workouts.length > 0, 'Should find The Sufferfest workouts');
+      // All workouts should have a channel
+      workouts.forEach(w => {
+        assert.ok(w.channel, 'Workout should have channel data');
       });
     });
 
