@@ -119,6 +119,7 @@ Get planned workouts from your calendar for a date range.
 - Total workout count
 - List of workouts with:
   - Date
+  - **Agenda ID** (required for `remove_workout` and `reschedule_workout`)
   - Workout ID (for use with `get_workout_details`)
   - Name
   - Type (Cycling, Running, Strength, Yoga, Swimming)

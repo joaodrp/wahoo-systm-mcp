@@ -120,6 +120,7 @@ export interface UserPlanItem {
   day: number;
   plannedDate: string;
   rank: number;
+  agendaId: string;
   status: string;
   type: string;
   prospects: WorkoutProspect[];

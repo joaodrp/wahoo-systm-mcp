@@ -64,6 +64,7 @@ describe('Integration Tests', () => {
     // Verify we can handle workouts with and without plans
     for (const workout of workouts) {
       if (workout.plannedDate && workout.prospects.length > 0) {
+        assert.ok(workout.agendaId, 'agendaId should be present');
         assert.ok(workout.prospects[0].name);
         // Plan can be null, that's OK
         if (workout.plan) {

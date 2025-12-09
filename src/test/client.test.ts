@@ -107,6 +107,7 @@ describe('WahooClient', () => {
         const workout = workouts[0];
         assert.ok(typeof workout.day === 'number');
         assert.ok(typeof workout.plannedDate === 'string');
+        assert.ok(typeof workout.agendaId === 'string', 'agendaId should be a string');
         assert.ok(typeof workout.status === 'string');
         assert.ok(Array.isArray(workout.prospects));
       }

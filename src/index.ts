@@ -330,6 +330,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           .filter(item => item.plannedDate && item.prospects.length > 0)
           .map(item => ({
             date: item.plannedDate.split('T')[0],
+            agenda_id: item.agendaId,
             workout: {
               id: item.prospects[0].workoutId,
               name: item.prospects[0].name,
