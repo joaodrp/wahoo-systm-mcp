@@ -319,6 +319,64 @@ want to have a great ride on, this is the workout for you...
 [Full interval structure details]
 ```
 
+### Finding Specific Cycling Workouts
+
+**You:**
+```
+Show me high-intensity cycling workouts under 60 minutes that focus on FTP with TSS between 40 and 60
+```
+
+**Claude:** *[calls get_cycling_workouts]*
+```
+I found 11 FTP-focused cycling workouts matching your criteria. Here are the first 5 (sorted by TSS):
+
+1. Micro Intervals: 3 Sets 8/6/4 x 40/20s (38m)
+   TSS: 42, Intensity: High
+   4DP: FTP=4, MAP=4, AC=3, NM=1
+   Category: Climbing
+
+2. FTP and MAP Over-Unders 10/8 (31m)
+   TSS: 43, Intensity: High
+   4DP: FTP=5, MAP=2, AC=1, NM=1
+   Category: Climbing
+
+3. Micro Intervals: Equal Work Rest 10/20/30/20/10 (42m)
+   TSS: 46, Intensity: High
+   4DP: FTP=4, MAP=3, AC=2, NM=1
+   Category: Mixed
+
+4. French Pyrenees: Les Baronnies (42m)
+   TSS: 48, Intensity: High
+   4DP: FTP=5, MAP=3, AC=2, NM=1
+   Category: Mixed
+
+5. Giro d'Italia 1 (35m)
+   TSS: 48, Intensity: High
+   4DP: FTP=5, MAP=4, AC=2, NM=1
+   Category: Racing
+
+[...and 6 more workouts]
+```
+
+**You:**
+```
+Tell me more about that Micro Intervals workout
+```
+
+**Claude:** *[calls get_workout_details]*
+```
+Micro Intervals: 3 Sets 8/6/4 x 40/20s is a 38-minute cycling workout with:
+
+Training Stress Score: 42
+Intensity Factor: 0.81
+4DP Focus: FTP=4, MAP=4 (builds both threshold and VO2 max)
+
+This session delivers 40/20s micro intervals to build your MAP without completely
+emptying your tank. Perfect for building sustainable power at threshold.
+
+[Full interval structure details]
+```
+
 ### Viewing Your Profile
 
 **You:**
