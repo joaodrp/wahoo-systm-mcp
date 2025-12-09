@@ -118,11 +118,11 @@ const tools: Tool[] = [
         },
         min_duration: {
           type: 'number',
-          description: 'Minimum workout duration in hours (e.g., 0.5 for 30 minutes)'
+          description: 'Minimum workout duration in minutes (e.g., 30 for 30 minutes)'
         },
         max_duration: {
           type: 'number',
-          description: 'Maximum workout duration in hours (e.g., 2 for 2 hours)'
+          description: 'Maximum workout duration in minutes (e.g., 120 for 2 hours)'
         },
         min_tss: {
           type: 'number',
@@ -171,11 +171,11 @@ const tools: Tool[] = [
         },
         min_duration: {
           type: 'number',
-          description: 'Minimum workout duration in hours (e.g., 0.5 for 30 minutes)'
+          description: 'Minimum workout duration in minutes (e.g., 30 for 30 minutes)'
         },
         max_duration: {
           type: 'number',
-          description: 'Maximum workout duration in hours (e.g., 1.5 for 90 minutes)'
+          description: 'Maximum workout duration in minutes (e.g., 90 for 90 minutes)'
         },
         min_tss: {
           type: 'number',

@@ -131,8 +131,8 @@ Get workouts from the Wahoo SYSTM library with filtering and sorting.
 
 **Parameters:**
 - `sport` (string, optional): Filter by sport (e.g., "Cycling", "Running", "Strength", "Yoga", "Swimming")
-- `min_duration` (number, optional): Minimum duration in hours (e.g., 0.5 for 30 minutes)
-- `max_duration` (number, optional): Maximum duration in hours (e.g., 2 for 2 hours)
+- `min_duration` (number, optional): Minimum duration in minutes (e.g., 30 for 30 minutes)
+- `max_duration` (number, optional): Maximum duration in minutes (e.g., 120 for 2 hours)
 - `min_tss` (number, optional): Minimum Training Stress Score (e.g., 20 for easy, 100+ for hard)
 - `max_tss` (number, optional): Maximum Training Stress Score
 - `sort_by` (string, optional): Sort by "name", "duration", or "tss" (default: "name")
@@ -143,7 +143,7 @@ Get workouts from the Wahoo SYSTM library with filtering and sorting.
 ```json
 {
   "sport": "Cycling",
-  "max_duration": 1,
+  "max_duration": 60,
   "min_tss": 30,
   "max_tss": 60,
   "sort_by": "tss",
@@ -175,8 +175,8 @@ Get cycling workouts with filters matching the SYSTM UI. Specialized tool for br
 - `channel` (string, optional): Filter by channel (e.g., "The Sufferfest", "Inspiration", "Wahoo Fitness", "A Week With", "ProRides", "On Location", "NoVid", "Fitness Test")
 - `category` (string, optional): Filter by category (e.g., "Endurance", "Speed", "Climbing", "Sustained Efforts", "Mixed", "Technique & Drills", "Racing", "Active Recovery", "Activation", "The Knowledge", "Overview", "Cool Down", "Fitness Test")
 - `four_dp_focus` (string, optional): Filter by 4DP focus - shows workouts with rating >= 4 in the specified energy system: "NM" (Neuromuscular), "AC" (Anaerobic Capacity), "MAP" (Maximal Aerobic Power), "FTP" (Functional Threshold Power)
-- `min_duration` (number, optional): Minimum duration in hours (e.g., 0.5 for 30 minutes)
-- `max_duration` (number, optional): Maximum duration in hours (e.g., 1.5 for 90 minutes)
+- `min_duration` (number, optional): Minimum duration in minutes (e.g., 30 for 30 minutes)
+- `max_duration` (number, optional): Maximum duration in minutes (e.g., 90 for 90 minutes)
 - `min_tss` (number, optional): Minimum Training Stress Score
 - `max_tss` (number, optional): Maximum Training Stress Score
 - `intensity` (string, optional): Filter by intensity level: "High", "Medium", or "Low"
@@ -188,7 +188,7 @@ Get cycling workouts with filters matching the SYSTM UI. Specialized tool for br
 ```json
 {
   "four_dp_focus": "FTP",
-  "max_duration": 1,
+  "max_duration": 60,
   "min_tss": 40,
   "max_tss": 60,
   "intensity": "High",
@@ -278,12 +278,12 @@ camp! This tempo session is designed to give your body a decent aerobic workload
 
 **You:**
 ```
-Show me some easy cycling workouts under 1 hour with TSS between 30 and 50, sorted by difficulty
+Show me some easy cycling workouts under 60 minutes with TSS between 30 and 50, sorted by difficulty
 ```
 
 **Claude:** *[calls get_workouts]*
 ```
-I found 82 cycling workouts under 1 hour with TSS 30-50. Here are the first 10 (easiest first):
+I found 82 cycling workouts under 60 minutes with TSS 30-50. Here are the first 10 (easiest first):
 
 1. Cadence Drills (Builds/Holds/Single Leg) (55m)
    TSS: 30

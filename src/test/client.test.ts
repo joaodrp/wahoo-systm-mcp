@@ -183,11 +183,11 @@ describe('WahooClient', () => {
       if (skipIfNoCredentials('duration filter test')) return;
 
       const client = await createAuthenticatedClient();
-      const maxDurationHours = 0.5;
-      const maxDurationSeconds = maxDurationHours * 3600;
+      const maxDurationMinutes = 30;
+      const maxDurationSeconds = maxDurationMinutes * 60;
       const workouts = await client.getWorkoutLibrary({
         sport: 'Cycling',
-        maxDuration: maxDurationHours
+        maxDuration: maxDurationMinutes
       });
 
       assert.ok(workouts.length > 0);
@@ -308,7 +308,7 @@ describe('WahooClient', () => {
       const client = await createAuthenticatedClient();
       const workouts = await client.getWorkoutLibrary({
         sport: 'Cycling',
-        maxDuration: 1,
+        maxDuration: 60,
         minTss: 30,
         maxTss: 50,
         sortBy: 'tss',
@@ -320,7 +320,7 @@ describe('WahooClient', () => {
       // Verify all filters are applied
       workouts.forEach(w => {
         assert.strictEqual(w.workoutType, 'Cycling');
-        assert.ok(w.duration <= 3600); // 1 hour
+        assert.ok(w.duration <= 60 * 60); // 60 minutes
         if (w.metrics?.tss) {
           assert.ok(w.metrics.tss >= 30);
           assert.ok(w.metrics.tss <= 50);
@@ -409,12 +409,12 @@ describe('WahooClient', () => {
       if (skipIfNoCredentials('duration filter test')) return;
 
       const client = await createAuthenticatedClient();
-      const maxHours = 0.5;
-      const workouts = await client.getCyclingWorkouts({ maxDuration: maxHours });
+      const maxMinutes = 30;
+      const workouts = await client.getCyclingWorkouts({ maxDuration: maxMinutes });
 
       assert.ok(workouts.length > 0);
       workouts.forEach(w => {
-        assert.ok(w.duration <= maxHours * 3600);
+        assert.ok(w.duration <= maxMinutes * 60);
       });
     });
 
@@ -441,7 +441,7 @@ describe('WahooClient', () => {
       const client = await createAuthenticatedClient();
       const workouts = await client.getCyclingWorkouts({
         fourDpFocus: 'FTP',
-        maxDuration: 1,
+        maxDuration: 60,
         minTss: 40,
         maxTss: 60,
         intensity: 'High',
@@ -454,7 +454,7 @@ describe('WahooClient', () => {
       // Verify all filters
       workouts.forEach(w => {
         assert.ok(w.metrics?.ratings?.ftp && w.metrics.ratings.ftp >= 4);
-        assert.ok(w.duration <= 3600);
+        assert.ok(w.duration <= 60 * 60);
         if (w.metrics?.tss) {
           assert.ok(w.metrics.tss >= 40);
           assert.ok(w.metrics.tss <= 60);

@@ -325,11 +325,11 @@ export class WahooClient {
         );
       }
       if (filters.minDuration !== undefined) {
-        const minSeconds = filters.minDuration * 3600;
+        const minSeconds = filters.minDuration * 60;
         content = content.filter(item => item.duration >= minSeconds);
       }
       if (filters.maxDuration !== undefined) {
-        const maxSeconds = filters.maxDuration * 3600;
+        const maxSeconds = filters.maxDuration * 60;
         content = content.filter(item => item.duration <= maxSeconds);
       }
       if (filters.minTss !== undefined) {
