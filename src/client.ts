@@ -265,6 +265,10 @@ export class WahooClient {
   }): Promise<LibraryContent[]> {
     this.ensureAuthenticated();
 
+    // NOTE: Workout names from the library endpoint may differ from the details endpoint.
+    // Library names may include challenge prefixes (e.g., "# Tasmania: ...") or event suffixes.
+    // Details endpoint returns canonical names. Always use IDs for matching, not names.
+
     const query = `
       query library($locale: Locale!, $queryParams: QueryParams, $appInformation: AppInformation!) {
         library(locale: $locale, queryParams: $queryParams, appInformation: $appInformation) {

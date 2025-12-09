@@ -157,15 +157,17 @@ describe('WahooClient', () => {
       // Test with workoutId (should work directly)
       const detailsByWorkoutId = await client.getWorkoutDetails(workout.workoutId);
       assert.ok(detailsByWorkoutId);
-      assert.strictEqual(detailsByWorkoutId.name, workout.name);
+      assert.ok(detailsByWorkoutId.name, 'Should have a name');
 
       // Test with content ID (should look it up and still work)
       const detailsByContentId = await client.getWorkoutDetails(workout.id);
       assert.ok(detailsByContentId);
-      assert.strictEqual(detailsByContentId.name, workout.name);
+      assert.ok(detailsByContentId.name, 'Should have a name');
 
-      // Both should return the same workout
+      // Both should return the same workout (by ID)
       assert.strictEqual(detailsByWorkoutId.id, detailsByContentId.id);
+      // NOTE: We don't check name equality with library.name because the API
+      // returns different names from library vs details endpoints (see Known Limitations)
     });
   });
 

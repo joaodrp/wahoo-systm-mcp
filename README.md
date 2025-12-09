@@ -698,6 +698,26 @@ you're building strong anaerobic capacity. Focus on maintaining these gains with
 targeted threshold and VO2 max work.
 ```
 
+## Known Limitations
+
+### Workout Name Inconsistencies
+
+The Wahoo SYSTM API returns different workout names depending on which endpoint is queried:
+
+- **Library endpoints** (`get_workouts`, `get_cycling_workouts`): May include challenge prefixes (e.g., "# Tasmania: ...") or event suffixes (e.g., "(December End Game Challenge)")
+- **Details endpoint** (`get_workout_details`): Returns canonical workout names, sometimes with "On Location -" prefix
+
+**Example:**
+- Library: `"# Tasmania: Cygnet Coast Road (December End Game Challenge)"`
+- Details: `"On Location - Tasmania: Cygnet Coast Road"`
+
+**Impact:**
+- Workout names should be used for display purposes only
+- **Always use workout IDs for matching and lookups**, not names
+- Both `id` (content ID) and `workoutId` fields work with `get_workout_details`
+
+This is a known inconsistency in the Wahoo API and affects all clients using these endpoints.
+
 ## Development
 
 ### Project Structure
