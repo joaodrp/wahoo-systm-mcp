@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import { z } from 'zod';
 import type {
   WahooCredentials,
   WahooAuthResponse,
@@ -18,6 +19,13 @@ import type {
   SearchActivitiesResponse,
   GetActivityResponse
 } from './types.js';
+import {
+  WorkoutDetailsResponseSchema,
+  LibraryResponseSchema,
+  RiderProfileResponseSchema,
+  FitnessTestHistoryResponseSchema,
+  GetWorkoutActivitiesResponseSchema
+} from './schemas.js';
 
 const WAHOO_API_URL = 'https://api.thesufferfest.com/graphql';
 const APP_VERSION = '7.12.0-web.2141';
@@ -224,7 +232,8 @@ export class WahooClient {
     let response = await this.callAPI<{ data: { workouts: WorkoutDetails[] } }>({
       query,
       variables,
-      operationName: 'GetWorkouts'
+      operationName: 'GetWorkouts',
+      schema: WorkoutDetailsResponseSchema
     });
 
     let libraryContent: LibraryContent | undefined;
@@ -243,7 +252,8 @@ export class WahooClient {
       response = await this.callAPI<{ data: { workouts: WorkoutDetails[] } }>({
         query,
         variables,
-        operationName: 'GetWorkouts'
+        operationName: 'GetWorkouts',
+        schema: WorkoutDetailsResponseSchema
       });
 
       if (!response.data.workouts || response.data.workouts.length === 0) {
@@ -348,7 +358,8 @@ export class WahooClient {
     const response = await this.callAPI<LibraryResponse>({
       query,
       variables,
-      operationName: 'library'
+      operationName: 'library',
+      schema: LibraryResponseSchema
     });
 
     let content = response.data.library.content;
@@ -772,7 +783,8 @@ export class WahooClient {
     }>({
       query,
       variables,
-      operationName: 'GetWorkoutActivities'
+      operationName: 'GetWorkoutActivities',
+      schema: GetWorkoutActivitiesResponseSchema
     });
 
     return {
@@ -903,6 +915,7 @@ export class WahooClient {
     query: string;
     variables: Record<string, unknown>;
     operationName: string;
+    schema?: z.ZodTypeAny;
   }): Promise<T> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json'
@@ -922,7 +935,21 @@ export class WahooClient {
       throw new Error(`API request failed: ${response.statusText}`);
     }
 
-    const data = await response.json() as T;
-    return data;
+    const data = await response.json();
+
+    // Validate with Zod schema if provided
+    if (payload.schema) {
+      try {
+        return payload.schema.parse(data) as T;
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          console.error('API response validation failed:', error.issues);
+          throw new Error(`API response validation failed for ${payload.operationName}: ${error.message}`);
+        }
+        throw error;
+      }
+    }
+
+    return data as T;
   }
 }
