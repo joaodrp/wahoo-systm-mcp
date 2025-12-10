@@ -1,6 +1,5 @@
 import './setup.js';
-import { test, describe } from 'node:test';
-import assert from 'node:assert';
+import { test, describe, expect } from 'vitest';
 import { getCredentialsFrom1Password } from '../onepassword.js';
 
 describe('1Password Integration', () => {
@@ -14,16 +13,14 @@ describe('1Password Integration', () => {
     }
 
     const credentials = await getCredentialsFrom1Password(usernameRef, passwordRef);
-    assert.ok(credentials.username);
-    assert.ok(credentials.password);
-    assert.ok(typeof credentials.username === 'string');
-    assert.ok(typeof credentials.password === 'string');
+    expect(credentials.username).toBeTruthy();
+    expect(credentials.password).toBeTruthy();
+    expect(typeof credentials.username).toBe('string');
+    expect(typeof credentials.password).toBe('string');
   });
 
   test('should throw error for invalid reference', async () => {
-    await assert.rejects(
-      () => getCredentialsFrom1Password('op://Invalid/Item/field', 'op://Invalid/Item/field'),
-      /Failed to retrieve credentials/
-    );
+    await expect(() => getCredentialsFrom1Password('op://Invalid/Item/field', 'op://Invalid/Item/field'))
+      .rejects.toThrow(/Failed to retrieve credentials/);
   });
 });

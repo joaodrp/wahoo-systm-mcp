@@ -11,7 +11,10 @@
     "build": "tsc",
     "prepare": "npm run build",
     "watch": "tsc --watch",
-    "test": "node --test build/test/*.test.js"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "mcp",
@@ -29,8 +32,10 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.1",
+    "@vitest/ui": "^4.0.15",
     "dotenv": "^17.2.3",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.15"
   },
   "engines": {
     "node": ">=18.0.0"

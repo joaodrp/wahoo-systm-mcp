@@ -1,6 +1,6 @@
 import './setup.js';
-import { test, describe } from 'node:test';
-import assert from 'node:assert';
+import { test, describe, expect } from 'vitest';
+
 import { WahooClient } from '../client.js';
 import { getCredentialsFrom1Password } from '../onepassword.js';
 
@@ -16,8 +16,8 @@ describe('Integration Tests', () => {
 
     // Get credentials from 1Password
     const credentials = await getCredentialsFrom1Password(usernameRef, passwordRef);
-    assert.ok(credentials.username);
-    assert.ok(credentials.password);
+    expect(credentials.username).toBeTruthy();
+    expect(credentials.password).toBeTruthy();
 
     // Authenticate with Wahoo SYSTM
     const client = new WahooClient();
@@ -25,11 +25,11 @@ describe('Integration Tests', () => {
 
     // Get rider profile
     const profile = client.getRiderProfile();
-    assert.ok(profile);
-    assert.ok(typeof profile.ftp === 'number');
-    assert.ok(typeof profile.map === 'number');
-    assert.ok(typeof profile.ac === 'number');
-    assert.ok(typeof profile.nm === 'number');
+    expect(profile).toBeTruthy();
+    expect(typeof profile.ftp === 'number').toBeTruthy();
+    expect(typeof profile.map === 'number').toBeTruthy();
+    expect(typeof profile.ac === 'number').toBeTruthy();
+    expect(typeof profile.nm === 'number').toBeTruthy();
 
     // Get calendar workouts
     const today = new Date();
@@ -40,7 +40,7 @@ describe('Integration Tests', () => {
     const endDateStr = endDate.toISOString().split('T')[0];
 
     const workouts = await client.getCalendarWorkouts(startDateStr, endDateStr);
-    assert.ok(Array.isArray(workouts));
+    expect(Array.isArray(workouts)).toBe(true);
 
     console.log(`✓ Found ${workouts.length} workouts in the next week`);
     console.log(`✓ 4DP Profile - FTP: ${profile.ftp}W, MAP: ${profile.map}W, AC: ${profile.ac}W, NM: ${profile.nm}W`);
@@ -64,11 +64,11 @@ describe('Integration Tests', () => {
     // Verify we can handle workouts with and without plans
     for (const workout of workouts) {
       if (workout.plannedDate && workout.prospects.length > 0) {
-        assert.ok(workout.agendaId, 'agendaId should be present');
-        assert.ok(workout.prospects[0].name);
+        expect(workout.agendaId).toBeTruthy() // agendaId should be present;
+        expect(workout.prospects[0].name).toBeTruthy();
         // Plan can be null, that's OK
         if (workout.plan) {
-          assert.ok(workout.plan.name);
+          expect(workout.plan.name).toBeTruthy();
         }
       }
     }

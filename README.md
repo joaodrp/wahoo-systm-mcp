@@ -804,7 +804,17 @@ npm run watch
 Run the test suite to verify everything is working:
 
 ```bash
+# Run all tests once
 npm test
+
+# Run tests in watch mode (re-runs on file changes)
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Run tests with interactive UI
+npm run test:ui
 ```
 
 The tests will use credentials from a `.env` file. Copy `.env.example` to `.env` and configure your credentials:
@@ -814,6 +824,10 @@ cp .env.example .env
 ```
 
 Then edit `.env` with your 1Password references or plain credentials.
+
+**Testing tools:**
+- Test framework: [Vitest](https://vitest.dev/)
+- Runtime validation: [Zod](https://zod.dev/)
 
 ## API Information
 
