@@ -9,6 +9,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { WahooClient } from './client.js';
 import { getCredentialsFrom1Password } from './onepassword.js';
+import { format } from 'date-fns';
 
 const server = new Server(
   {
@@ -488,11 +489,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         // Format the test date
         const testDate = new Date(enhancedProfile.startTime);
-        const formattedDate = testDate.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
+        const formattedDate = format(testDate, 'MMMM d, yyyy');
 
         return {
           content: [
@@ -933,11 +930,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         // Format the response
         const formattedTests = result.activities.map((test) => {
           const testDate = new Date(test.completedDate);
-          const formattedDate = testDate.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          });
+          const formattedDate = format(testDate, 'MMMM d, yyyy');
 
           const durationHours = test.durationSeconds / 3600;
           const hours = Math.floor(durationHours);
@@ -1013,11 +1006,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         // Format the response
         const testDate = new Date(testDetails.completedDate);
-        const formattedDate = testDate.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
+        const formattedDate = format(testDate, 'MMMM d, yyyy');
 
         const durationHours = testDetails.durationSeconds / 3600;
         const hours = Math.floor(durationHours);

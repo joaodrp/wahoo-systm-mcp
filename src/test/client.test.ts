@@ -1,6 +1,7 @@
 import './setup.js';
 import { test, describe, expect } from 'vitest';
 import { WahooClient } from '../client.js';
+import { addDays, format } from 'date-fns';
 
 // Test helpers
 function getTestCredentials() {
@@ -595,9 +596,8 @@ describe('WahooClient', () => {
       const workout = workouts[0];
 
       // Schedule it for tomorrow
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const dateStr = `${tomorrow.toISOString().split('T')[0]}T12:00:00.000Z`;
+      const tomorrow = addDays(new Date(), 1);
+      const dateStr = `${format(tomorrow, 'yyyy-MM-dd')}T12:00:00.000Z`;
 
       const agendaId = await client.scheduleWorkout(workout.id, dateStr, 'Europe/Lisbon');
 
@@ -624,18 +624,16 @@ describe('WahooClient', () => {
       const workout = workouts[0];
 
       // Schedule it for tomorrow
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = `${tomorrow.toISOString().split('T')[0]}T12:00:00.000Z`;
+      const tomorrow = addDays(new Date(), 1);
+      const tomorrowStr = `${format(tomorrow, 'yyyy-MM-dd')}T12:00:00.000Z`;
 
       const agendaId = await client.scheduleWorkout(workout.id, tomorrowStr, 'Europe/Lisbon');
 
       expect(agendaId).toBeTruthy();
 
       // Now reschedule it to the day after tomorrow
-      const dayAfter = new Date();
-      dayAfter.setDate(dayAfter.getDate() + 2);
-      const dayAfterStr = `${dayAfter.toISOString().split('T')[0]}T12:00:00.000Z`;
+      const dayAfter = addDays(new Date(), 2);
+      const dayAfterStr = `${format(dayAfter, 'yyyy-MM-dd')}T12:00:00.000Z`;
 
       // Should not throw
       await client.rescheduleWorkout(agendaId, dayAfterStr, 'Europe/Lisbon');
@@ -659,9 +657,8 @@ describe('WahooClient', () => {
       const workout = workouts[0];
 
       // Schedule it for tomorrow
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = `${tomorrow.toISOString().split('T')[0]}T12:00:00.000Z`;
+      const tomorrow = addDays(new Date(), 1);
+      const tomorrowStr = `${format(tomorrow, 'yyyy-MM-dd')}T12:00:00.000Z`;
 
       const agendaId = await client.scheduleWorkout(workout.id, tomorrowStr, 'Europe/Lisbon');
 
