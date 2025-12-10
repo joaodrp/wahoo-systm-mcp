@@ -266,8 +266,7 @@ describe('WahooClient', () => {
       expect(workouts.length > 0).toBeTruthy();
       expect(
         workouts.every(
-          (w) =>
-            w.metrics?.tss !== undefined && w.metrics.tss >= minTss && w.metrics.tss <= maxTss
+          (w) => w.metrics?.tss !== undefined && w.metrics.tss >= minTss && w.metrics.tss <= maxTss
         )
       ).toBeTruthy();
     });
