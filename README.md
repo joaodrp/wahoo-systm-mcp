@@ -1,46 +1,55 @@
 # Wahoo SYSTM MCP Server
 
-A Model Context Protocol (MCP) server that provides access to Wahoo SYSTM calendar and workout data. This allows Claude and other MCP clients to interact with your Wahoo SYSTM training plan, retrieve planned workouts, and get detailed workout information including intervals and power zones.
+## Overview
 
-## Features
+The Wahoo SYSTM MCP Server is a TypeScript-based Model Context Protocol server that bridges Large Language Models to the Wahoo SYSTM API, exposing training data and workout management as callable tools.
 
-- **Authentication**: Securely authenticate with your Wahoo SYSTM account
-- **Calendar Access**: Retrieve planned workouts for any date range
-- **Workout Scheduling**: Schedule workouts from the library to your calendar
-- **Library Browsing**: Browse and search the complete Wahoo SYSTM workout library with filters for sport, level, duration, and channel
-- **Workout Details**: Get comprehensive workout information including:
-  - Workout intervals and structure
-  - Power zones (FTP, MAP, AC, NM)
-  - Duration and intensity
-  - Equipment requirements
-  - TSS (Training Stress Score) and IF (Intensity Factor)
-- **Rider Profile**: Access your 4DP profile values
-- **Fitness Test History**: View all completed Full Frontal and Half Monty tests with 4DP results
-- **Fitness Test Details**: Get second-by-second data and complete analysis for any fitness test
+## Key Features
 
-## Installation
+- 📅 **Calendar Management**: View, schedule, reschedule, and remove planned workouts
+- 📚 **Workout Library**: Browse and search 1000+ workouts with advanced filtering (sport, duration, TSS, 4DP focus, intensity)
+- 📋 **Workout Details**: Access complete workout structures with intervals, power zones, and equipment requirements
+- 👤 **Rider Profile**: Retrieve 4DP values, rider type classification, strengths/weaknesses, and heart rate zones
+- 🧪 **Fitness Test History**: Access Full Frontal and Half Monty test results with complete 4DP analysis
+- 🤖 **AI Integration**: Returns JSON responses optimized for LLM consumption via MCP standard
+
+## Compatibility
+
+This server is designed for clients supporting the Model Context Protocol (MCP) standard:
+
+- ✅ **Claude Desktop** - Officially supported and tested
+- 🔧 **Other MCP clients** - Should work with any MCP-compatible client
+- ❓ **ChatGPT** - May be possible through third-party MCP bridge tools (untested)
+
+While this server is only tested with Claude Desktop, the MCP protocol is open and users are welcome to experiment with other clients. If you successfully use this with another client, please share your experience!
+
+## Setup Instructions
+
+### Prerequisites
+- Node.js v18 or later
+- npm package manager
+- Active Wahoo SYSTM account
+- (Recommended) 1Password CLI for secure credential storage
+
+### Installation Steps
+
+#### 1. Clone and Build
 
 ```bash
+git clone https://github.com/yourusername/wahoo-systm-mcp.git
+cd wahoo-systm-mcp
 npm install
 npm run build
 ```
 
-## Configuration
+#### 2. Configure Claude Desktop
 
-### Option 1: 1Password Integration (Recommended)
+Update the configuration file with the absolute path to the built server:
 
-Store your credentials securely in 1Password and reference them via the `op` CLI.
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
 
-1. **Install 1Password CLI** if you haven't already: https://1password.com/downloads/command-line
-
-2. **Store your Wahoo SYSTM credentials in 1Password**
-
-3. **Configure Claude Desktop** with 1Password secret references:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-**Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
-
+##### Option A: 1Password Integration (Recommended)
 ```json
 {
   "mcpServers": {
@@ -48,31 +57,18 @@ Store your credentials securely in 1Password and reference them via the `op` CLI
       "command": "node",
       "args": ["/absolute/path/to/wahoo-systm-mcp/build/index.js"],
       "env": {
-        "WAHOO_USERNAME_1P_REF": "op://Your-Vault/Your-Item-Name/username",
-        "WAHOO_PASSWORD_1P_REF": "op://Your-Vault/Your-Item-Name/password"
+        "WAHOO_USERNAME_1P_REF": "op://Your-Vault/Your-Item/username",
+        "WAHOO_PASSWORD_1P_REF": "op://Your-Vault/Your-Item/password"
       }
     }
   }
 }
 ```
 
-Replace the references with your actual 1Password item references. Format is: `op://vault/item/field`
+##### Option B: Plain Environment Variables
 
-To find your vault and item names, use:
-```bash
-op vault list
-op item list
-```
-
-**Important**: Make sure you have enabled 1Password CLI desktop app integration. See the [1Password CLI documentation](https://developer.1password.com/docs/cli/app-integration/) for setup instructions.
-
-The server will automatically authenticate on startup using these credentials.
-
-### Option 2: Environment Variables (Plain Text)
-
-**Warning**: This stores credentials in plain text. Only use this if you don't have 1Password.
-
-Configure Claude Desktop with plain environment variables:
+> [!WARNING]
+> This option stores your credentials in plain text in the configuration file. Use Option A (1Password) for better security.
 
 ```json
 {
@@ -89,749 +85,425 @@ Configure Claude Desktop with plain environment variables:
 }
 ```
 
-The server will automatically authenticate on startup using these credentials.
-
-## Usage
-
-### Adding to Claude Desktop
-
-See configuration options above for the full setup.
-
-### Available Tools
-
-#### 1. `get_calendar`
-
-Get planned workouts from your calendar for a date range.
-
-**Parameters:**
-- `start_date` (string): Start date in YYYY-MM-DD format
-- `end_date` (string): End date in YYYY-MM-DD format
-
-**Example:**
-```json
-{
-  "start_date": "2025-01-01",
-  "end_date": "2025-01-31"
-}
-```
-
-**Returns:**
-- Total workout count
-- List of workouts with:
-  - Date
-  - **Agenda ID** (required for `remove_workout` and `reschedule_workout`)
-  - Workout ID (for use with `get_workout_details`)
-  - Name
-  - Type (Cycling, Running, Strength, Yoga, Swimming)
-  - Duration in hours
-  - Description
-  - Intensity ratings
-  - Status
-  - Plan information
-
-#### 2. `get_workouts`
-
-Get workouts from the Wahoo SYSTM library with filtering and sorting.
-
-**Parameters:**
-- `sport` (string, optional): Filter by sport (e.g., "Cycling", "Running", "Strength", "Yoga", "Swimming")
-- `search` (string, optional): Search for workouts by name (case-insensitive, partial match)
-- `min_duration` (number, optional): Minimum duration in minutes (e.g., 30 for 30 minutes)
-- `max_duration` (number, optional): Maximum duration in minutes (e.g., 120 for 2 hours)
-- `min_tss` (number, optional): Minimum Training Stress Score (e.g., 20 for easy, 100+ for hard)
-- `max_tss` (number, optional): Maximum Training Stress Score
-- `sort_by` (string, optional): Sort by "name", "duration", or "tss" (default: "name")
-- `sort_direction` (string, optional): Sort direction "asc" or "desc" (default: "asc")
-- `limit` (number, optional): Maximum number of results to return (default: 50)
-
-**Example:**
-```json
-{
-  "sport": "Cycling",
-  "max_duration": 60,
-  "min_tss": 30,
-  "max_tss": 60,
-  "sort_by": "tss",
-  "sort_direction": "asc",
-  "limit": 10
-}
-```
-
-**Returns:**
-- Total workout count
-- List of workouts with:
-  - Workout ID (for use with `get_workout_details`)
-  - Name
-  - Sport/workout type
-  - Channel/series
-  - Level/intensity
-  - Category
-  - Duration (seconds and formatted)
-  - Description excerpt
-  - TSS and Intensity Factor
-  - 4DP ratings (NM, AC, MAP, FTP)
-  - Tags
-
-#### 3. `get_cycling_workouts`
-
-Get cycling workouts with filters matching the SYSTM UI. Specialized tool for browsing cycling workouts with cycling-specific filters.
-
-**Parameters:**
-- `channel` (string, optional): Filter by channel (e.g., "The Sufferfest", "Inspiration", "Wahoo Fitness", "A Week With", "ProRides", "On Location", "NoVid", "Fitness Test")
-- `category` (string, optional): Filter by category (e.g., "Endurance", "Speed", "Climbing", "Sustained Efforts", "Mixed", "Technique & Drills", "Racing", "Active Recovery", "Activation", "The Knowledge", "Overview", "Cool Down", "Fitness Test")
-- `four_dp_focus` (string, optional): Filter by 4DP focus - shows workouts with rating >= 4 in the specified energy system: "NM" (Neuromuscular), "AC" (Anaerobic Capacity), "MAP" (Maximal Aerobic Power), "FTP" (Functional Threshold Power)
-- `search` (string, optional): Search for workouts by name (case-insensitive, partial match)
-- `min_duration` (number, optional): Minimum duration in minutes (e.g., 30 for 30 minutes)
-- `max_duration` (number, optional): Maximum duration in minutes (e.g., 90 for 90 minutes)
-- `min_tss` (number, optional): Minimum Training Stress Score
-- `max_tss` (number, optional): Maximum Training Stress Score
-- `intensity` (string, optional): Filter by intensity level: "High", "Medium", or "Low"
-- `sort_by` (string, optional): Sort by "name", "duration", or "tss" (default: "name")
-- `sort_direction` (string, optional): Sort direction "asc" or "desc" (default: "asc")
-- `limit` (number, optional): Maximum number of results to return (default: 50)
-
-**Example:**
-```json
-{
-  "four_dp_focus": "FTP",
-  "max_duration": 60,
-  "min_tss": 40,
-  "max_tss": 60,
-  "intensity": "High",
-  "sort_by": "tss",
-  "sort_direction": "asc",
-  "limit": 10
-}
-```
-
-**Returns:**
-Same structure as `get_workouts` - total workout count and list of workouts with all metadata including 4DP ratings, TSS, duration, description, etc.
-
-#### 4. `get_workout_details`
-
-Get comprehensive details about a specific workout.
-
-**Parameters:**
-- `workout_id` (string): The workout ID from `get_calendar` or `get_workouts`
-
-**Example:**
-```json
-{
-  "workout_id": "workout-id-here"
-}
-```
-
-**Returns:**
-- Workout name and sport
-- Duration (seconds and formatted)
-- Level/difficulty
-- Full description
-- Equipment needed
-- Metrics (TSS, Intensity Factor, 4DP ratings)
-- Complete interval structure with power zones
-
-#### 5. `get_rider_profile`
-
-Get your complete 4DP profile, rider type, strengths/weaknesses, and heart rate zones.
-
-**Parameters:** None
-
-**Returns:**
-- **4DP Power Values** (with scores):
-  - NM (Neuromuscular Power - 5s max)
-  - AC (Anaerobic Capacity - 1m max)
-  - MAP (Maximal Aerobic Power - 5m max)
-  - FTP (Functional Threshold Power - 20m)
-- **Rider Type**: Classification (Sprinter, Pursuiter, Time Trialist, Climber, All-Rounder, Attacker, Rouleur) with description
-- **Strengths**: What you excel at
-- **Weaknesses**: What needs improvement
-- **LTHR**: Lactate Threshold Heart Rate
-- **Heart Rate Zones**: 5 training zones calculated from LTHR
-- **Test Info**: Last fitness test date and type
-
-#### 6. `schedule_workout`
-
-Schedule a workout for a specific date on your calendar.
-
-**Parameters:**
-- `content_id` (string): The workout content ID from `get_workouts` or `get_cycling_workouts`
-- `date` (string): Date in YYYY-MM-DD format (e.g., "2025-12-15")
-- `time_zone` (string, optional): Timezone (e.g., "Europe/Lisbon", "America/New_York"). Defaults to UTC if not specified.
-
-**Example:**
-```json
-{
-  "content_id": "idi8fUK8Ew",
-  "date": "2025-12-15",
-  "time_zone": "Europe/Lisbon"
-}
-```
-
-**Returns:**
-- Success status
-- Agenda ID (unique identifier for the scheduled workout)
-- Scheduled date and timezone
-
-**Note:** The `content_id` is the `id` field from workout results, not the `workoutId`.
-
-#### 7. `reschedule_workout`
-
-Reschedule an existing workout to a different date.
-
-**Parameters:**
-- `agenda_id` (string): The agenda ID of the scheduled workout (from `schedule_workout` or `get_calendar`)
-- `new_date` (string): New date to reschedule the workout to in YYYY-MM-DD format (e.g., "2025-12-16")
-- `time_zone` (string, optional): Timezone (e.g., "Europe/Lisbon", "America/New_York"). Defaults to UTC if not specified.
-
-**Example:**
-```json
-{
-  "agenda_id": "1LLFcfoVUb_0",
-  "new_date": "2025-12-16",
-  "time_zone": "Europe/Lisbon"
-}
-```
-
-**Returns:**
-- Success status
-- Agenda ID
-- New date and timezone
-- Confirmation message
-
-#### 8. `remove_workout`
-
-Remove/cancel a scheduled workout from your calendar.
-
-**Parameters:**
-- `agenda_id` (string): The agenda ID of the scheduled workout to remove (from `schedule_workout` or `get_calendar`)
-
-**Example:**
-```json
-{
-  "agenda_id": "91xKHVU1lA_0"
-}
-```
-
-**Returns:**
-- Success status
-- Agenda ID
-- Confirmation message
-
-#### 9. `get_fitness_test_history`
-
-Get your fitness test history from Wahoo SYSTM. Returns all completed Full Frontal and Half Monty tests with 4DP values, LTHR, rider type, TSS, and test dates. Results are sorted by date (most recent first).
-
-**Parameters:**
-- `page` (number, optional): Page number for pagination (default: 1)
-- `page_size` (number, optional): Number of results per page (default: 15)
-
-**Example:**
-```json
-{
-  "page": 1,
-  "page_size": 10
-}
-```
-
-**Returns:**
-- Total test count
-- List of fitness tests with:
-  - Test ID (for use with `get_fitness_test_details`)
-  - Name (Full Frontal or Half Monty)
-  - Completion date
-  - Duration
-  - Distance
-  - TSS and Intensity Factor
-  - **4DP Test Results**:
-    - NM (5s power): value (W), score, status
-    - AC (1m power): value (W), score, status
-    - MAP (5m power): value (W), score, status
-    - FTP (20m power): value (W), score, status
-  - Lactate Threshold Heart Rate (LTHR)
-  - Rider Type (with name, icon, description)
-
-#### 10. `get_fitness_test_details`
-
-Get detailed information about a specific fitness test activity. Returns second-by-second power, cadence, and heart rate data, power curve bests, test notes, profile used during test, and complete 4DP results with rider type analysis.
-
-**Parameters:**
-- `activity_id` (string): The activity ID of the fitness test (obtained from `get_fitness_test_history`)
-
-**Example:**
-```json
-{
-  "activity_id": "abc123xyz"
-}
-```
-
-**Returns:**
-- Test name and completion date
-- Duration, distance, TSS, Intensity Factor
-- Test notes/commentary
-- **Complete 4DP Test Results**:
-  - NM, AC, MAP, FTP with values, scores, and status
-  - LTHR (Lactate Threshold Heart Rate)
-  - Rider Type classification with description
-- **Profile Used During Test**:
-  - FTP, MAP, AC, NM values used
-- **Activity Data** (second-by-second arrays):
-  - Power data
-  - Cadence data
-  - Heart rate data
-- **Power Curve Bests**: Top efforts across various durations (5s, 1m, 5m, 20m, etc.)
-- Post-test analysis and recommendations
-
-## Example Conversations with Claude
-
-### Checking Your Calendar
-
-**You:**
-```
-What workouts do I have planned for this week?
-```
-
-**Claude:** *[calls get_calendar - automatically authenticated]*
-```
-Let me check your calendar for this week. You have the following workouts planned:
-
-December 9, 2025:
-- ALL Access EF 1: Tempo Blocks (Cycling, 1h 9m)
-  Description: Saddle up for the high-energy atmosphere of the EF men's & women's
-  team training camp! Warm up with Jonathan Vaughters setting expectations and
-  emphasizing the purpose of the camp: growth, improvement...
-```
-
-**You:**
-```
-Tell me more about that EF tempo workout
-```
-
-**Claude:** *[calls get_workout_details]*
-```
-ALL Access EF 1: Tempo Blocks is a 1h 9m cycling workout with:
-
-Training Stress Score: 50
-Intensity Factor: 0.66
-
-Saddle up for the high-energy atmosphere of the EF men's & women's team training
-camp! This tempo session is designed to give your body a decent aerobic workload.
-
-[Full interval structure details]
-```
-
-### Finding Workouts in the Library
-
-**You:**
-```
-Show me some easy cycling workouts under 60 minutes with TSS between 30 and 50, sorted by difficulty
-```
-
-**Claude:** *[calls get_workouts]*
-```
-I found 82 cycling workouts under 60 minutes with TSS 30-50. Here are the first 10 (easiest first):
-
-1. Cadence Drills (Builds/Holds/Single Leg) (55m)
-   TSS: 30
-   This workout combines several technique driven intervals to improve your overall form
-
-2. Kayabike (45m)
-   TSS: 30
-   Film (2016): The life of a group of kids and their BMX coach training in a South African township
-
-3. Primers (44m)
-   TSS: 42
-   Whether you have a 4DP fitness test coming up or a group ride you want to smash
-
-[...and 79 more workouts]
-```
-
-**You:**
-```
-Tell me more about Primers
-```
-
-**Claude:** *[calls get_workout_details using workout_id from browse results]*
-```
-Primers is a 44-minute cycling workout with:
-
-Training Stress Score: 42
-Intensity Factor: 0.76
-
-Whether you have a 4DP® fitness test coming up, a group ride you want to smash,
-that event you have been training all winter for, or even just a fun route you
-want to have a great ride on, this is the workout for you...
-
-[Full interval structure details]
-```
-
-### Finding Specific Cycling Workouts
-
-**You:**
-```
-Show me high-intensity cycling workouts under 60 minutes that focus on FTP with TSS between 40 and 60
-```
-
-**Claude:** *[calls get_cycling_workouts]*
-```
-I found 11 FTP-focused cycling workouts matching your criteria. Here are the first 5 (sorted by TSS):
-
-1. Micro Intervals: 3 Sets 8/6/4 x 40/20s (38m)
-   TSS: 42, Intensity: High
-   4DP: FTP=4, MAP=4, AC=3, NM=1
-   Category: Climbing
-
-2. FTP and MAP Over-Unders 10/8 (31m)
-   TSS: 43, Intensity: High
-   4DP: FTP=5, MAP=2, AC=1, NM=1
-   Category: Climbing
-
-3. Micro Intervals: Equal Work Rest 10/20/30/20/10 (42m)
-   TSS: 46, Intensity: High
-   4DP: FTP=4, MAP=3, AC=2, NM=1
-   Category: Mixed
-
-4. French Pyrenees: Les Baronnies (42m)
-   TSS: 48, Intensity: High
-   4DP: FTP=5, MAP=3, AC=2, NM=1
-   Category: Mixed
-
-5. Giro d'Italia 1 (35m)
-   TSS: 48, Intensity: High
-   4DP: FTP=5, MAP=4, AC=2, NM=1
-   Category: Racing
-
-[...and 6 more workouts]
-```
-
-**You:**
-```
-Tell me more about that Micro Intervals workout
-```
-
-**Claude:** *[calls get_workout_details]*
-```
-Micro Intervals: 3 Sets 8/6/4 x 40/20s is a 38-minute cycling workout with:
-
-Training Stress Score: 42
-Intensity Factor: 0.81
-4DP Focus: FTP=4, MAP=4 (builds both threshold and VO2 max)
-
-This session delivers 40/20s micro intervals to build your MAP without completely
-emptying your tank. Perfect for building sustainable power at threshold.
-
-[Full interval structure details]
-```
-
-### Finding a Specific Workout
-
-**You:**
-```
-Find me the "Nine Hammers" workout
-```
-
-**Claude:** *[calls get_cycling_workouts with search: "Nine Hammers"]*
-```
-I found the Nine Hammers workout:
-
-Nine Hammers (58m)
-TSS: 80, Intensity: High
-4DP: NM=5, AC=5, MAP=3, FTP=2
-Category: Speed
-Channel: The Sufferfest
-
-This is the classic Nine Hammers - a brutal session featuring nine 1-minute maximum
-efforts designed to push your neuromuscular and anaerobic capacity to the limit.
-Each "hammer" is a full gas, all-out effort followed by recovery. This workout
-is legendary in the SYSTM community!
-```
-
-**You:**
-```
-What about tempo workouts?
-```
-
-**Claude:** *[calls get_cycling_workouts with search: "tempo"]*
-```
-I found 36 tempo workouts. Here are some popular ones:
-
-1. Tempo: 5 x 4 (90min, TSS: 63)
-   Five 4-minute tempo intervals with recovery
-
-2. Tempo Alternating: 2 x 15 (49min, TSS: 46)
-   Two 15-minute tempo blocks with varying cadence
-
-3. Tempo With Surges: 2 x 20 (57min, TSS: 66)
-   Tempo intervals with power surges to add intensity
-
-Would you like details on any of these?
-```
-
-### Scheduling a Workout
-
-**You:**
-```
-Find me a short FTP workout under 45 minutes and schedule it for next Monday
-```
-
-**Claude:** *[calls get_cycling_workouts]*
-```
-I found several FTP-focused workouts under 45 minutes. Here's a good one:
-
-FTP and MAP Over-Unders 10/8 (31m)
-TSS: 43, Intensity: High
-4DP: FTP=5, MAP=2
-Category: Climbing
-
-This workout delivers classic over-under intervals to boost both FTP and MAP.
-```
-
-**Claude:** *[calls schedule_workout with content_id, date: "2025-12-16"]*
-```
-✓ Workout successfully scheduled!
-
-The workout "FTP and MAP Over-Unders 10/8" has been added to your calendar for
-Monday, December 16, 2025. You can view it in your SYSTM calendar.
-```
-
-### Rescheduling a Workout
-
-**You:**
-```
-I need to move Monday's workout to Tuesday instead
-```
-
-**Claude:** *[calls get_calendar to find Monday's workout]*
-```
-I see you have "FTP and MAP Over-Unders 10/8" scheduled for Monday, December 16.
-Let me reschedule it to Tuesday, December 17.
-```
-
-**Claude:** *[calls reschedule_workout with agenda_id, new_date: "2025-12-17"]*
-```
-✓ Workout successfully rescheduled!
-
-"FTP and MAP Over-Unders 10/8" has been moved from Monday, December 16 to
-Tuesday, December 17, 2025.
-```
-
-### Removing a Workout
-
-**You:**
-```
-Actually, I need to cancel Tuesday's workout
-```
-
-**Claude:** *[calls get_calendar to find Tuesday's workout]*
-```
-I see you have "FTP and MAP Over-Unders 10/8" scheduled for Tuesday, December 17.
-Let me remove it from your calendar.
-```
-
-**Claude:** *[calls remove_workout with agenda_id]*
-```
-✓ Workout successfully removed!
-
-"FTP and MAP Over-Unders 10/8" has been removed from your calendar.
-```
-
-### Viewing Your Profile
-
-**You:**
-```
-What are my 4DP values?
-```
-
-**Claude:** *[calls get_rider_profile]*
-```
-Your 4DP Profile:
-  NM (Neuromuscular): 1350W (Score: 1.15)
-  AC (Anaerobic): 612W (Score: 0.92)
-  MAP (Max Aerobic): 495W (Score: 0.88)
-  FTP (Threshold): 419W (Score: 0.85)
-
-Rider Type: All-Rounder
-  "You're the complete package - powerful on the climbs, dangerous in the sprint,
-  and relentless in the time trial. Like a certain Slovenian superstar, you can
-  do it all. Just don't forget to let others win occasionally!"
-
-Strengths: Sustained Power
-  Your ability to maintain high power over long periods is exceptional!
-
-Weaknesses: Sprint Efforts
-  While your sprint is good, focusing on explosive efforts could make you even more dangerous.
-
-LTHR: 178 bpm
-
-Heart Rate Zones:
-  Zone 1 (Active Recovery): 0-121 bpm
-  Zone 2 (Endurance): 122-148 bpm
-  Zone 3 (Tempo): 149-167 bpm
-  Zone 4 (Threshold): 168-187 bpm
-  Zone 5 (VO2 Max): 188+ bpm
-
-Last Test: Full Frontal on October 28, 2025
-
-(These might be Tadej Pogačar's numbers... but we can all dream of yellow jerseys! 🚴‍♂️)
-```
-
-### Viewing Your Fitness Test History
-
-**You:**
-```
-Show me my fitness test history
-```
-
-**Claude:** *[calls get_fitness_test_history]*
-```
-You have completed 1 fitness test:
-
-Full Frontal (October 28, 2025)
-  Duration: 1h 10m
-  TSS: 95
-
-  4DP Results:
-    NM (5s): 1350W (Score: 1.15) [Good]
-    AC (1m): 612W (Score: 0.92) [Excellent]
-    MAP (5m): 495W (Score: 0.88) [Excellent]
-    FTP (20m): 419W (Score: 0.85) [Excellent]
-
-  LTHR: 178 bpm
-  Rider Type: All-Rounder
-    "You're the complete package - powerful on the climbs, dangerous in the sprint,
-    and relentless in the time trial."
-```
-
-**You:**
-```
-Give me the detailed analysis of that Full Frontal test
-```
-
-**Claude:** *[calls get_fitness_test_details with activity_id]*
-```
-Full Frontal - October 28, 2025
-
-Test Duration: 1h 10m
-TSS: 95, Intensity Factor: 0.82
-
-4DP Test Results:
-  NM (5s): 1350W (Score: 1.15) [Good]
-  AC (1m): 612W (Score: 0.92) [Excellent]
-  MAP (5m): 495W (Score: 0.88) [Excellent]
-  FTP (20m): 419W (Score: 0.85) [Excellent]
-
-LTHR: 178 bpm
-Rider Type: All-Rounder
-
-Profile Used During Test:
-  FTP: 403W, MAP: 478W, AC: 591W, NM: 1303W
-
-Activity Data (4,200 samples):
-  Power: 287W avg, 1350W max
-  Cadence: 88 rpm avg, 156 rpm max
-  Heart Rate: 156 bpm avg, 185 bpm max
-
-Power Bests:
-  1. 5s: 1350W
-  2. 1m: 612W
-  3. 5m: 495W
-  4. 20m: 419W
-  [... more durations]
-
-Analysis:
-Your test shows excellent improvements across all energy systems. Your FTP increased
-by 4%, indicating strong aerobic development. The higher AC and MAP values suggest
-you're building strong anaerobic capacity. Focus on maintaining these gains with
-targeted threshold and VO2 max work.
-```
+#### 3. 1Password Setup (if using Option A)
+
+- Install [1Password CLI](https://1password.com/downloads/command-line)
+- Enable [CLI desktop app integration](https://developer.1password.com/docs/cli/app-integration/)
+- Store Wahoo SYSTM credentials in 1Password
+- Find your vault/item: `op vault list` and `op item list`
+
+#### 4. Restart Claude
+
+Restart Claude Desktop to load the configuration.
+
+### Environment Variables
+
+#### Option A (1Password)
+
+| Variable | Purpose |
+|----------|---------|
+| `WAHOO_USERNAME_1P_REF` | 1Password reference for Wahoo SYSTM username |
+| `WAHOO_PASSWORD_1P_REF` | 1Password reference for Wahoo SYSTM password |
+
+#### Option B (Plain Environment Variables)
+
+| Variable | Purpose |
+|----------|---------|
+| `WAHOO_USERNAME` | Wahoo SYSTM email address |
+| `WAHOO_PASSWORD` | Wahoo SYSTM password |
+
+The server automatically authenticates on startup and maintains the session for the duration of the process.
+
+## Available Tools
+
+### 📅 Calendar & Scheduling
+- `get_calendar`: Retrieve planned workouts for a date range with full workout details and agenda IDs
+- `schedule_workout`: Add a workout from the library to your calendar for a specific date
+- `reschedule_workout`: Move a scheduled workout to a different date
+- `remove_workout`: Cancel/remove a scheduled workout from your calendar
+
+### 📚 Workout Library
+
+> [!NOTE]
+> Currently, only cycling has a specialized workout search tool (`get_cycling_workouts`) with sport-specific filters like 4DP focus and cycling categories. For other sports (Running, Strength, Yoga, Swimming), use the general `get_workouts` tool. Specialized commands for other sports may be added in future releases.
+
+- `get_workouts`: Browse entire workout library with filters for sport, duration, TSS, search terms, and sorting options
+- `get_cycling_workouts`: Specialized cycling workout search with 4DP focus, channel, category, and intensity filters
+- `get_workout_details`: Get complete workout information including intervals, power zones, equipment, and TSS
+
+### 👤 Rider Profile
+- `get_rider_profile`: Retrieve 4DP values (NM, AC, MAP, FTP), rider type classification, strengths/weaknesses, LTHR, and heart rate zones
+
+### 🧪 Fitness Tests
+- `get_fitness_test_history`: List all completed Full Frontal and Half Monty tests with 4DP results, rider type, and dates
+- `get_fitness_test_details`: Access detailed test data including second-by-second power/cadence/HR, power curve bests, and analysis
+
+## Example Usage
+
+### Calendar Management
+
+- "What's on my SYSTM calendar this week?"
+- "Schedule Nine Hammers for Saturday"
+- "Move tomorrow's workout to Thursday"
+- "Remove Friday's workout from SYSTM"
+- "Clear my SYSTM calendar for next week"
+
+### Workout Discovery
+
+- "Find a 45-60 minute sweet spot workout"
+- "What SYSTM workouts target MAP?"
+- "Show me Sufferfest cycling workouts under 1 hour"
+- "Find a low intensity recovery ride"
+- "What NoVid workouts are available?"
+- "Search for workouts with 'Hammer' in the name"
+- "List high intensity workouts between 30-45 minutes"
+- "What workouts focus on FTP development?"
+
+### Workout Details
+
+- "Tell me about The Omnium workout"
+- "What's the structure of Half Monty?"
+- "How long is Full Frontal and what does it test?"
+
+### 4DP Profile & Testing
+
+- "What's my current 4DP profile?"
+- "Show my fitness test history"
+- "Compare my last two Full Frontal results"
+- "When was my last Half Monty?"
+- "How has my FTP progressed over time?"
+
+### Planning & Recommendations
+
+- "Suggest a SYSTM workout for an easy day"
+- "What's a good opener workout before a race?"
+- "Find a workout similar to Tempo with Surges"
+- "I have 90 minutes - what SYSTM ride should I do?"
+
+## Tool Parameters and Returns
+
+### Calendar & Scheduling Tools
+
+#### `get_calendar`
+
+- **Parameters:**
+  - `start_date` (required):
+    - Type: `string`
+    - Description: Start date for calendar range
+    - Format: YYYY-MM-DD
+  - `end_date` (required):
+    - Type: `string`
+    - Description: End date for calendar range
+    - Format: YYYY-MM-DD
+
+- **Output:** JSON array of workout objects with:
+  - `date`: Scheduled date
+  - `agendaId`: Unique identifier for scheduled workout
+  - `workoutId`: Workout identifier
+  - `name`: Workout name
+  - `type`: Sport type (Cycling, Running, Strength, Yoga, Swimming)
+  - `duration`: Duration in seconds
+  - `description`: Workout description
+  - `completed`: Completion status
+  - `plan`: Associated training plan information (if applicable)
+
+#### `schedule_workout`
+
+- **Parameters:**
+  - `content_id` (required):
+    - Type: `string`
+    - Description: The workout content ID from library search results (use the `id` field, not `workoutId`)
+  - `date` (required):
+    - Type: `string`
+    - Description: Target date for scheduling
+    - Format: YYYY-MM-DD
+  - `time_zone` (optional):
+    - Type: `string`
+    - Description: Timezone for the scheduled workout
+    - Default: UTC
+    - Example: "Europe/Lisbon", "America/New_York"
+
+- **Output:** Object with:
+  - `success`: Boolean indicating success
+  - `agendaId`: Generated agenda ID for future operations
+  - `date`: Scheduled date with timezone
+
+#### `reschedule_workout`
+
+- **Parameters:**
+  - `agenda_id` (required):
+    - Type: `string`
+    - Description: The unique agenda identifier from `get_calendar` or `schedule_workout`
+  - `new_date` (required):
+    - Type: `string`
+    - Description: New target date
+    - Format: YYYY-MM-DD
+  - `time_zone` (optional):
+    - Type: `string`
+    - Description: Timezone for the rescheduled workout
+    - Default: UTC
+
+- **Output:** Object with:
+  - `success`: Boolean indicating success
+  - `agendaId`: Agenda ID of rescheduled workout
+  - `newDate`: New scheduled date with timezone
+  - `message`: Confirmation message
+
+#### `remove_workout`
+
+- **Parameters:**
+  - `agenda_id` (required):
+    - Type: `string`
+    - Description: The unique agenda identifier from `get_calendar` or `schedule_workout`
+
+- **Output:** Object with:
+  - `success`: Boolean indicating success
+  - `agendaId`: Agenda ID of removed workout
+  - `message`: Confirmation message
+
+### Workout Library Tools
+
+#### `get_workouts`
+
+- **Parameters:**
+  - `sport` (optional):
+    - Type: `string`
+    - Description: Filter by workout type
+    - Options: "Cycling", "Running", "Strength", "Yoga", "Swimming"
+  - `search` (optional):
+    - Type: `string`
+    - Description: Search workouts by name (case-insensitive partial match)
+  - `min_duration` (optional):
+    - Type: `number`
+    - Description: Minimum duration filter in minutes
+  - `max_duration` (optional):
+    - Type: `number`
+    - Description: Maximum duration filter in minutes
+  - `min_tss` (optional):
+    - Type: `number`
+    - Description: Minimum Training Stress Score
+  - `max_tss` (optional):
+    - Type: `number`
+    - Description: Maximum Training Stress Score
+  - `sort_by` (optional):
+    - Type: `string`
+    - Description: Sort field
+    - Options: "name", "duration", "tss"
+    - Default: "name"
+  - `sort_direction` (optional):
+    - Type: `string`
+    - Description: Sort order
+    - Options: "asc", "desc"
+    - Default: "asc"
+  - `limit` (optional):
+    - Type: `number`
+    - Description: Maximum number of results
+    - Default: 50
+
+- **Output:** Object with:
+  - `total`: Total workout count
+  - `workouts`: JSON array of workout objects with:
+    - `id`: Content ID (for scheduling)
+    - `workoutId`: Workout identifier
+    - `name`: Workout name
+    - `sport`: Sport type
+    - `channel`: Content channel/series
+    - `level`: Difficulty level
+    - `category`: Workout category
+    - `duration`: Duration in seconds
+    - `durationFormatted`: Human-readable duration
+    - `description`: Workout description
+    - `tss`: Training Stress Score
+    - `intensityFactor`: Intensity Factor
+    - `fourDP`: 4DP ratings (NM, AC, MAP, FTP)
+    - `tags`: Array of tags
+
+#### `get_cycling_workouts`
+
+- **Parameters:** All `get_workouts` parameters plus:
+  - `channel` (optional):
+    - Type: `string`
+    - Description: Filter by content channel
+    - Options: "The Sufferfest", "Inspiration", "Wahoo Fitness", "A Week With", "ProRides", "On Location", "NoVid", "Fitness Test"
+  - `category` (optional):
+    - Type: `string`
+    - Description: Filter by workout category
+    - Options: "Endurance", "Speed", "Climbing", "Sustained Efforts", "Mixed", "Technique & Drills", "Racing", "Active Recovery", "Activation", "The Knowledge", "Overview", "Cool Down", "Fitness Test"
+  - `four_dp_focus` (optional):
+    - Type: `string`
+    - Description: Filter by primary 4DP energy system (rating >= 4)
+    - Options: "NM" (Neuromuscular), "AC" (Anaerobic Capacity), "MAP" (Maximal Aerobic Power), "FTP" (Functional Threshold Power)
+  - `intensity` (optional):
+    - Type: `string`
+    - Description: Filter by intensity level
+    - Options: "High", "Medium", "Low"
+
+- **Output:** Same as `get_workouts`.
+
+#### `get_workout_details`
+
+- **Parameters:**
+  - `workout_id` (required):
+    - Type: `string`
+    - Description: Workout identifier from calendar or library (accepts both `id` and `workoutId`)
+
+- **Output:** Object with:
+  - `name`: Workout name
+  - `sport`: Sport type
+  - `duration`: Duration in seconds
+  - `durationFormatted`: Human-readable duration
+  - `level`: Difficulty level
+  - `description`: Full workout description
+  - `equipment`: Required equipment list
+  - `tss`: Training Stress Score
+  - `intensityFactor`: Intensity Factor
+  - `fourDP`: 4DP ratings (NM, AC, MAP, FTP)
+  - `intervals`: Complete interval structure with power zones and cadence targets
+
+### Rider Profile Tools
+
+#### `get_rider_profile`
+
+- **Parameters:** None
+
+- **Output:** Object with:
+  - `fourDP`: 4DP power values with scores
+    - `nm`: Neuromuscular power (watts) and score
+    - `ac`: Anaerobic Capacity (watts) and score
+    - `map`: Maximal Aerobic Power (watts) and score
+    - `ftp`: Functional Threshold Power (watts) and score
+  - `riderType`: Classification (Sprinter, Pursuiter, Time Trialist, Climber, All-Rounder, Attacker, Rouleur)
+  - `riderTypeDescription`: Detailed rider type description
+  - `strengths`: Identified strengths
+  - `weaknesses`: Identified weaknesses
+  - `lthr`: Lactate Threshold Heart Rate
+  - `heartRateZones`: 5 heart rate training zones
+  - `lastTestDate`: Date of last fitness test
+  - `lastTestType`: Type of last fitness test
+
+### Fitness Test Tools
+
+#### `get_fitness_test_history`
+
+- **Parameters:**
+  - `page` (optional):
+    - Type: `number`
+    - Description: Page number for pagination
+    - Default: 1
+  - `page_size` (optional):
+    - Type: `number`
+    - Description: Number of results per page
+    - Default: 15
+
+- **Output:** Object with:
+  - `total`: Total test count
+  - `tests`: JSON array of fitness test objects (sorted by date, most recent first) with:
+    - `activityId`: Test activity identifier
+    - `name`: Test name (Full Frontal or Half Monty)
+    - `date`: Completion date
+    - `duration`: Duration in seconds
+    - `distance`: Distance covered
+    - `tss`: Training Stress Score
+    - `intensityFactor`: Intensity Factor
+    - `fourDPResults`: Complete 4DP results
+      - `nm`: Neuromuscular power (watts, score, status)
+      - `ac`: Anaerobic Capacity (watts, score, status)
+      - `map`: Maximal Aerobic Power (watts, score, status)
+      - `ftp`: Functional Threshold Power (watts, score, status)
+    - `lthr`: Lactate Threshold Heart Rate
+    - `riderType`: Rider type classification
+    - `riderTypeDescription`: Rider type description
+
+#### `get_fitness_test_details`
+
+- **Parameters:**
+  - `activity_id` (required):
+    - Type: `string`
+    - Description: Activity identifier from `get_fitness_test_history`
+
+- **Output:** Object with:
+  - `name`: Test name
+  - `date`: Completion date
+  - `duration`: Duration in seconds
+  - `distance`: Distance covered
+  - `tss`: Training Stress Score
+  - `intensityFactor`: Intensity Factor
+  - `notes`: Test notes
+  - `fourDPResults`: Complete 4DP results with rider type analysis
+  - `profileValues`: Profile values used during test
+  - `activityData`: Second-by-second data arrays
+    - `power`: Power data array
+    - `cadence`: Cadence data array
+    - `heartRate`: Heart rate data array
+  - `powerCurve`: Power curve bests across all durations
+  - `analysis`: Post-test analysis with recommendations
 
 ## Known Limitations
 
 ### Workout Name Inconsistencies
 
-The Wahoo SYSTM API returns different workout names depending on which endpoint is queried:
+The Wahoo SYSTM API returns different workout names depending on the endpoint. Library endpoints may include challenge prefixes or event suffixes, while the details endpoint returns canonical names (sometimes with "On Location -" prefix).
 
-- **Library endpoints** (`get_workouts`, `get_cycling_workouts`): May include challenge prefixes (e.g., "# Tasmania: ...") or event suffixes (e.g., "(December End Game Challenge)")
-- **Details endpoint** (`get_workout_details`): Returns canonical workout names, sometimes with "On Location -" prefix
-
-**Example:**
-- Library: `"# Tasmania: Cygnet Coast Road (December End Game Challenge)"`
-- Details: `"On Location - Tasmania: Cygnet Coast Road"`
-
-**Impact:**
-- Workout names should be used for display purposes only
-- **Always use workout IDs for matching and lookups**, not names
-- Both `id` (content ID) and `workoutId` fields work with `get_workout_details`
-
-This is a known inconsistency in the Wahoo API and affects all clients using these endpoints.
+**Always use workout IDs for matching and lookups, not names.** Both `id` (content ID) and `workoutId` fields work with `get_workout_details`.
 
 ## Development
 
 ### Project Structure
-
 ```
 wahoo-systm-mcp/
 ├── src/
 │   ├── index.ts           # MCP server implementation
 │   ├── client.ts          # Wahoo SYSTM API client
 │   ├── types.ts           # TypeScript type definitions
+│   ├── schemas.ts         # Zod validation schemas
 │   ├── onepassword.ts     # 1Password integration
-│   └── test/              # Test suite
-│       ├── setup.ts
-│       ├── client.test.ts
-│       ├── onepassword.test.ts
-│       └── integration.test.ts
+│   └── test/              # Test suite (Vitest)
 ├── build/                 # Compiled JavaScript (generated)
+├── package.json           # Project dependencies and scripts
+├── tsconfig.json          # TypeScript configuration
+├── vitest.config.ts       # Vitest test configuration
+├── eslint.config.mjs      # ESLint configuration
+├── .prettierrc            # Prettier configuration
 ├── .env.example           # Example environment variables
-├── package.json
-├── tsconfig.json
-└── README.md
+├── .gitignore             # Git ignore patterns
+└── README.md              # Project documentation
 ```
 
-### Building
+### Building & Development
 
 ```bash
+# Build the project
 npm run build
-```
 
-### Watch Mode (for development)
-
-```bash
+# Watch mode (auto-rebuild on changes)
 npm run watch
 ```
 
 ### Testing
 
-Run the test suite to verify everything is working:
+Create a `.env` file with your credentials for testing:
+```bash
+cp .env.example .env
+# Edit .env with your 1Password references or plain credentials
+```
+
+Then run the tests:
 
 ```bash
-# Run all tests once
+# Run all tests
 npm test
 
-# Run tests in watch mode (re-runs on file changes)
+# Watch mode (re-runs on file changes)
 npm run test:watch
 
-# Run tests with coverage report
+# Coverage report
 npm run test:coverage
 
-# Run tests with interactive UI
+# Interactive UI
 npm run test:ui
 ```
 
-The tests will use credentials from a `.env` file. Copy `.env.example` to `.env` and configure your credentials:
-
-```bash
-cp .env.example .env
-```
-
-Then edit `.env` with your 1Password references or plain credentials.
-
-**Testing tools:**
-- Test framework: [Vitest](https://vitest.dev/)
-- Runtime validation: [Zod](https://zod.dev/)
-
-### Linting and Formatting
-
-Keep code quality high with ESLint and Prettier:
+### Linting & Formatting
 
 ```bash
 # Check for linting errors
@@ -843,13 +515,9 @@ npm run lint:fix
 # Format code with Prettier
 npm run format
 
-# Check if code is formatted correctly (without writing)
+# Check formatting (without writing)
 npm run format:check
 ```
-
-**Code quality tools:**
-- Linter: [ESLint](https://eslint.org/) with TypeScript support
-- Formatter: [Prettier](https://prettier.io/)
 
 ## API Information
 
@@ -866,10 +534,6 @@ This server uses the Wahoo SYSTM GraphQL API at `https://api.thesufferfest.com/g
 
 This project was inspired by [suffersync](https://github.com/bakermat/suffersync) by bakermat, which syncs Wahoo SYSTM workouts to intervals.icu.
 
-## License
+## Contributing & License
 
-MIT
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome via pull requests. Licensed under the MIT License.
