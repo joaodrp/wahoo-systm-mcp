@@ -26,6 +26,7 @@ describe('Integration Tests', () => {
     // Get rider profile
     const profile = client.getRiderProfile();
     expect(profile).toBeTruthy();
+    if (!profile) return;
     expect(typeof profile.ftp === 'number').toBeTruthy();
     expect(typeof profile.map === 'number').toBeTruthy();
     expect(typeof profile.ac === 'number').toBeTruthy();

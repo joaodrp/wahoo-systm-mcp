@@ -56,6 +56,7 @@ describe('WahooClient', () => {
       const client = await createAuthenticatedClient();
       const profile = client.getRiderProfile();
       expect(profile).toBeTruthy();
+      if (!profile) return;
       expect(typeof profile.ftp === 'number').toBeTruthy();
     });
   });
@@ -74,6 +75,7 @@ describe('WahooClient', () => {
       const profile = client.getRiderProfile();
 
       expect(profile).toBeTruthy();
+      if (!profile) return;
       expect(typeof profile.ftp === 'number').toBeTruthy();
       expect(typeof profile.map === 'number').toBeTruthy();
       expect(typeof profile.ac === 'number').toBeTruthy();
@@ -99,7 +101,7 @@ describe('WahooClient', () => {
       const client = await createAuthenticatedClient();
       const workouts = await client.getCalendarWorkouts('2025-12-01', '2025-12-31');
 
-      expect(Array.isArray(workouts).toBeTruthy());
+      expect(Array.isArray(workouts)).toBeTruthy();
 
       if (workouts.length > 0) {
         const workout = workouts[0];
@@ -107,7 +109,7 @@ describe('WahooClient', () => {
         expect(typeof workout.plannedDate === 'string').toBeTruthy();
         expect(typeof workout.agendaId === 'string').toBeTruthy(); // agendaId should be a string;
         expect(typeof workout.status === 'string').toBeTruthy();
-        expect(Array.isArray(workout.prospects).toBeTruthy());
+        expect(Array.isArray(workout.prospects)).toBeTruthy();
       }
     });
   });
@@ -187,14 +189,14 @@ describe('WahooClient', () => {
 
       // Verify descriptions are included
       expect(details.descriptions).toBeTruthy(); // Should have descriptions array;
-      expect(Array.isArray(details.descriptions).toBeTruthy(), 'Descriptions should be an array');
-      expect(details.descriptions.length > 0).toBeTruthy(); // Should have at least one description;
+      expect(Array.isArray(details.descriptions), 'Descriptions should be an array').toBeTruthy();
+      expect(details.descriptions?.length).toBeGreaterThan(0); // Should have at least one description;
 
       // Verify description structure
-      const desc = details.descriptions[0];
-      expect(typeof desc.title === 'string').toBeTruthy(); // Description should have title;
-      expect(typeof desc.body === 'string').toBeTruthy(); // Description should have body;
-      expect(desc.body.length > 0).toBeTruthy(); // Description body should not be empty;
+      const desc = details.descriptions?.[0];
+      expect(typeof desc?.title === 'string').toBeTruthy(); // Description should have title;
+      expect(typeof desc?.body === 'string').toBeTruthy(); // Description should have body;
+      expect(desc?.body?.length).toBeGreaterThan(0); // Description body should not be empty;
 
       // Verify it matches the library description
       expect(details.descriptions).toEqual(workoutWithDesc.descriptions); // Descriptions from details should match library descriptions;
@@ -213,7 +215,7 @@ describe('WahooClient', () => {
       const client = await createAuthenticatedClient();
       const workouts = await client.getWorkoutLibrary();
 
-      expect(Array.isArray(workouts).toBeTruthy());
+      expect(Array.isArray(workouts)).toBeTruthy();
       expect(workouts.length > 0).toBeTruthy();
 
       const workout = workouts[0];
@@ -231,7 +233,7 @@ describe('WahooClient', () => {
       const workouts = await client.getWorkoutLibrary({ sport: 'Cycling' });
 
       expect(workouts.length > 0).toBeTruthy();
-      expect(workouts.every((w) => w.workoutType === 'Cycling').toBeTruthy());
+      expect(workouts.every((w) => w.workoutType === 'Cycling')).toBeTruthy();
     });
 
     test('should filter by max duration', async () => {
@@ -246,7 +248,7 @@ describe('WahooClient', () => {
       });
 
       expect(workouts.length > 0).toBeTruthy();
-      expect(workouts.every((w) => w.duration <= maxDurationSeconds).toBeTruthy());
+      expect(workouts.every((w) => w.duration <= maxDurationSeconds)).toBeTruthy();
     });
 
     test('should filter by TSS range', async () => {
@@ -263,13 +265,11 @@ describe('WahooClient', () => {
 
       expect(workouts.length > 0).toBeTruthy();
       expect(
-        workouts
-          .every(
-            (w) =>
-              w.metrics?.tss !== undefined && w.metrics.tss >= minTss && w.metrics.tss <= maxTss
-          )
-          .toBeTruthy()
-      );
+        workouts.every(
+          (w) =>
+            w.metrics?.tss !== undefined && w.metrics.tss >= minTss && w.metrics.tss <= maxTss
+        )
+      ).toBeTruthy();
     });
 
     test('should filter by channel using human-readable name', async () => {
@@ -284,7 +284,7 @@ describe('WahooClient', () => {
       expect(workouts.length > 0).toBeTruthy(); // Should find On Location workouts;
       // All workouts should have the human-readable channel name, not the ID
       workouts.forEach((w) => {
-        expect(w.channel).toBe('On Location', 'Channel should be human-readable name');
+        expect(w.channel, 'Channel should be human-readable name').toBe('On Location');
       });
     });
 
@@ -300,9 +300,9 @@ describe('WahooClient', () => {
       expect(workouts.length > 0).toBeTruthy(); // Should find workouts with "Hammer" in name;
       workouts.forEach((w) => {
         expect(
-          w.name.toLowerCase().toBeTruthy().includes('hammer'),
+          w.name.toLowerCase().includes('hammer'),
           `Workout "${w.name}" should contain "Hammer"`
-        );
+        ).toBeTruthy();
       });
     });
 
@@ -320,9 +320,9 @@ describe('WahooClient', () => {
 
       for (let i = 1; i < Math.min(10, workouts.length); i++) {
         expect(
-          workouts[i].name.localeCompare(workouts[i - 1].name).toBeTruthy() >= 0,
+          workouts[i].name.localeCompare(workouts[i - 1].name) >= 0,
           `Expected ${workouts[i].name} >= ${workouts[i - 1].name}`
-        );
+        ).toBeTruthy();
       }
     });
 
@@ -444,7 +444,9 @@ describe('WahooClient', () => {
       expect(workouts.length > 0).toBeTruthy();
       workouts.forEach((w) => {
         expect(w.metrics?.ratings?.ftp !== undefined).toBeTruthy();
-        expect(w.metrics.ratings.ftp >= 4).toBeTruthy();
+        if (w.metrics?.ratings?.ftp !== undefined) {
+          expect(w.metrics.ratings.ftp >= 4).toBeTruthy();
+        }
       });
     });
 
@@ -457,7 +459,9 @@ describe('WahooClient', () => {
       expect(workouts.length > 0).toBeTruthy();
       workouts.forEach((w) => {
         expect(w.metrics?.ratings?.map !== undefined).toBeTruthy();
-        expect(w.metrics.ratings.map >= 4).toBeTruthy();
+        if (w.metrics?.ratings?.map !== undefined) {
+          expect(w.metrics.ratings.map >= 4).toBeTruthy();
+        }
       });
     });
 
@@ -470,7 +474,7 @@ describe('WahooClient', () => {
       expect(workouts.length > 0).toBeTruthy(); // Should find The Sufferfest workouts;
       // All workouts should have the human-readable channel name, not the ID
       workouts.forEach((w) => {
-        expect(w.channel).toBe('The Sufferfest', 'Channel should be human-readable name');
+        expect(w.channel, 'Channel should be human-readable name').toBe('The Sufferfest');
       });
     });
 
@@ -483,9 +487,9 @@ describe('WahooClient', () => {
       expect(workouts.length > 0).toBeTruthy(); // Should find workouts with "Violator" in name;
       workouts.forEach((w) => {
         expect(
-          w.name.toLowerCase().toBeTruthy().includes('violator'),
+          w.name.toLowerCase().includes('violator'),
           `Workout "${w.name}" should contain "Violator"`
-        );
+        ).toBeTruthy();
       });
     });
 
@@ -683,7 +687,7 @@ describe('WahooClient', () => {
 
       expect(result).toBeTruthy();
       expect(typeof result.total === 'number').toBeTruthy();
-      expect(Array.isArray(result.activities).toBeTruthy());
+      expect(Array.isArray(result.activities)).toBeTruthy();
 
       // If there are any tests, validate the structure
       if (result.activities.length > 0) {
@@ -771,13 +775,13 @@ describe('WahooClient', () => {
       expect(typeof details.profile.nm === 'number').toBeTruthy();
 
       // Validate activity data arrays
-      expect(Array.isArray(details.power).toBeTruthy());
-      expect(Array.isArray(details.cadence).toBeTruthy());
-      expect(Array.isArray(details.heartRate).toBeTruthy());
+      expect(Array.isArray(details.power)).toBeTruthy();
+      expect(Array.isArray(details.cadence)).toBeTruthy();
+      expect(Array.isArray(details.heartRate)).toBeTruthy();
       expect(details.power.length > 0).toBeTruthy();
 
       // Validate power bests
-      expect(Array.isArray(details.powerBests).toBeTruthy());
+      expect(Array.isArray(details.powerBests)).toBeTruthy();
       expect(details.powerBests.length > 0).toBeTruthy();
       const best = details.powerBests[0];
       expect(typeof best.duration === 'number').toBeTruthy();
