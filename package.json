@@ -1,6 +1,6 @@
 {
   "name": "wahoo-systm-mcp",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "MCP server for Wahoo SYSTM calendar and workout data",
   "type": "module",
   "main": "build/index.js",
