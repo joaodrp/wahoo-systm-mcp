@@ -21,8 +21,8 @@ export interface WahooAuthResponse {
 }
 
 export interface RiderProfile {
-  nm: number;  // Neuromuscular Power (5s)
-  ac: number;  // Anaerobic Capacity (1m)
+  nm: number; // Neuromuscular Power (5s)
+  ac: number; // Anaerobic Capacity (1m)
   map: number; // Maximal Aerobic Power (5m)
   ftp: number; // Functional Threshold Power (20m)
 }

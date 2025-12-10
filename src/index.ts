@@ -5,7 +5,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
-  Tool
+  Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import { WahooClient } from './client.js';
 import { getCredentialsFrom1Password } from './onepassword.js';
@@ -44,7 +44,10 @@ async function autoAuthenticate(): Promise<void> {
       console.error('Auto-authenticated with Wahoo SYSTM using 1Password credentials');
       return;
     } catch (error) {
-      console.error('Failed to auto-authenticate with 1Password:', error instanceof Error ? error.message : String(error));
+      console.error(
+        'Failed to auto-authenticate with 1Password:',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
 
@@ -53,12 +56,15 @@ async function autoAuthenticate(): Promise<void> {
     try {
       await wahooClient.authenticate({
         username: PLAIN_USERNAME,
-        password: PLAIN_PASSWORD
+        password: PLAIN_PASSWORD,
       });
       isAuthenticated = true;
       console.error('Auto-authenticated with Wahoo SYSTM using plain credentials');
     } catch (error) {
-      console.error('Failed to auto-authenticate with plain credentials:', error instanceof Error ? error.message : String(error));
+      console.error(
+        'Failed to auto-authenticate with plain credentials:',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
 }
@@ -67,245 +73,268 @@ async function autoAuthenticate(): Promise<void> {
 const tools: Tool[] = [
   {
     name: 'get_calendar',
-    description: 'Get planned workouts from Wahoo SYSTM calendar for a date range. Returns workout name, type, duration, planned date, and basic details.',
+    description:
+      'Get planned workouts from Wahoo SYSTM calendar for a date range. Returns workout name, type, duration, planned date, and basic details.',
     inputSchema: {
       type: 'object',
       properties: {
         start_date: {
           type: 'string',
-          description: 'Start date in YYYY-MM-DD format'
+          description: 'Start date in YYYY-MM-DD format',
         },
         end_date: {
           type: 'string',
-          description: 'End date in YYYY-MM-DD format'
-        }
+          description: 'End date in YYYY-MM-DD format',
+        },
       },
-      required: ['start_date', 'end_date']
-    }
+      required: ['start_date', 'end_date'],
+    },
   },
   {
     name: 'get_workout_details',
-    description: 'Get detailed information about a specific workout including intervals, power zones, equipment needed, and full workout structure.',
+    description:
+      'Get detailed information about a specific workout including intervals, power zones, equipment needed, and full workout structure.',
     inputSchema: {
       type: 'object',
       properties: {
         workout_id: {
           type: 'string',
-          description: 'The workout ID (obtained from get_calendar)'
-        }
+          description: 'The workout ID (obtained from get_calendar)',
+        },
       },
-      required: ['workout_id']
-    }
+      required: ['workout_id'],
+    },
   },
   {
     name: 'get_rider_profile',
-    description: 'Get the authenticated user\'s 4DP profile values (FTP, MAP, AC, NM). Must be authenticated first.',
+    description:
+      "Get the authenticated user's 4DP profile values (FTP, MAP, AC, NM). Must be authenticated first.",
     inputSchema: {
       type: 'object',
       properties: {},
-      required: []
-    }
+      required: [],
+    },
   },
   {
     name: 'schedule_workout',
-    description: 'Schedule a workout for a specific date. The contentId can be obtained from get_workouts or get_cycling_workouts results.',
+    description:
+      'Schedule a workout for a specific date. The contentId can be obtained from get_workouts or get_cycling_workouts results.',
     inputSchema: {
       type: 'object',
       properties: {
         content_id: {
           type: 'string',
-          description: 'The content ID of the workout to schedule (from get_workouts/get_cycling_workouts)'
+          description:
+            'The content ID of the workout to schedule (from get_workouts/get_cycling_workouts)',
         },
         date: {
           type: 'string',
-          description: 'Date to schedule the workout in YYYY-MM-DD format (e.g., "2025-12-15")'
+          description: 'Date to schedule the workout in YYYY-MM-DD format (e.g., "2025-12-15")',
         },
         time_zone: {
           type: 'string',
-          description: 'Optional timezone (e.g., "Europe/Lisbon", "America/New_York"). Defaults to UTC if not specified.'
-        }
+          description:
+            'Optional timezone (e.g., "Europe/Lisbon", "America/New_York"). Defaults to UTC if not specified.',
+        },
       },
-      required: ['content_id', 'date']
-    }
+      required: ['content_id', 'date'],
+    },
   },
   {
     name: 'reschedule_workout',
-    description: 'Reschedule an existing workout to a different date. The agendaId can be obtained from schedule_workout or get_calendar results.',
+    description:
+      'Reschedule an existing workout to a different date. The agendaId can be obtained from schedule_workout or get_calendar results.',
     inputSchema: {
       type: 'object',
       properties: {
         agenda_id: {
           type: 'string',
-          description: 'The agenda ID of the scheduled workout (from schedule_workout or get_calendar)'
+          description:
+            'The agenda ID of the scheduled workout (from schedule_workout or get_calendar)',
         },
         new_date: {
           type: 'string',
-          description: 'New date to reschedule the workout to in YYYY-MM-DD format (e.g., "2025-12-16")'
+          description:
+            'New date to reschedule the workout to in YYYY-MM-DD format (e.g., "2025-12-16")',
         },
         time_zone: {
           type: 'string',
-          description: 'Optional timezone (e.g., "Europe/Lisbon", "America/New_York"). Defaults to UTC if not specified.'
-        }
+          description:
+            'Optional timezone (e.g., "Europe/Lisbon", "America/New_York"). Defaults to UTC if not specified.',
+        },
       },
-      required: ['agenda_id', 'new_date']
-    }
+      required: ['agenda_id', 'new_date'],
+    },
   },
   {
     name: 'remove_workout',
-    description: 'Remove/cancel a scheduled workout from your calendar. The agendaId can be obtained from schedule_workout or get_calendar results.',
+    description:
+      'Remove/cancel a scheduled workout from your calendar. The agendaId can be obtained from schedule_workout or get_calendar results.',
     inputSchema: {
       type: 'object',
       properties: {
         agenda_id: {
           type: 'string',
-          description: 'The agenda ID of the scheduled workout to remove (from schedule_workout or get_calendar)'
-        }
+          description:
+            'The agenda ID of the scheduled workout to remove (from schedule_workout or get_calendar)',
+        },
       },
-      required: ['agenda_id']
-    }
+      required: ['agenda_id'],
+    },
   },
   {
     name: 'get_workouts',
-    description: 'Get workouts from the Wahoo SYSTM library. Filter by sport, duration, and TSS. Sort by name, duration, or TSS. Returns a list of workouts with their metadata.',
+    description:
+      'Get workouts from the Wahoo SYSTM library. Filter by sport, duration, and TSS. Sort by name, duration, or TSS. Returns a list of workouts with their metadata.',
     inputSchema: {
       type: 'object',
       properties: {
         sport: {
           type: 'string',
-          description: 'Filter by sport/workout type (e.g., Cycling, Running, Strength, Yoga, Swimming)'
+          description:
+            'Filter by sport/workout type (e.g., Cycling, Running, Strength, Yoga, Swimming)',
         },
         search: {
           type: 'string',
-          description: 'Search for workouts by name (case-insensitive, partial match). Example: "Nine Hammers", "tempo", "Violator"'
+          description:
+            'Search for workouts by name (case-insensitive, partial match). Example: "Nine Hammers", "tempo", "Violator"',
         },
         min_duration: {
           type: 'number',
-          description: 'Minimum workout duration in minutes (e.g., 30 for 30 minutes)'
+          description: 'Minimum workout duration in minutes (e.g., 30 for 30 minutes)',
         },
         max_duration: {
           type: 'number',
-          description: 'Maximum workout duration in minutes (e.g., 120 for 2 hours)'
+          description: 'Maximum workout duration in minutes (e.g., 120 for 2 hours)',
         },
         min_tss: {
           type: 'number',
-          description: 'Minimum Training Stress Score (e.g., 20 for easy, 100+ for hard)'
+          description: 'Minimum Training Stress Score (e.g., 20 for easy, 100+ for hard)',
         },
         max_tss: {
           type: 'number',
-          description: 'Maximum Training Stress Score'
+          description: 'Maximum Training Stress Score',
         },
         sort_by: {
           type: 'string',
           enum: ['name', 'duration', 'tss'],
-          description: 'Sort workouts by: name (default), duration, or tss'
+          description: 'Sort workouts by: name (default), duration, or tss',
         },
         sort_direction: {
           type: 'string',
           enum: ['asc', 'desc'],
-          description: 'Sort direction: asc (default) or desc'
+          description: 'Sort direction: asc (default) or desc',
         },
         limit: {
           type: 'number',
-          description: 'Maximum number of results to return (default: 50)'
-        }
+          description: 'Maximum number of results to return (default: 50)',
+        },
       },
-      required: []
-    }
+      required: [],
+    },
   },
   {
     name: 'get_cycling_workouts',
-    description: 'Get cycling workouts with filters matching the SYSTM UI. Filter by channel, category, 4DP focus (NM/AC/MAP/FTP), duration range, and intensity. Returns cycling workouts with metadata.',
+    description:
+      'Get cycling workouts with filters matching the SYSTM UI. Filter by channel, category, 4DP focus (NM/AC/MAP/FTP), duration range, and intensity. Returns cycling workouts with metadata.',
     inputSchema: {
       type: 'object',
       properties: {
         channel: {
           type: 'string',
-          description: 'Filter by channel: The Sufferfest, Inspiration, Wahoo Fitness, A Week With, ProRides, On Location, NoVid, Fitness Test'
+          description:
+            'Filter by channel: The Sufferfest, Inspiration, Wahoo Fitness, A Week With, ProRides, On Location, NoVid, Fitness Test',
         },
         category: {
           type: 'string',
-          description: 'Filter by category: Activation, Active Recovery, Climbing, Cool Down, Endurance, Fitness Test, Mixed, Overview, Racing, Speed, Sustained Efforts, Technique & Drills, The Knowledge'
+          description:
+            'Filter by category: Activation, Active Recovery, Climbing, Cool Down, Endurance, Fitness Test, Mixed, Overview, Racing, Speed, Sustained Efforts, Technique & Drills, The Knowledge',
         },
         four_dp_focus: {
           type: 'string',
           enum: ['NM', 'AC', 'MAP', 'FTP'],
-          description: 'Filter by 4DP focus - workouts that target this energy system (rating >= 4): NM (Neuromuscular), AC (Anaerobic Capacity), MAP (Maximal Aerobic Power), FTP (Functional Threshold Power)'
+          description:
+            'Filter by 4DP focus - workouts that target this energy system (rating >= 4): NM (Neuromuscular), AC (Anaerobic Capacity), MAP (Maximal Aerobic Power), FTP (Functional Threshold Power)',
         },
         search: {
           type: 'string',
-          description: 'Search for workouts by name (case-insensitive, partial match). Example: "Nine Hammers", "tempo", "Violator"'
+          description:
+            'Search for workouts by name (case-insensitive, partial match). Example: "Nine Hammers", "tempo", "Violator"',
         },
         min_duration: {
           type: 'number',
-          description: 'Minimum workout duration in minutes (e.g., 30 for 30 minutes)'
+          description: 'Minimum workout duration in minutes (e.g., 30 for 30 minutes)',
         },
         max_duration: {
           type: 'number',
-          description: 'Maximum workout duration in minutes (e.g., 90 for 90 minutes)'
+          description: 'Maximum workout duration in minutes (e.g., 90 for 90 minutes)',
         },
         min_tss: {
           type: 'number',
-          description: 'Minimum Training Stress Score'
+          description: 'Minimum Training Stress Score',
         },
         max_tss: {
           type: 'number',
-          description: 'Maximum Training Stress Score'
+          description: 'Maximum Training Stress Score',
         },
         intensity: {
           type: 'string',
           enum: ['High', 'Medium', 'Low'],
-          description: 'Filter by intensity level'
+          description: 'Filter by intensity level',
         },
         sort_by: {
           type: 'string',
           enum: ['name', 'duration', 'tss'],
-          description: 'Sort workouts by: name (default), duration, or tss'
+          description: 'Sort workouts by: name (default), duration, or tss',
         },
         sort_direction: {
           type: 'string',
           enum: ['asc', 'desc'],
-          description: 'Sort direction: asc (default) or desc'
+          description: 'Sort direction: asc (default) or desc',
         },
         limit: {
           type: 'number',
-          description: 'Maximum number of results to return (default: 50)'
-        }
+          description: 'Maximum number of results to return (default: 50)',
+        },
       },
-      required: []
-    }
+      required: [],
+    },
   },
   {
     name: 'get_fitness_test_history',
-    description: 'Get your fitness test history from Wahoo SYSTM. Returns all completed Full Frontal and Half Monty tests with 4DP values (NM, AC, MAP, FTP), LTHR, rider type, TSS, and test dates. Results are sorted by date (most recent first).',
+    description:
+      'Get your fitness test history from Wahoo SYSTM. Returns all completed Full Frontal and Half Monty tests with 4DP values (NM, AC, MAP, FTP), LTHR, rider type, TSS, and test dates. Results are sorted by date (most recent first).',
     inputSchema: {
       type: 'object',
       properties: {
         page: {
           type: 'number',
-          description: 'Page number for pagination (default: 1)'
+          description: 'Page number for pagination (default: 1)',
         },
         page_size: {
           type: 'number',
-          description: 'Number of results per page (default: 15)'
-        }
+          description: 'Number of results per page (default: 15)',
+        },
       },
-      required: []
-    }
+      required: [],
+    },
   },
   {
     name: 'get_fitness_test_details',
-    description: 'Get detailed information about a specific fitness test activity. Returns second-by-second power, cadence, and heart rate data, power curve bests, test notes, profile used during test, and complete 4DP results with rider type analysis.',
+    description:
+      'Get detailed information about a specific fitness test activity. Returns second-by-second power, cadence, and heart rate data, power curve bests, test notes, profile used during test, and complete 4DP results with rider type analysis.',
     inputSchema: {
       type: 'object',
       properties: {
         activity_id: {
           type: 'string',
-          description: 'The activity ID of the fitness test (obtained from get_fitness_test_history)'
-        }
+          description:
+            'The activity ID of the fitness test (obtained from get_fitness_test_history)',
+        },
       },
-      required: ['activity_id']
-    }
-  }
+      required: ['activity_id'],
+    },
+  },
 ];
 
 // List available tools
@@ -321,7 +350,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       case 'get_calendar': {
         if (!isAuthenticated) {
-          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+          throw new Error(
+            'Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.'
+          );
         }
 
         if (!args || typeof args !== 'object') {
@@ -335,8 +366,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         // Format the response to be more readable
         const formattedWorkouts = workouts
-          .filter(item => item.plannedDate && item.prospects.length > 0)
-          .map(item => ({
+          .filter((item) => item.plannedDate && item.prospects.length > 0)
+          .map((item) => ({
             date: item.plannedDate.split('T')[0],
             agenda_id: item.agendaId,
             workout: {
@@ -346,30 +377,38 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               duration_hours: item.prospects[0].plannedDuration,
               description: item.prospects[0].description,
               intensity: item.prospects[0].intensity,
-              status: item.status
+              status: item.status,
             },
-            plan: item.plan ? {
-              name: item.plan.name,
-              category: item.plan.category
-            } : null
+            plan: item.plan
+              ? {
+                  name: item.plan.name,
+                  category: item.plan.category,
+                }
+              : null,
           }));
 
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                total_workouts: formattedWorkouts.length,
-                workouts: formattedWorkouts
-              }, null, 2)
-            }
-          ]
+              text: JSON.stringify(
+                {
+                  total_workouts: formattedWorkouts.length,
+                  workouts: formattedWorkouts,
+                },
+                null,
+                2
+              ),
+            },
+          ],
         };
       }
 
       case 'get_workout_details': {
         if (!isAuthenticated) {
-          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+          throw new Error(
+            'Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.'
+          );
         }
 
         if (!args || typeof args !== 'object') {
@@ -405,24 +444,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           metrics: {
             intensity_factor: workout.metrics.intensityFactor,
             tss: workout.metrics.tss,
-            ratings: workout.metrics.ratings
+            ratings: workout.metrics.ratings,
           },
-          intervals: intervals
+          intervals: intervals,
         };
 
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(formattedWorkout, null, 2)
-            }
-          ]
+              text: JSON.stringify(formattedWorkout, null, 2),
+            },
+          ],
         };
       }
 
       case 'get_rider_profile': {
         if (!isAuthenticated) {
-          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+          throw new Error(
+            'Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.'
+          );
         }
 
         const enhancedProfile = await wahooClient.getEnhancedRiderProfile();
@@ -432,11 +473,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify({
-                  error: 'No fitness test data available. Please complete a Full Frontal or Half Monty test in SYSTM.'
-                }, null, 2)
-              }
-            ]
+                text: JSON.stringify(
+                  {
+                    error:
+                      'No fitness test data available. Please complete a Full Frontal or Half Monty test in SYSTM.',
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
           };
         }
 
@@ -445,74 +491,78 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const formattedDate = testDate.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
-          day: 'numeric'
+          day: 'numeric',
         });
 
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                fourDP: {
-                  nm: {
-                    watts: enhancedProfile.nm,
-                    score: enhancedProfile.power5s.graphValue.toFixed(2),
-                    description: 'Neuromuscular Power (5s max effort)'
+              text: JSON.stringify(
+                {
+                  fourDP: {
+                    nm: {
+                      watts: enhancedProfile.nm,
+                      score: enhancedProfile.power5s.graphValue.toFixed(2),
+                      description: 'Neuromuscular Power (5s max effort)',
+                    },
+                    ac: {
+                      watts: enhancedProfile.ac,
+                      score: enhancedProfile.power1m.graphValue.toFixed(2),
+                      description: 'Anaerobic Capacity (1m max effort)',
+                    },
+                    map: {
+                      watts: enhancedProfile.map,
+                      score: enhancedProfile.power5m.graphValue.toFixed(2),
+                      description: 'Maximal Aerobic Power (5m max effort)',
+                    },
+                    ftp: {
+                      watts: enhancedProfile.ftp,
+                      score: enhancedProfile.power20m.graphValue.toFixed(2),
+                      description: 'Functional Threshold Power (20m effort)',
+                    },
                   },
-                  ac: {
-                    watts: enhancedProfile.ac,
-                    score: enhancedProfile.power1m.graphValue.toFixed(2),
-                    description: 'Anaerobic Capacity (1m max effort)'
+                  riderType: {
+                    name: enhancedProfile.riderType.name,
+                    description: enhancedProfile.riderType.description,
+                    icon: enhancedProfile.riderType.icon,
                   },
-                  map: {
-                    watts: enhancedProfile.map,
-                    score: enhancedProfile.power5m.graphValue.toFixed(2),
-                    description: 'Maximal Aerobic Power (5m max effort)'
+                  strengths: {
+                    name: enhancedProfile.riderWeakness.strengthName,
+                    summary: enhancedProfile.riderWeakness.strengthSummary,
+                    description: enhancedProfile.riderWeakness.strengthDescription,
                   },
-                  ftp: {
-                    watts: enhancedProfile.ftp,
-                    score: enhancedProfile.power20m.graphValue.toFixed(2),
-                    description: 'Functional Threshold Power (20m effort)'
-                  }
+                  weaknesses: {
+                    name: enhancedProfile.riderWeakness.name,
+                    summary: enhancedProfile.riderWeakness.weaknessSummary,
+                    description: enhancedProfile.riderWeakness.weaknessDescription,
+                  },
+                  heartRate: {
+                    lthr: Math.round(enhancedProfile.lactateThresholdHeartRate),
+                    zones: enhancedProfile.heartRateZones.map((zone) => ({
+                      zone: zone.zone,
+                      name: zone.name,
+                      range: zone.max ? `${zone.min}-${zone.max} bpm` : `${zone.min}+ bpm`,
+                    })),
+                  },
+                  testInfo: {
+                    completed: enhancedProfile.fitnessTestRidden,
+                    date: formattedDate,
+                  },
                 },
-                riderType: {
-                  name: enhancedProfile.riderType.name,
-                  description: enhancedProfile.riderType.description,
-                  icon: enhancedProfile.riderType.icon
-                },
-                strengths: {
-                  name: enhancedProfile.riderWeakness.strengthName,
-                  summary: enhancedProfile.riderWeakness.strengthSummary,
-                  description: enhancedProfile.riderWeakness.strengthDescription
-                },
-                weaknesses: {
-                  name: enhancedProfile.riderWeakness.name,
-                  summary: enhancedProfile.riderWeakness.weaknessSummary,
-                  description: enhancedProfile.riderWeakness.weaknessDescription
-                },
-                heartRate: {
-                  lthr: Math.round(enhancedProfile.lactateThresholdHeartRate),
-                  zones: enhancedProfile.heartRateZones.map(zone => ({
-                    zone: zone.zone,
-                    name: zone.name,
-                    range: zone.max
-                      ? `${zone.min}-${zone.max} bpm`
-                      : `${zone.min}+ bpm`
-                  }))
-                },
-                testInfo: {
-                  completed: enhancedProfile.fitnessTestRidden,
-                  date: formattedDate
-                }
-              }, null, 2)
-            }
-          ]
+                null,
+                2
+              ),
+            },
+          ],
         };
       }
 
       case 'schedule_workout': {
         if (!isAuthenticated) {
-          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+          throw new Error(
+            'Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.'
+          );
         }
 
         if (!args || typeof args !== 'object') {
@@ -544,22 +594,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                success: true,
-                agenda_id: agendaId,
-                content_id: content_id,
-                scheduled_date: date,
-                time_zone: tz || 'UTC',
-                message: `Workout successfully scheduled for ${date}`
-              }, null, 2)
-            }
-          ]
+              text: JSON.stringify(
+                {
+                  success: true,
+                  agenda_id: agendaId,
+                  content_id: content_id,
+                  scheduled_date: date,
+                  time_zone: tz || 'UTC',
+                  message: `Workout successfully scheduled for ${date}`,
+                },
+                null,
+                2
+              ),
+            },
+          ],
         };
       }
 
       case 'reschedule_workout': {
         if (!isAuthenticated) {
-          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+          throw new Error(
+            'Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.'
+          );
         }
 
         if (!args || typeof args !== 'object') {
@@ -590,21 +646,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                success: true,
-                agenda_id: agenda_id,
-                new_date: new_date,
-                time_zone: tz || 'UTC',
-                message: `Workout successfully rescheduled to ${new_date}`
-              }, null, 2)
-            }
-          ]
+              text: JSON.stringify(
+                {
+                  success: true,
+                  agenda_id: agenda_id,
+                  new_date: new_date,
+                  time_zone: tz || 'UTC',
+                  message: `Workout successfully rescheduled to ${new_date}`,
+                },
+                null,
+                2
+              ),
+            },
+          ],
         };
       }
 
       case 'remove_workout': {
         if (!isAuthenticated) {
-          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+          throw new Error(
+            'Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.'
+          );
         }
 
         if (!args || typeof args !== 'object') {
@@ -625,19 +687,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                success: true,
-                agenda_id: agenda_id,
-                message: `Workout successfully removed from calendar`
-              }, null, 2)
-            }
-          ]
+              text: JSON.stringify(
+                {
+                  success: true,
+                  agenda_id: agenda_id,
+                  message: `Workout successfully removed from calendar`,
+                },
+                null,
+                2
+              ),
+            },
+          ],
         };
       }
 
       case 'get_workouts': {
         if (!isAuthenticated) {
-          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+          throw new Error(
+            'Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.'
+          );
         }
 
         const filters: {
@@ -659,10 +727,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           if (typeof params.max_duration === 'number') filters.maxDuration = params.max_duration;
           if (typeof params.min_tss === 'number') filters.minTss = params.min_tss;
           if (typeof params.max_tss === 'number') filters.maxTss = params.max_tss;
-          if (typeof params.sort_by === 'string' && ['name', 'duration', 'tss'].includes(params.sort_by)) {
+          if (
+            typeof params.sort_by === 'string' &&
+            ['name', 'duration', 'tss'].includes(params.sort_by)
+          ) {
             filters.sortBy = params.sort_by as 'name' | 'duration' | 'tss';
           }
-          if (typeof params.sort_direction === 'string' && ['asc', 'desc'].includes(params.sort_direction)) {
+          if (
+            typeof params.sort_direction === 'string' &&
+            ['asc', 'desc'].includes(params.sort_direction)
+          ) {
             filters.sortDirection = params.sort_direction as 'asc' | 'desc';
           }
         }
@@ -670,13 +744,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const library = await wahooClient.getWorkoutLibrary(filters);
 
         // Apply limit
-        const limit = (args && typeof args === 'object' && typeof (args as Record<string, unknown>).limit === 'number')
-          ? (args as Record<string, unknown>).limit as number
-          : 50;
+        const limit =
+          args &&
+          typeof args === 'object' &&
+          typeof (args as Record<string, unknown>).limit === 'number'
+            ? ((args as Record<string, unknown>).limit as number)
+            : 50;
         const limitedLibrary = library.slice(0, limit);
 
         // Format the response
-        const formattedWorkouts = limitedLibrary.map(item => {
+        const formattedWorkouts = limitedLibrary.map((item) => {
           const durationHours = item.duration / 3600;
           const hours = Math.floor(durationHours);
           const minutes = Math.round((durationHours - hours) * 60);
@@ -694,13 +771,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             description: item.descriptions?.[0]?.body?.substring(0, 400) + '...' || '',
             tss: item.metrics?.tss,
             intensity_factor: item.metrics?.intensityFactor,
-            ratings_4dp: item.metrics?.ratings ? {
-              ftp: item.metrics.ratings.ftp,
-              map: item.metrics.ratings.map,
-              ac: item.metrics.ratings.ac,
-              nm: item.metrics.ratings.nm
-            } : null,
-            tags: item.tags
+            ratings_4dp: item.metrics?.ratings
+              ? {
+                  ftp: item.metrics.ratings.ftp,
+                  map: item.metrics.ratings.map,
+                  ac: item.metrics.ratings.ac,
+                  nm: item.metrics.ratings.nm,
+                }
+              : null,
+            tags: item.tags,
           };
         });
 
@@ -708,19 +787,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                total_found: library.length,
-                returned: formattedWorkouts.length,
-                workouts: formattedWorkouts
-              }, null, 2)
-            }
-          ]
+              text: JSON.stringify(
+                {
+                  total_found: library.length,
+                  returned: formattedWorkouts.length,
+                  workouts: formattedWorkouts,
+                },
+                null,
+                2
+              ),
+            },
+          ],
         };
       }
 
       case 'get_cycling_workouts': {
         if (!isAuthenticated) {
-          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+          throw new Error(
+            'Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.'
+          );
         }
 
         const filters: {
@@ -742,7 +827,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           const params = args as Record<string, unknown>;
           if (typeof params.channel === 'string') filters.channel = params.channel;
           if (typeof params.category === 'string') filters.category = params.category;
-          if (typeof params.four_dp_focus === 'string' && ['NM', 'AC', 'MAP', 'FTP'].includes(params.four_dp_focus)) {
+          if (
+            typeof params.four_dp_focus === 'string' &&
+            ['NM', 'AC', 'MAP', 'FTP'].includes(params.four_dp_focus)
+          ) {
             filters.fourDpFocus = params.four_dp_focus as 'NM' | 'AC' | 'MAP' | 'FTP';
           }
           if (typeof params.search === 'string') filters.search = params.search;
@@ -750,13 +838,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           if (typeof params.max_duration === 'number') filters.maxDuration = params.max_duration;
           if (typeof params.min_tss === 'number') filters.minTss = params.min_tss;
           if (typeof params.max_tss === 'number') filters.maxTss = params.max_tss;
-          if (typeof params.intensity === 'string' && ['High', 'Medium', 'Low'].includes(params.intensity)) {
+          if (
+            typeof params.intensity === 'string' &&
+            ['High', 'Medium', 'Low'].includes(params.intensity)
+          ) {
             filters.intensity = params.intensity as 'High' | 'Medium' | 'Low';
           }
-          if (typeof params.sort_by === 'string' && ['name', 'duration', 'tss'].includes(params.sort_by)) {
+          if (
+            typeof params.sort_by === 'string' &&
+            ['name', 'duration', 'tss'].includes(params.sort_by)
+          ) {
             filters.sortBy = params.sort_by as 'name' | 'duration' | 'tss';
           }
-          if (typeof params.sort_direction === 'string' && ['asc', 'desc'].includes(params.sort_direction)) {
+          if (
+            typeof params.sort_direction === 'string' &&
+            ['asc', 'desc'].includes(params.sort_direction)
+          ) {
             filters.sortDirection = params.sort_direction as 'asc' | 'desc';
           }
           if (typeof params.limit === 'number') filters.limit = params.limit;
@@ -765,7 +862,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const cyclingWorkouts = await wahooClient.getCyclingWorkouts(filters);
 
         // Format the response (same as get_workouts)
-        const formattedWorkouts = cyclingWorkouts.map(item => {
+        const formattedWorkouts = cyclingWorkouts.map((item) => {
           const durationHours = item.duration / 3600;
           const hours = Math.floor(durationHours);
           const minutes = Math.round((durationHours - hours) * 60);
@@ -783,13 +880,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             description: item.descriptions?.[0]?.body?.substring(0, 400) + '...' || '',
             tss: item.metrics?.tss,
             intensity_factor: item.metrics?.intensityFactor,
-            ratings_4dp: item.metrics?.ratings ? {
-              ftp: item.metrics.ratings.ftp,
-              map: item.metrics.ratings.map,
-              ac: item.metrics.ratings.ac,
-              nm: item.metrics.ratings.nm
-            } : null,
-            tags: item.tags
+            ratings_4dp: item.metrics?.ratings
+              ? {
+                  ftp: item.metrics.ratings.ftp,
+                  map: item.metrics.ratings.map,
+                  ac: item.metrics.ratings.ac,
+                  nm: item.metrics.ratings.nm,
+                }
+              : null,
+            tags: item.tags,
           };
         });
 
@@ -797,19 +896,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                total_found: cyclingWorkouts.length,
-                returned: formattedWorkouts.length,
-                workouts: formattedWorkouts
-              }, null, 2)
-            }
-          ]
+              text: JSON.stringify(
+                {
+                  total_found: cyclingWorkouts.length,
+                  returned: formattedWorkouts.length,
+                  workouts: formattedWorkouts,
+                },
+                null,
+                2
+              ),
+            },
+          ],
         };
       }
 
       case 'get_fitness_test_history': {
         if (!isAuthenticated) {
-          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+          throw new Error(
+            'Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.'
+          );
         }
 
         const options: {
@@ -826,12 +931,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const result = await wahooClient.getFitnessTestHistory(options);
 
         // Format the response
-        const formattedTests = result.activities.map(test => {
+        const formattedTests = result.activities.map((test) => {
           const testDate = new Date(test.completedDate);
           const formattedDate = testDate.toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
-            day: 'numeric'
+            day: 'numeric',
           });
 
           const durationHours = test.durationSeconds / 3600;
@@ -845,26 +950,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             duration: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
             tss: test.tss,
             intensity_factor: test.intensityFactor,
-            fourDP: test.testResults ? {
-              nm: {
-                watts: test.testResults.power5s.value,
-                score: test.testResults.power5s.graphValue.toFixed(2)
-              },
-              ac: {
-                watts: test.testResults.power1m.value,
-                score: test.testResults.power1m.graphValue.toFixed(2)
-              },
-              map: {
-                watts: test.testResults.power5m.value,
-                score: test.testResults.power5m.graphValue.toFixed(2)
-              },
-              ftp: {
-                watts: test.testResults.power20m.value,
-                score: test.testResults.power20m.graphValue.toFixed(2)
-              }
-            } : null,
+            fourDP: test.testResults
+              ? {
+                  nm: {
+                    watts: test.testResults.power5s.value,
+                    score: test.testResults.power5s.graphValue.toFixed(2),
+                  },
+                  ac: {
+                    watts: test.testResults.power1m.value,
+                    score: test.testResults.power1m.graphValue.toFixed(2),
+                  },
+                  map: {
+                    watts: test.testResults.power5m.value,
+                    score: test.testResults.power5m.graphValue.toFixed(2),
+                  },
+                  ftp: {
+                    watts: test.testResults.power20m.value,
+                    score: test.testResults.power20m.graphValue.toFixed(2),
+                  },
+                }
+              : null,
             lthr: test.testResults ? Math.round(test.testResults.lactateThresholdHeartRate) : null,
-            rider_type: test.testResults?.riderType.name || null
+            rider_type: test.testResults?.riderType.name || null,
           };
         });
 
@@ -872,18 +979,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                total: result.total,
-                tests: formattedTests
-              }, null, 2)
-            }
-          ]
+              text: JSON.stringify(
+                {
+                  total: result.total,
+                  tests: formattedTests,
+                },
+                null,
+                2
+              ),
+            },
+          ],
         };
       }
 
       case 'get_fitness_test_details': {
         if (!isAuthenticated) {
-          throw new Error('Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.');
+          throw new Error(
+            'Not authenticated. Please configure WAHOO_USERNAME/WAHOO_PASSWORD or WAHOO_USERNAME_1P_REF/WAHOO_PASSWORD_1P_REF environment variables.'
+          );
         }
 
         if (!args || typeof args !== 'object') {
@@ -903,7 +1016,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const formattedDate = testDate.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
-          day: 'numeric'
+          day: 'numeric',
         });
 
         const durationHours = testDetails.durationSeconds / 3600;
@@ -924,64 +1037,71 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                id: testDetails.id,
-                name: testDetails.name,
-                completed_date: formattedDate,
-                duration: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
-                tss: testDetails.tss,
-                intensity_factor: testDetails.intensityFactor,
-                notes: testDetails.notes || '',
-                fourDP: {
-                  nm: {
-                    watts: testDetails.testResults.power5s.value,
-                    score: testDetails.testResults.power5s.graphValue.toFixed(2),
-                    status: testDetails.testResults.power5s.status
+              text: JSON.stringify(
+                {
+                  id: testDetails.id,
+                  name: testDetails.name,
+                  completed_date: formattedDate,
+                  duration: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+                  tss: testDetails.tss,
+                  intensity_factor: testDetails.intensityFactor,
+                  notes: testDetails.notes || '',
+                  fourDP: {
+                    nm: {
+                      watts: testDetails.testResults.power5s.value,
+                      score: testDetails.testResults.power5s.graphValue.toFixed(2),
+                      status: testDetails.testResults.power5s.status,
+                    },
+                    ac: {
+                      watts: testDetails.testResults.power1m.value,
+                      score: testDetails.testResults.power1m.graphValue.toFixed(2),
+                      status: testDetails.testResults.power1m.status,
+                    },
+                    map: {
+                      watts: testDetails.testResults.power5m.value,
+                      score: testDetails.testResults.power5m.graphValue.toFixed(2),
+                      status: testDetails.testResults.power5m.status,
+                    },
+                    ftp: {
+                      watts: testDetails.testResults.power20m.value,
+                      score: testDetails.testResults.power20m.graphValue.toFixed(2),
+                      status: testDetails.testResults.power20m.status,
+                    },
                   },
-                  ac: {
-                    watts: testDetails.testResults.power1m.value,
-                    score: testDetails.testResults.power1m.graphValue.toFixed(2),
-                    status: testDetails.testResults.power1m.status
+                  lthr: Math.round(testDetails.testResults.lactateThresholdHeartRate),
+                  rider_type: {
+                    name: testDetails.testResults.riderType.name,
+                    description: testDetails.testResults.riderType.description,
                   },
-                  map: {
-                    watts: testDetails.testResults.power5m.value,
-                    score: testDetails.testResults.power5m.graphValue.toFixed(2),
-                    status: testDetails.testResults.power5m.status
+                  profile_used: testDetails.profile,
+                  power_data: {
+                    length: testDetails.power.length,
+                    avg: testDetails.power.reduce((a, b) => a + b, 0) / testDetails.power.length,
+                    max: Math.max(...testDetails.power),
                   },
-                  ftp: {
-                    watts: testDetails.testResults.power20m.value,
-                    score: testDetails.testResults.power20m.graphValue.toFixed(2),
-                    status: testDetails.testResults.power20m.status
-                  }
+                  heart_rate_data: {
+                    length: testDetails.heartRate.length,
+                    avg:
+                      testDetails.heartRate.reduce((a, b) => a + b, 0) /
+                      testDetails.heartRate.length,
+                    max: Math.max(...testDetails.heartRate),
+                  },
+                  cadence_data: {
+                    length: testDetails.cadence.length,
+                    avg:
+                      testDetails.cadence.reduce((a, b) => a + b, 0) / testDetails.cadence.length,
+                  },
+                  power_bests: testDetails.powerBests.map((best) => ({
+                    duration_seconds: best.duration,
+                    power: best.value,
+                  })),
+                  analysis: analysisData,
                 },
-                lthr: Math.round(testDetails.testResults.lactateThresholdHeartRate),
-                rider_type: {
-                  name: testDetails.testResults.riderType.name,
-                  description: testDetails.testResults.riderType.description
-                },
-                profile_used: testDetails.profile,
-                power_data: {
-                  length: testDetails.power.length,
-                  avg: testDetails.power.reduce((a, b) => a + b, 0) / testDetails.power.length,
-                  max: Math.max(...testDetails.power)
-                },
-                heart_rate_data: {
-                  length: testDetails.heartRate.length,
-                  avg: testDetails.heartRate.reduce((a, b) => a + b, 0) / testDetails.heartRate.length,
-                  max: Math.max(...testDetails.heartRate)
-                },
-                cadence_data: {
-                  length: testDetails.cadence.length,
-                  avg: testDetails.cadence.reduce((a, b) => a + b, 0) / testDetails.cadence.length
-                },
-                power_bests: testDetails.powerBests.map(best => ({
-                  duration_seconds: best.duration,
-                  power: best.value
-                })),
-                analysis: analysisData
-              }, null, 2)
-            }
-          ]
+                null,
+                2
+              ),
+            },
+          ],
         };
       }
 
@@ -994,10 +1114,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({ error: errorMessage }, null, 2)
-        }
+          text: JSON.stringify({ error: errorMessage }, null, 2),
+        },
       ],
-      isError: true
+      isError: true,
     };
   }
 });

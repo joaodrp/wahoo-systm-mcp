@@ -18,17 +18,19 @@ export async function getCredentialsFrom1Password(
   try {
     const username = execSync(`op read "${usernameRef}"`, {
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe'],
     }).trim();
 
     const password = execSync(`op read "${passwordRef}"`, {
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe'],
     }).trim();
 
     return { username, password };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to retrieve credentials from 1Password: ${errorMessage}. Make sure you're signed in to 1Password and the references are correct.`);
+    throw new Error(
+      `Failed to retrieve credentials from 1Password: ${errorMessage}. Make sure you're signed in to 1Password and the references are correct.`
+    );
   }
 }

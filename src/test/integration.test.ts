@@ -43,7 +43,9 @@ describe('Integration Tests', () => {
     expect(Array.isArray(workouts)).toBe(true);
 
     console.log(`✓ Found ${workouts.length} workouts in the next week`);
-    console.log(`✓ 4DP Profile - FTP: ${profile.ftp}W, MAP: ${profile.map}W, AC: ${profile.ac}W, NM: ${profile.nm}W`);
+    console.log(
+      `✓ 4DP Profile - FTP: ${profile.ftp}W, MAP: ${profile.map}W, AC: ${profile.ac}W, NM: ${profile.nm}W`
+    );
   });
 
   test('should handle workouts without plans', async () => {
@@ -64,7 +66,7 @@ describe('Integration Tests', () => {
     // Verify we can handle workouts with and without plans
     for (const workout of workouts) {
       if (workout.plannedDate && workout.prospects.length > 0) {
-        expect(workout.agendaId).toBeTruthy() // agendaId should be present;
+        expect(workout.agendaId).toBeTruthy(); // agendaId should be present;
         expect(workout.prospects[0].name).toBeTruthy();
         // Plan can be null, that's OK
         if (workout.plan) {
@@ -73,6 +75,8 @@ describe('Integration Tests', () => {
       }
     }
 
-    console.log(`✓ Successfully processed ${workouts.length} workouts (including those without plans)`);
+    console.log(
+      `✓ Successfully processed ${workouts.length} workouts (including those without plans)`
+    );
   });
 });

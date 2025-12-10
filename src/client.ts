@@ -17,14 +17,14 @@ import type {
   FitnessTestResult,
   FitnessTestDetails,
   SearchActivitiesResponse,
-  GetActivityResponse
+  GetActivityResponse,
 } from './types.js';
 import {
   WorkoutDetailsResponseSchema,
   LibraryResponseSchema,
   RiderProfileResponseSchema,
   FitnessTestHistoryResponseSchema,
-  GetWorkoutActivitiesResponseSchema
+  GetWorkoutActivitiesResponseSchema,
 } from './schemas.js';
 
 const WAHOO_API_URL = 'https://api.thesufferfest.com/graphql';
@@ -66,16 +66,16 @@ export class WahooClient {
       appInformation: {
         platform: 'web',
         version: APP_VERSION,
-        installId: INSTALL_ID
+        installId: INSTALL_ID,
       },
       username: credentials.username,
-      password: credentials.password
+      password: credentials.password,
     };
 
     const response = await this.callAPI<WahooAuthResponse>({
       query,
       variables,
-      operationName: 'Login'
+      operationName: 'Login',
     });
 
     if (response.data.loginUser.token) {
@@ -168,14 +168,14 @@ export class WahooClient {
       startDate: `${startDate}T00:00:00.000Z`,
       endDate: `${endDate}T23:59:59.999Z`,
       queryParams: {
-        limit: 1000
-      }
+        limit: 1000,
+      },
     };
 
     const response = await this.callAPI<{ data: { userPlan: UserPlanItem[] } }>({
       query,
       variables,
-      operationName: 'GetUserPlansRange'
+      operationName: 'GetUserPlansRange',
     });
 
     return response.data.userPlan;
@@ -233,7 +233,7 @@ export class WahooClient {
       query,
       variables,
       operationName: 'GetWorkouts',
-      schema: WorkoutDetailsResponseSchema
+      schema: WorkoutDetailsResponseSchema,
     });
 
     let libraryContent: LibraryContent | undefined;
@@ -241,7 +241,7 @@ export class WahooClient {
     // If not found, it might be a content ID - look it up in the library
     if (!response.data.workouts || response.data.workouts.length === 0) {
       const library = await this.getWorkoutLibrary();
-      libraryContent = library.find(item => item.id === id);
+      libraryContent = library.find((item) => item.id === id);
 
       if (!libraryContent) {
         throw new Error(`Workout with ID ${id} not found (tried both content ID and workout ID)`);
@@ -253,7 +253,7 @@ export class WahooClient {
         query,
         variables,
         operationName: 'GetWorkouts',
-        schema: WorkoutDetailsResponseSchema
+        schema: WorkoutDetailsResponseSchema,
       });
 
       if (!response.data.workouts || response.data.workouts.length === 0) {
@@ -266,7 +266,7 @@ export class WahooClient {
     // Fetch the library entry to get the descriptions field (only available in library endpoint)
     if (!libraryContent) {
       const library = await this.getWorkoutLibrary();
-      libraryContent = library.find(item => item.workoutId === workout.id);
+      libraryContent = library.find((item) => item.workoutId === workout.id);
     }
 
     // Merge descriptions from library into workout details
@@ -347,19 +347,19 @@ export class WahooClient {
     const variables = {
       locale: 'en',
       queryParams: {
-        limit: 3000
+        limit: 3000,
       },
       appInformation: {
         platform: 'web',
-        version: APP_VERSION
-      }
+        version: APP_VERSION,
+      },
     };
 
     const response = await this.callAPI<LibraryResponse>({
       query,
       variables,
       operationName: 'library',
-      schema: LibraryResponseSchema
+      schema: LibraryResponseSchema,
     });
 
     let content = response.data.library.content;
@@ -367,8 +367,8 @@ export class WahooClient {
     // Apply client-side filters
     if (filters) {
       if (filters.sport) {
-        content = content.filter(item =>
-          item.workoutType?.toLowerCase() === filters.sport?.toLowerCase()
+        content = content.filter(
+          (item) => item.workoutType?.toLowerCase() === filters.sport?.toLowerCase()
         );
       }
       if (filters.channel) {
@@ -377,38 +377,34 @@ export class WahooClient {
         // but users provide human-readable names (e.g., "On Location")
         const channelLower = filters.channel.toLowerCase();
         const channelMapping = response.data.library.channels.find(
-          ch => ch.name.toLowerCase() === channelLower || ch.id.toLowerCase() === channelLower
+          (ch) => ch.name.toLowerCase() === channelLower || ch.id.toLowerCase() === channelLower
         );
         const channelId = channelMapping?.id.toLowerCase() || channelLower;
 
-        content = content.filter(item =>
-          item.channel?.toLowerCase() === channelId
-        );
+        content = content.filter((item) => item.channel?.toLowerCase() === channelId);
       }
       if (filters.level) {
-        content = content.filter(item =>
-          item.level?.toLowerCase() === filters.level?.toLowerCase()
+        content = content.filter(
+          (item) => item.level?.toLowerCase() === filters.level?.toLowerCase()
         );
       }
       if (filters.minDuration !== undefined) {
         const minSeconds = filters.minDuration * 60;
-        content = content.filter(item => item.duration >= minSeconds);
+        content = content.filter((item) => item.duration >= minSeconds);
       }
       if (filters.maxDuration !== undefined) {
         const maxSeconds = filters.maxDuration * 60;
-        content = content.filter(item => item.duration <= maxSeconds);
+        content = content.filter((item) => item.duration <= maxSeconds);
       }
       if (filters.minTss !== undefined) {
-        content = content.filter(item => (item.metrics?.tss ?? 0) >= filters.minTss!);
+        content = content.filter((item) => (item.metrics?.tss ?? 0) >= filters.minTss!);
       }
       if (filters.maxTss !== undefined) {
-        content = content.filter(item => (item.metrics?.tss ?? 0) <= filters.maxTss!);
+        content = content.filter((item) => (item.metrics?.tss ?? 0) <= filters.maxTss!);
       }
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
-        content = content.filter(item =>
-          item.name?.toLowerCase().includes(searchLower)
-        );
+        content = content.filter((item) => item.name?.toLowerCase().includes(searchLower));
       }
     }
 
@@ -432,7 +428,7 @@ export class WahooClient {
           break;
         case 'level':
           // Define level order: Basic < Intermediate < Advanced
-          const levelOrder: Record<string, number> = { 'basic': 1, 'intermediate': 2, 'advanced': 3 };
+          const levelOrder: Record<string, number> = { basic: 1, intermediate: 2, advanced: 3 };
           const aLevel = levelOrder[a.level?.toLowerCase()] ?? 0;
           const bLevel = levelOrder[b.level?.toLowerCase()] ?? 0;
           compareValue = aLevel - bLevel;
@@ -444,10 +440,10 @@ export class WahooClient {
 
     // Convert channel IDs to human-readable names before returning
     // The API returns IDs like "0MEmGeS5js" but users expect names like "On Location"
-    const channelMap = new Map(response.data.library.channels.map(ch => [ch.id, ch.name]));
-    content = content.map(item => ({
+    const channelMap = new Map(response.data.library.channels.map((ch) => [ch.id, ch.name]));
+    content = content.map((item) => ({
       ...item,
-      channel: item.channel ? (channelMap.get(item.channel) || item.channel) : item.channel
+      channel: item.channel ? channelMap.get(item.channel) || item.channel : item.channel,
     }));
 
     return content;
@@ -471,7 +467,7 @@ export class WahooClient {
     const baseFilters: any = {
       sport: 'Cycling',
       sortBy: filters?.sortBy,
-      sortDirection: filters?.sortDirection
+      sortDirection: filters?.sortDirection,
     };
 
     if (filters?.minDuration) baseFilters.minDuration = filters.minDuration;
@@ -488,14 +484,14 @@ export class WahooClient {
     let workouts = await this.getWorkoutLibrary(baseFilters);
 
     if (filters?.category) {
-      workouts = workouts.filter(w =>
-        w.category?.toLowerCase() === filters.category!.toLowerCase()
+      workouts = workouts.filter(
+        (w) => w.category?.toLowerCase() === filters.category!.toLowerCase()
       );
     }
 
     if (filters?.intensity) {
-      workouts = workouts.filter(w =>
-        w.intensity?.toLowerCase() === filters.intensity!.toLowerCase()
+      workouts = workouts.filter(
+        (w) => w.intensity?.toLowerCase() === filters.intensity!.toLowerCase()
       );
     }
 
@@ -504,7 +500,7 @@ export class WahooClient {
     // MAP shows 89 workouts (45 rating=5 + 44 rating=4), etc.
     if (filters?.fourDpFocus) {
       const focus = filters.fourDpFocus.toLowerCase();
-      workouts = workouts.filter(w => {
+      workouts = workouts.filter((w) => {
         const rating = w.metrics?.ratings?.[focus as keyof typeof w.metrics.ratings];
         return rating !== undefined && rating >= 4;
       });
@@ -536,13 +532,13 @@ export class WahooClient {
       contentId,
       date,
       timeZone: tz,
-      rank: 200
+      rank: 200,
     };
 
     const response = await this.callAPI<ScheduleWorkoutResponse>({
       query,
       variables,
-      operationName: 'AddUserPlanItem'
+      operationName: 'AddUserPlanItem',
     });
 
     if (response.data.addAgenda.status !== 'Success') {
@@ -571,13 +567,13 @@ export class WahooClient {
       agendaId,
       date: newDate,
       rank: 200,
-      timeZone: tz
+      timeZone: tz,
     };
 
     const response = await this.callAPI<MoveAgendaResponse>({
       query,
       variables,
-      operationName: 'MoveAgenda'
+      operationName: 'MoveAgenda',
     });
 
     if (response.data.moveAgenda.status !== 'Success') {
@@ -597,13 +593,13 @@ export class WahooClient {
     `;
 
     const variables = {
-      agendaId
+      agendaId,
     };
 
     const response = await this.callAPI<DeleteAgendaResponse>({
       query,
       variables,
-      operationName: 'DeleteAgenda'
+      operationName: 'DeleteAgenda',
     });
 
     if (response.data.deleteAgenda.status !== 'Success') {
@@ -668,7 +664,7 @@ export class WahooClient {
     const response = await this.callAPI<MostRecentTestResponse>({
       query,
       variables: {},
-      operationName: 'MostRecentTest'
+      operationName: 'MostRecentTest',
     });
 
     const testData = response.data.mostRecentTest;
@@ -704,7 +700,7 @@ export class WahooClient {
       // Test metadata
       fitnessTestRidden: testData.fitnessTestRidden,
       startTime: testData.startTime,
-      endTime: testData.endTime
+      endTime: testData.endTime,
     };
   }
 
@@ -769,8 +765,8 @@ export class WahooClient {
       workoutIds: fitnessTestWorkoutIds,
       pageInformation: {
         page: options?.page || 1,
-        pageSize: options?.pageSize || 15
-      }
+        pageSize: options?.pageSize || 15,
+      },
     };
 
     const response = await this.callAPI<{
@@ -784,12 +780,12 @@ export class WahooClient {
       query,
       variables,
       operationName: 'GetWorkoutActivities',
-      schema: GetWorkoutActivitiesResponseSchema
+      schema: GetWorkoutActivitiesResponseSchema,
     });
 
     return {
       activities: response.data.getWorkoutActivities.activities,
-      total: response.data.getWorkoutActivities.count
+      total: response.data.getWorkoutActivities.count,
     };
   }
 
@@ -854,7 +850,7 @@ export class WahooClient {
     `;
 
     const variables = {
-      id: activityId
+      id: activityId,
     };
 
     const response = await this.callAPI<{
@@ -864,7 +860,7 @@ export class WahooClient {
     }>({
       query,
       variables,
-      operationName: 'GetActivity'
+      operationName: 'GetActivity',
     });
 
     return response.data.activity;
@@ -876,32 +872,32 @@ export class WahooClient {
         zone: 1,
         name: 'Active Recovery',
         min: 0,
-        max: Math.round(lthr * 0.68)
+        max: Math.round(lthr * 0.68),
       },
       {
         zone: 2,
         name: 'Endurance',
         min: Math.round(lthr * 0.68) + 1,
-        max: Math.round(lthr * 0.83)
+        max: Math.round(lthr * 0.83),
       },
       {
         zone: 3,
         name: 'Tempo',
         min: Math.round(lthr * 0.83) + 1,
-        max: Math.round(lthr * 0.94)
+        max: Math.round(lthr * 0.94),
       },
       {
         zone: 4,
         name: 'Threshold',
         min: Math.round(lthr * 0.94) + 1,
-        max: Math.round(lthr * 1.05)
+        max: Math.round(lthr * 1.05),
       },
       {
         zone: 5,
         name: 'VO2 Max',
         min: Math.round(lthr * 1.05) + 1,
-        max: null
-      }
+        max: null,
+      },
     ];
   }
 
@@ -918,7 +914,7 @@ export class WahooClient {
     schema?: z.ZodTypeAny;
   }): Promise<T> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     };
 
     if (this.token) {
@@ -928,7 +924,7 @@ export class WahooClient {
     const response = await fetch(WAHOO_API_URL, {
       method: 'POST',
       headers,
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -944,7 +940,9 @@ export class WahooClient {
       } catch (error) {
         if (error instanceof z.ZodError) {
           console.error('API response validation failed:', error.issues);
-          throw new Error(`API response validation failed for ${payload.operationName}: ${error.message}`);
+          throw new Error(
+            `API response validation failed for ${payload.operationName}: ${error.message}`
+          );
         }
         throw error;
       }

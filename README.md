@@ -829,6 +829,28 @@ Then edit `.env` with your 1Password references or plain credentials.
 - Test framework: [Vitest](https://vitest.dev/)
 - Runtime validation: [Zod](https://zod.dev/)
 
+### Linting and Formatting
+
+Keep code quality high with ESLint and Prettier:
+
+```bash
+# Check for linting errors
+npm run lint
+
+# Fix linting errors automatically
+npm run lint:fix
+
+# Format code with Prettier
+npm run format
+
+# Check if code is formatted correctly (without writing)
+npm run format:check
+```
+
+**Code quality tools:**
+- Linter: [ESLint](https://eslint.org/) with TypeScript support
+- Formatter: [Prettier](https://prettier.io/)
+
 ## API Information
 
 This server uses the Wahoo SYSTM GraphQL API at `https://api.thesufferfest.com/graphql`. The implementation is based on reverse-engineering the web app's API calls.

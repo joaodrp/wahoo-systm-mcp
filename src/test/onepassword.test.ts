@@ -20,7 +20,8 @@ describe('1Password Integration', () => {
   });
 
   test('should throw error for invalid reference', async () => {
-    await expect(() => getCredentialsFrom1Password('op://Invalid/Item/field', 'op://Invalid/Item/field'))
-      .rejects.toThrow(/Failed to retrieve credentials/);
+    await expect(() =>
+      getCredentialsFrom1Password('op://Invalid/Item/field', 'op://Invalid/Item/field')
+    ).rejects.toThrow(/Failed to retrieve credentials/);
   });
 });
