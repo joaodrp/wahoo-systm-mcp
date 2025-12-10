@@ -26,7 +26,7 @@ While this server is only tested with Claude Desktop, the MCP protocol is open a
 ## Setup Instructions
 
 ### Prerequisites
-- Node.js v18 or later
+- Node.js v20 or later
 - npm package manager
 - Active Wahoo SYSTM account
 - (Recommended) 1Password CLI for secure credential storage
