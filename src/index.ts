@@ -73,6 +73,10 @@ mcp.addTool({
   name: 'get_calendar',
   description:
     'Get planned workouts from Wahoo SYSTM calendar for a date range. Returns workout name, type, duration, planned date, and basic details.',
+  annotations: {
+    title: 'Get Calendar Workouts',
+    readOnlyHint: true,
+  },
   parameters: z.object({
     start_date: z.string().describe('Start date in YYYY-MM-DD format'),
     end_date: z.string().describe('End date in YYYY-MM-DD format'),
@@ -89,6 +93,10 @@ mcp.addTool({
   name: 'get_workout_details',
   description:
     'Get detailed information about a specific workout including intervals, power zones, equipment needed, and full workout structure.',
+  annotations: {
+    title: 'Get Workout Details',
+    readOnlyHint: true,
+  },
   parameters: z.object({
     workout_id: z
       .string()
@@ -106,6 +114,10 @@ mcp.addTool({
   name: 'get_rider_profile',
   description:
     'Get the rider 4DP profile (NM, AC, MAP, FTP) including rider type classification, strengths/weaknesses, and heart rate zones.',
+  annotations: {
+    title: 'Get Rider Profile',
+    readOnlyHint: true,
+  },
   parameters: z.object({}),
   execute: async () => {
     ensureAuthenticated();
@@ -156,6 +168,11 @@ mcp.addTool({
 mcp.addTool({
   name: 'schedule_workout',
   description: 'Schedule a workout from the library to your calendar for a specific date.',
+  annotations: {
+    title: 'Schedule Workout',
+    readOnlyHint: false,
+    destructiveHint: true,
+  },
   parameters: z.object({
     content_id: z
       .string()
@@ -192,6 +209,12 @@ mcp.addTool({
 mcp.addTool({
   name: 'reschedule_workout',
   description: 'Move a scheduled workout to a different date.',
+  annotations: {
+    title: 'Reschedule Workout',
+    readOnlyHint: false,
+    destructiveHint: true,
+    idempotentHint: true,
+  },
   parameters: z.object({
     agenda_id: z.string().describe('Agenda ID from get_calendar or schedule_workout'),
     new_date: z.string().describe('New date for the workout (YYYY-MM-DD format)'),
@@ -221,6 +244,12 @@ mcp.addTool({
 mcp.addTool({
   name: 'remove_workout',
   description: 'Remove a scheduled workout from your calendar.',
+  annotations: {
+    title: 'Remove Workout',
+    readOnlyHint: false,
+    destructiveHint: true,
+    idempotentHint: true,
+  },
   parameters: z.object({
     agenda_id: z.string().describe('Agenda ID from get_calendar or schedule_workout'),
   }),
@@ -244,6 +273,10 @@ mcp.addTool({
   name: 'get_workouts',
   description:
     'Browse the complete workout library with advanced filtering for sport, duration, TSS, search terms, and sorting options. Returns workout metadata including duration, TSS, intensity, and 4DP ratings.',
+  annotations: {
+    title: 'Browse Workout Library',
+    readOnlyHint: true,
+  },
   parameters: z.object({
     sport: z
       .enum(['Cycling', 'Running', 'Strength', 'Yoga', 'Swimming'])
@@ -297,6 +330,10 @@ mcp.addTool({
   name: 'get_cycling_workouts',
   description:
     'Specialized cycling workout search with filters for 4DP focus (NM/AC/MAP/FTP), channel, category, and intensity. Automatically filters for cycling workouts only.',
+  annotations: {
+    title: 'Browse Cycling Workouts',
+    readOnlyHint: true,
+  },
   parameters: z.object({
     search: z.string().optional().describe('Search by workout name'),
     min_duration: z.number().optional().describe('Minimum duration in minutes'),
@@ -357,6 +394,10 @@ mcp.addTool({
   name: 'get_fitness_test_history',
   description:
     'Get history of completed Full Frontal and Half Monty fitness tests with 4DP results, rider type classification, and test dates.',
+  annotations: {
+    title: 'Get Fitness Test History',
+    readOnlyHint: true,
+  },
   parameters: z.object({
     page: z.number().optional().describe('Page number for pagination (default: 1)'),
     page_size: z.number().optional().describe('Results per page (default: 15)'),
@@ -420,6 +461,10 @@ mcp.addTool({
   name: 'get_fitness_test_details',
   description:
     'Get detailed fitness test data including second-by-second power/cadence/heart rate, power curve bests, and post-test analysis.',
+  annotations: {
+    title: 'Get Fitness Test Details',
+    readOnlyHint: true,
+  },
   parameters: z.object({
     activity_id: z.string().describe('Activity ID from get_fitness_test_history'),
   }),
