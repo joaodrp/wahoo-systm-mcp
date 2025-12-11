@@ -7,19 +7,20 @@ import { WahooClient } from '../client.js';
 
 describe('Calendar Tools', () => {
   it('should register all 4 calendar tools', () => {
+    const addToolMock = vi.fn();
     const mockMcp = {
-      addTool: vi.fn(),
+      addTool: addToolMock,
     } as unknown as FastMCP;
     const mockClient = {} as WahooClient;
     const mockEnsureAuth = vi.fn();
 
     registerCalendarTools(mockMcp, mockClient, mockEnsureAuth);
 
-    expect(mockMcp.addTool).toHaveBeenCalledTimes(4);
+    expect(addToolMock).toHaveBeenCalledTimes(4);
 
     // Verify tool names
-    const toolCalls = mockMcp.addTool.mock.calls;
-    const toolNames = toolCalls.map((call) => call[0].name);
+    const toolCalls = addToolMock.mock.calls;
+    const toolNames = toolCalls.map((call: any) => call[0].name);
 
     expect(toolNames).toContain('get_calendar');
     expect(toolNames).toContain('schedule_workout');
@@ -28,16 +29,17 @@ describe('Calendar Tools', () => {
   });
 
   it('should register get_calendar with correct annotations', () => {
+    const addToolMock = vi.fn();
     const mockMcp = {
-      addTool: vi.fn(),
+      addTool: addToolMock,
     } as unknown as FastMCP;
     const mockClient = {} as WahooClient;
     const mockEnsureAuth = vi.fn();
 
     registerCalendarTools(mockMcp, mockClient, mockEnsureAuth);
 
-    const getCalendarTool = mockMcp.addTool.mock.calls.find(
-      (call) => call[0].name === 'get_calendar'
+    const getCalendarTool = addToolMock.mock.calls.find(
+      (call: any) => call[0].name === 'get_calendar'
     )?.[0];
 
     expect(getCalendarTool).toBeDefined();
@@ -49,16 +51,17 @@ describe('Calendar Tools', () => {
   });
 
   it('should register write operations with destructive hints', () => {
+    const addToolMock = vi.fn();
     const mockMcp = {
-      addTool: vi.fn(),
+      addTool: addToolMock,
     } as unknown as FastMCP;
     const mockClient = {} as WahooClient;
     const mockEnsureAuth = vi.fn();
 
     registerCalendarTools(mockMcp, mockClient, mockEnsureAuth);
 
-    const scheduleWorkoutTool = mockMcp.addTool.mock.calls.find(
-      (call) => call[0].name === 'schedule_workout'
+    const scheduleWorkoutTool = addToolMock.mock.calls.find(
+      (call: any) => call[0].name === 'schedule_workout'
     )?.[0];
 
     expect(scheduleWorkoutTool.annotations).toEqual({
@@ -69,16 +72,17 @@ describe('Calendar Tools', () => {
   });
 
   it('should register idempotent operations correctly', () => {
+    const addToolMock = vi.fn();
     const mockMcp = {
-      addTool: vi.fn(),
+      addTool: addToolMock,
     } as unknown as FastMCP;
     const mockClient = {} as WahooClient;
     const mockEnsureAuth = vi.fn();
 
     registerCalendarTools(mockMcp, mockClient, mockEnsureAuth);
 
-    const rescheduleTool = mockMcp.addTool.mock.calls.find(
-      (call) => call[0].name === 'reschedule_workout'
+    const rescheduleTool = addToolMock.mock.calls.find(
+      (call: any) => call[0].name === 'reschedule_workout'
     )?.[0];
 
     expect(rescheduleTool.annotations).toMatchObject({
@@ -87,8 +91,8 @@ describe('Calendar Tools', () => {
       readOnlyHint: false,
     });
 
-    const removeTool = mockMcp.addTool.mock.calls.find(
-      (call) => call[0].name === 'remove_workout'
+    const removeTool = addToolMock.mock.calls.find(
+      (call: any) => call[0].name === 'remove_workout'
     )?.[0];
 
     expect(removeTool.annotations).toMatchObject({

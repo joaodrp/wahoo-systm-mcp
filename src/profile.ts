@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { type FastMCP, UserError } from 'fastmcp';
 import { z } from 'zod';
 
-import type { WahooClient } from '../client.js';
+import type { WahooClient } from './client.js';
 
 /**
  * Register profile and fitness test tools

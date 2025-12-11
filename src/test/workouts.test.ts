@@ -7,19 +7,20 @@ import { registerWorkoutTools } from '../workouts.js';
 
 describe('Workout Tools', () => {
   it('should register all 3 workout library tools', () => {
+    const addToolMock = vi.fn();
     const mockMcp = {
-      addTool: vi.fn(),
+      addTool: addToolMock,
     } as unknown as FastMCP;
     const mockClient = {} as WahooClient;
     const mockEnsureAuth = vi.fn();
 
     registerWorkoutTools(mockMcp, mockClient, mockEnsureAuth);
 
-    expect(mockMcp.addTool).toHaveBeenCalledTimes(3);
+    expect(addToolMock).toHaveBeenCalledTimes(3);
 
     // Verify tool names
-    const toolCalls = mockMcp.addTool.mock.calls;
-    const toolNames = toolCalls.map((call) => call[0].name);
+    const toolCalls = addToolMock.mock.calls;
+    const toolNames = toolCalls.map((call: any) => call[0].name);
 
     expect(toolNames).toContain('get_workouts');
     expect(toolNames).toContain('get_cycling_workouts');
@@ -27,8 +28,9 @@ describe('Workout Tools', () => {
   });
 
   it('should register all tools as read-only', () => {
+    const addToolMock = vi.fn();
     const mockMcp = {
-      addTool: vi.fn(),
+      addTool: addToolMock,
     } as unknown as FastMCP;
     const mockClient = {} as WahooClient;
     const mockEnsureAuth = vi.fn();
@@ -36,22 +38,23 @@ describe('Workout Tools', () => {
     registerWorkoutTools(mockMcp, mockClient, mockEnsureAuth);
 
     // All workout tools should be read-only
-    mockMcp.addTool.mock.calls.forEach((call) => {
+    addToolMock.mock.calls.forEach((call: any) => {
       expect(call[0].annotations.readOnlyHint).toBe(true);
     });
   });
 
   it('should register get_workouts with correct configuration', () => {
+    const addToolMock = vi.fn();
     const mockMcp = {
-      addTool: vi.fn(),
+      addTool: addToolMock,
     } as unknown as FastMCP;
     const mockClient = {} as WahooClient;
     const mockEnsureAuth = vi.fn();
 
     registerWorkoutTools(mockMcp, mockClient, mockEnsureAuth);
 
-    const getWorkoutsTool = mockMcp.addTool.mock.calls.find(
-      (call) => call[0].name === 'get_workouts'
+    const getWorkoutsTool = addToolMock.mock.calls.find(
+      (call: any) => call[0].name === 'get_workouts'
     )?.[0];
 
     expect(getWorkoutsTool).toBeDefined();
@@ -60,16 +63,17 @@ describe('Workout Tools', () => {
   });
 
   it('should register get_cycling_workouts with 4DP focus support', () => {
+    const addToolMock = vi.fn();
     const mockMcp = {
-      addTool: vi.fn(),
+      addTool: addToolMock,
     } as unknown as FastMCP;
     const mockClient = {} as WahooClient;
     const mockEnsureAuth = vi.fn();
 
     registerWorkoutTools(mockMcp, mockClient, mockEnsureAuth);
 
-    const cyclingTool = mockMcp.addTool.mock.calls.find(
-      (call) => call[0].name === 'get_cycling_workouts'
+    const cyclingTool = addToolMock.mock.calls.find(
+      (call: any) => call[0].name === 'get_cycling_workouts'
     )?.[0];
 
     expect(cyclingTool).toBeDefined();

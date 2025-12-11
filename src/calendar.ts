@@ -2,7 +2,7 @@ import type { FastMCP } from 'fastmcp';
 
 import { z } from 'zod';
 
-import type { WahooClient } from '../client.js';
+import type { WahooClient } from './client.js';
 
 /**
  * Register calendar management tools
