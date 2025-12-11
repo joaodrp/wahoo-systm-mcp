@@ -33,6 +33,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "date-fns": "^4.1.0",
+    "fastmcp": "^3.25.4",
     "node-fetch": "^3.3.2",
     "zod": "^4.1.13"
   },
