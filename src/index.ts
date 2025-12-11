@@ -94,6 +94,7 @@ async function main() {
 
     mcp.start({
       httpStream: {
+        host: '0.0.0.0',
         port,
       },
       transportType: 'httpStream',
