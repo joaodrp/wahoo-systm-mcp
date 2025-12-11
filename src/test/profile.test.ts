@@ -19,8 +19,8 @@ describe('Profile Tools', () => {
     expect(addToolMock).toHaveBeenCalledTimes(3);
 
     // Verify tool names
-    const toolCalls = addToolMock.mock.calls;
-    const toolNames = toolCalls.map((call: any) => call[0].name);
+    const toolCalls = addToolMock.mock.calls as Array<[{ name: string }]>;
+    const toolNames = toolCalls.map((call) => call[0].name);
 
     expect(toolNames).toContain('get_rider_profile');
     expect(toolNames).toContain('get_fitness_test_history');
@@ -38,9 +38,11 @@ describe('Profile Tools', () => {
     registerProfileTools(mockMcp, mockClient, mockEnsureAuth);
 
     // All profile tools should be read-only
-    addToolMock.mock.calls.forEach((call: any) => {
-      expect(call[0].annotations.readOnlyHint).toBe(true);
-    });
+    (addToolMock.mock.calls as Array<[{ annotations?: { readOnlyHint?: boolean } }]>).forEach(
+      (call) => {
+        expect(call[0].annotations?.readOnlyHint).toBe(true);
+      }
+    );
   });
 
   it('should register get_rider_profile with correct configuration', () => {
@@ -53,14 +55,16 @@ describe('Profile Tools', () => {
 
     registerProfileTools(mockMcp, mockClient, mockEnsureAuth);
 
-    const profileTool = addToolMock.mock.calls.find(
-      (call: any) => call[0].name === 'get_rider_profile'
-    )?.[0];
+    const profileTool = (
+      addToolMock.mock.calls as Array<
+        [{ annotations?: { title?: string }; description?: string; name: string }]
+      >
+    ).find((call) => call[0].name === 'get_rider_profile')?.[0];
 
     expect(profileTool).toBeDefined();
-    expect(profileTool.annotations.title).toBe('Get Rider Profile');
-    expect(profileTool.description).toContain('4DP profile');
-    expect(profileTool.description).toContain('strengths/weaknesses');
+    expect(profileTool!.annotations!.title).toBe('Get Rider Profile');
+    expect(profileTool!.description).toContain('4DP profile');
+    expect(profileTool!.description).toContain('strengths/weaknesses');
   });
 
   it('should register fitness test tools with correct titles', () => {
@@ -73,15 +77,14 @@ describe('Profile Tools', () => {
 
     registerProfileTools(mockMcp, mockClient, mockEnsureAuth);
 
-    const historyTool = addToolMock.mock.calls.find(
-      (call: any) => call[0].name === 'get_fitness_test_history'
-    )?.[0];
+    const calls = addToolMock.mock.calls as Array<
+      [{ annotations?: { title?: string }; name: string }]
+    >;
+    const historyTool = calls.find((call) => call[0].name === 'get_fitness_test_history')?.[0];
 
-    const detailsTool = addToolMock.mock.calls.find(
-      (call: any) => call[0].name === 'get_fitness_test_details'
-    )?.[0];
+    const detailsTool = calls.find((call) => call[0].name === 'get_fitness_test_details')?.[0];
 
-    expect(historyTool.annotations.title).toBe('Get Fitness Test History');
-    expect(detailsTool.annotations.title).toBe('Get Fitness Test Details');
+    expect(historyTool!.annotations!.title).toBe('Get Fitness Test History');
+    expect(detailsTool!.annotations!.title).toBe('Get Fitness Test Details');
   });
 });

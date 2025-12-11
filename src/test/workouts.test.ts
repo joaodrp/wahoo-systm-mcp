@@ -19,8 +19,8 @@ describe('Workout Tools', () => {
     expect(addToolMock).toHaveBeenCalledTimes(3);
 
     // Verify tool names
-    const toolCalls = addToolMock.mock.calls;
-    const toolNames = toolCalls.map((call: any) => call[0].name);
+    const toolCalls = addToolMock.mock.calls as Array<[{ name: string }]>;
+    const toolNames = toolCalls.map((call) => call[0].name);
 
     expect(toolNames).toContain('get_workouts');
     expect(toolNames).toContain('get_cycling_workouts');
@@ -38,9 +38,11 @@ describe('Workout Tools', () => {
     registerWorkoutTools(mockMcp, mockClient, mockEnsureAuth);
 
     // All workout tools should be read-only
-    addToolMock.mock.calls.forEach((call: any) => {
-      expect(call[0].annotations.readOnlyHint).toBe(true);
-    });
+    (addToolMock.mock.calls as Array<[{ annotations?: { readOnlyHint?: boolean } }]>).forEach(
+      (call) => {
+        expect(call[0].annotations?.readOnlyHint).toBe(true);
+      }
+    );
   });
 
   it('should register get_workouts with correct configuration', () => {
@@ -53,13 +55,15 @@ describe('Workout Tools', () => {
 
     registerWorkoutTools(mockMcp, mockClient, mockEnsureAuth);
 
-    const getWorkoutsTool = addToolMock.mock.calls.find(
-      (call: any) => call[0].name === 'get_workouts'
-    )?.[0];
+    const getWorkoutsTool = (
+      addToolMock.mock.calls as Array<
+        [{ annotations?: { title?: string }; description?: string; name: string }]
+      >
+    ).find((call) => call[0].name === 'get_workouts')?.[0];
 
     expect(getWorkoutsTool).toBeDefined();
-    expect(getWorkoutsTool.annotations.title).toBe('Browse Workout Library');
-    expect(getWorkoutsTool.description).toContain('Browse the complete workout library');
+    expect(getWorkoutsTool!.annotations!.title).toBe('Browse Workout Library');
+    expect(getWorkoutsTool!.description).toContain('Browse the complete workout library');
   });
 
   it('should register get_cycling_workouts with 4DP focus support', () => {
@@ -72,12 +76,14 @@ describe('Workout Tools', () => {
 
     registerWorkoutTools(mockMcp, mockClient, mockEnsureAuth);
 
-    const cyclingTool = addToolMock.mock.calls.find(
-      (call: any) => call[0].name === 'get_cycling_workouts'
-    )?.[0];
+    const cyclingTool = (
+      addToolMock.mock.calls as Array<
+        [{ annotations?: { title?: string }; description?: string; name: string }]
+      >
+    ).find((call) => call[0].name === 'get_cycling_workouts')?.[0];
 
     expect(cyclingTool).toBeDefined();
-    expect(cyclingTool.description).toContain('4DP focus');
-    expect(cyclingTool.annotations.title).toBe('Browse Cycling Workouts');
+    expect(cyclingTool!.description).toContain('4DP focus');
+    expect(cyclingTool!.annotations!.title).toBe('Browse Cycling Workouts');
   });
 });

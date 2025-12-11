@@ -19,8 +19,8 @@ describe('Calendar Tools', () => {
     expect(addToolMock).toHaveBeenCalledTimes(4);
 
     // Verify tool names
-    const toolCalls = addToolMock.mock.calls;
-    const toolNames = toolCalls.map((call: any) => call[0].name);
+    const toolCalls = addToolMock.mock.calls as Array<[{ name: string }]>;
+    const toolNames = toolCalls.map((call) => call[0].name);
 
     expect(toolNames).toContain('get_calendar');
     expect(toolNames).toContain('schedule_workout');
@@ -38,16 +38,18 @@ describe('Calendar Tools', () => {
 
     registerCalendarTools(mockMcp, mockClient, mockEnsureAuth);
 
-    const getCalendarTool = addToolMock.mock.calls.find(
-      (call: any) => call[0].name === 'get_calendar'
-    )?.[0];
+    const getCalendarTool = (
+      addToolMock.mock.calls as Array<
+        [{ annotations?: Record<string, unknown>; description?: string; name: string }]
+      >
+    ).find((call) => call[0].name === 'get_calendar')?.[0];
 
     expect(getCalendarTool).toBeDefined();
-    expect(getCalendarTool.annotations).toEqual({
+    expect(getCalendarTool!.annotations).toEqual({
       readOnlyHint: true,
       title: 'Get Calendar Workouts',
     });
-    expect(getCalendarTool.description).toContain('Get planned workouts');
+    expect(getCalendarTool!.description).toContain('Get planned workouts');
   });
 
   it('should register write operations with destructive hints', () => {
@@ -60,11 +62,11 @@ describe('Calendar Tools', () => {
 
     registerCalendarTools(mockMcp, mockClient, mockEnsureAuth);
 
-    const scheduleWorkoutTool = addToolMock.mock.calls.find(
-      (call: any) => call[0].name === 'schedule_workout'
-    )?.[0];
+    const scheduleWorkoutTool = (
+      addToolMock.mock.calls as Array<[{ annotations?: Record<string, unknown>; name: string }]>
+    ).find((call) => call[0].name === 'schedule_workout')?.[0];
 
-    expect(scheduleWorkoutTool.annotations).toEqual({
+    expect(scheduleWorkoutTool!.annotations).toEqual({
       destructiveHint: true,
       readOnlyHint: false,
       title: 'Schedule Workout',
@@ -81,21 +83,20 @@ describe('Calendar Tools', () => {
 
     registerCalendarTools(mockMcp, mockClient, mockEnsureAuth);
 
-    const rescheduleTool = addToolMock.mock.calls.find(
-      (call: any) => call[0].name === 'reschedule_workout'
-    )?.[0];
+    const calls = addToolMock.mock.calls as Array<
+      [{ annotations?: Record<string, unknown>; name: string }]
+    >;
+    const rescheduleTool = calls.find((call) => call[0].name === 'reschedule_workout')?.[0];
 
-    expect(rescheduleTool.annotations).toMatchObject({
+    expect(rescheduleTool!.annotations).toMatchObject({
       destructiveHint: true,
       idempotentHint: true,
       readOnlyHint: false,
     });
 
-    const removeTool = addToolMock.mock.calls.find(
-      (call: any) => call[0].name === 'remove_workout'
-    )?.[0];
+    const removeTool = calls.find((call) => call[0].name === 'remove_workout')?.[0];
 
-    expect(removeTool.annotations).toMatchObject({
+    expect(removeTool!.annotations).toMatchObject({
       destructiveHint: true,
       idempotentHint: true,
       readOnlyHint: false,
