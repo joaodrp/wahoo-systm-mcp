@@ -1,11 +1,13 @@
 import eslint from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
+import perfectionist from 'eslint-plugin-perfectionist';
 import prettier from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
 
 export default [
   eslint.configs.recommended,
+  perfectionist.configs['recommended-alphabetical'],
   {
     files: ['**/*.ts'],
     plugins: {
@@ -42,7 +44,7 @@ export default [
   },
   {
     ignores: [
-      'build/**',
+      'dist/**',
       'node_modules/**',
       'coverage/**',
       '*.js',

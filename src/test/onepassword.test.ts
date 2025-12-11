@@ -1,5 +1,6 @@
 import './setup.js';
-import { test, describe, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
+
 import { getCredentialsFrom1Password } from '../onepassword.js';
 
 describe('1Password Integration', () => {

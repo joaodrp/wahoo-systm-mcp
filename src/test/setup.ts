@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
-import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
 // Load .env file from project root
 const __filename = fileURLToPath(import.meta.url);

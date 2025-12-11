@@ -1,5 +1,5 @@
 import './setup.js';
-import { test, describe, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 import { WahooClient } from '../client.js';
 import { getCredentialsFrom1Password } from '../onepassword.js';

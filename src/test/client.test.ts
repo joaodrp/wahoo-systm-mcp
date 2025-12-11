@@ -1,31 +1,32 @@
 import './setup.js';
-import { test, describe, expect } from 'vitest';
-import { WahooClient } from '../client.js';
 import { addDays, format } from 'date-fns';
+import { describe, expect, test } from 'vitest';
 
-// Test helpers
-function getTestCredentials() {
-  return {
-    username: process.env.WAHOO_USERNAME || process.env.TEST_WAHOO_USERNAME,
-    password: process.env.WAHOO_PASSWORD || process.env.TEST_WAHOO_PASSWORD,
-  };
-}
-
-function hasCredentials() {
-  const { username, password } = getTestCredentials();
-  return !!(username && password);
-}
+import { WahooClient } from '../client.js';
 
 async function createAuthenticatedClient(): Promise<WahooClient> {
-  const { username, password } = getTestCredentials();
+  const { password, username } = getTestCredentials();
 
   if (!username || !password) {
     throw new Error('Credentials not available');
   }
 
   const client = new WahooClient();
-  await client.authenticate({ username, password });
+  await client.authenticate({ password, username });
   return client;
+}
+
+// Test helpers
+function getTestCredentials() {
+  return {
+    password: process.env.WAHOO_PASSWORD || process.env.TEST_WAHOO_PASSWORD,
+    username: process.env.WAHOO_USERNAME || process.env.TEST_WAHOO_USERNAME,
+  };
+}
+
+function hasCredentials() {
+  const { password, username } = getTestCredentials();
+  return !!(username && password);
 }
 
 function skipIfNoCredentials(testName: string) {
@@ -243,8 +244,8 @@ describe('WahooClient', () => {
       const maxDurationMinutes = 30;
       const maxDurationSeconds = maxDurationMinutes * 60;
       const workouts = await client.getWorkoutLibrary({
-        sport: 'Cycling',
         maxDuration: maxDurationMinutes,
+        sport: 'Cycling',
       });
 
       expect(workouts.length > 0).toBeTruthy();
@@ -258,9 +259,9 @@ describe('WahooClient', () => {
       const minTss = 40;
       const maxTss = 60;
       const workouts = await client.getWorkoutLibrary({
-        sport: 'Cycling',
-        minTss,
         maxTss,
+        minTss,
+        sport: 'Cycling',
       });
 
       expect(workouts.length > 0).toBeTruthy();
@@ -276,8 +277,8 @@ describe('WahooClient', () => {
 
       const client = await createAuthenticatedClient();
       const workouts = await client.getWorkoutLibrary({
-        sport: 'Cycling',
         channel: 'On Location',
+        sport: 'Cycling',
       });
 
       expect(workouts.length > 0).toBeTruthy(); // Should find On Location workouts;
@@ -292,8 +293,8 @@ describe('WahooClient', () => {
 
       const client = await createAuthenticatedClient();
       const workouts = await client.getWorkoutLibrary({
-        sport: 'Cycling',
         search: 'Hammer',
+        sport: 'Cycling',
       });
 
       expect(workouts.length > 0).toBeTruthy(); // Should find workouts with "Hammer" in name;
@@ -310,9 +311,9 @@ describe('WahooClient', () => {
 
       const client = await createAuthenticatedClient();
       const workouts = await client.getWorkoutLibrary({
-        sport: 'Cycling',
         sortBy: 'name',
         sortDirection: 'asc',
+        sport: 'Cycling',
       });
 
       expect(workouts.length > 1).toBeTruthy();
@@ -330,9 +331,9 @@ describe('WahooClient', () => {
 
       const client = await createAuthenticatedClient();
       const workouts = await client.getWorkoutLibrary({
-        sport: 'Cycling',
         sortBy: 'duration',
         sortDirection: 'desc',
+        sport: 'Cycling',
       });
 
       expect(workouts.length > 1).toBeTruthy();
@@ -347,9 +348,9 @@ describe('WahooClient', () => {
 
       const client = await createAuthenticatedClient();
       const workouts = await client.getWorkoutLibrary({
-        sport: 'Cycling',
         sortBy: 'tss',
         sortDirection: 'asc',
+        sport: 'Cycling',
       });
 
       expect(workouts.length > 1).toBeTruthy();
@@ -366,15 +367,15 @@ describe('WahooClient', () => {
 
       const client = await createAuthenticatedClient();
       const workouts = await client.getWorkoutLibrary({
-        sport: 'Strength',
         sortBy: 'level',
         sortDirection: 'asc',
+        sport: 'Strength',
       });
 
       expect(workouts.length > 0).toBeTruthy();
 
       // Check that levels are ordered correctly where present
-      const levelOrder = { Basic: 1, Intermediate: 2, Advanced: 3 };
+      const levelOrder = { Advanced: 3, Basic: 1, Intermediate: 2 };
       for (let i = 1; i < Math.min(10, workouts.length); i++) {
         if (workouts[i].level && workouts[i - 1].level) {
           const currentLevel = levelOrder[workouts[i].level as keyof typeof levelOrder] || 0;
@@ -389,12 +390,12 @@ describe('WahooClient', () => {
 
       const client = await createAuthenticatedClient();
       const workouts = await client.getWorkoutLibrary({
-        sport: 'Cycling',
         maxDuration: 60,
-        minTss: 30,
         maxTss: 50,
+        minTss: 30,
         sortBy: 'tss',
         sortDirection: 'asc',
+        sport: 'Cycling',
       });
 
       expect(workouts.length > 0).toBeTruthy();
@@ -535,7 +536,7 @@ describe('WahooClient', () => {
       const client = await createAuthenticatedClient();
       const minTss = 40;
       const maxTss = 60;
-      const workouts = await client.getCyclingWorkouts({ minTss, maxTss });
+      const workouts = await client.getCyclingWorkouts({ maxTss, minTss });
 
       expect(workouts.length > 0).toBeTruthy();
       workouts.forEach((w) => {
@@ -552,10 +553,10 @@ describe('WahooClient', () => {
       const client = await createAuthenticatedClient();
       const workouts = await client.getCyclingWorkouts({
         fourDpFocus: 'FTP',
-        maxDuration: 60,
-        minTss: 40,
-        maxTss: 60,
         intensity: 'High',
+        maxDuration: 60,
+        maxTss: 60,
+        minTss: 40,
         sortBy: 'tss',
         sortDirection: 'asc',
       });

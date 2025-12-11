@@ -55,7 +55,7 @@ Update the configuration file with the absolute path to the built server:
   "mcpServers": {
     "wahoo-systm": {
       "command": "node",
-      "args": ["/absolute/path/to/wahoo-systm-mcp/build/index.js"],
+      "args": ["/absolute/path/to/wahoo-systm-mcp/dist/index.js"],
       "env": {
         "WAHOO_USERNAME_1P_REF": "op://Your-Vault/Your-Item/username",
         "WAHOO_PASSWORD_1P_REF": "op://Your-Vault/Your-Item/password"
@@ -75,7 +75,7 @@ Update the configuration file with the absolute path to the built server:
   "mcpServers": {
     "wahoo-systm": {
       "command": "node",
-      "args": ["/absolute/path/to/wahoo-systm-mcp/build/index.js"],
+      "args": ["/absolute/path/to/wahoo-systm-mcp/dist/index.js"],
       "env": {
         "WAHOO_USERNAME": "your_email@example.com",
         "WAHOO_PASSWORD": "your_password"
@@ -452,13 +452,16 @@ The Wahoo SYSTM API returns different workout names depending on the endpoint. L
 ```
 wahoo-systm-mcp/
 ├── src/
-│   ├── index.ts           # MCP server implementation
+│   ├── index.ts           # Main entry point
+│   ├── calendar.ts        # Calendar management tools
+│   ├── workouts.ts        # Workout library tools
+│   ├── profile.ts         # Profile and fitness test tools
 │   ├── client.ts          # Wahoo SYSTM API client
 │   ├── types.ts           # TypeScript type definitions
 │   ├── schemas.ts         # Zod validation schemas
 │   ├── onepassword.ts     # 1Password integration
 │   └── test/              # Test suite (Vitest)
-├── build/                 # Compiled JavaScript (generated)
+├── dist/                  # Compiled JavaScript (generated)
 ├── package.json           # Project dependencies and scripts
 ├── tsconfig.json          # TypeScript configuration
 ├── vitest.config.ts       # Vitest test configuration
@@ -477,6 +480,9 @@ npm run build
 
 # Watch mode (auto-rebuild on changes)
 npm run watch
+
+# Development mode (interactive CLI testing)
+npm run dev
 ```
 
 ### Testing
