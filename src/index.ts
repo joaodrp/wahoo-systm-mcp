@@ -78,8 +78,38 @@ registerProfileTools(mcp, wahooClient, ensureAuthenticated);
 // Start the server
 async function main() {
   await autoAuthenticate();
-  mcp.start({ transportType: 'stdio' });
-  console.error('Wahoo SYSTM MCP server running on stdio');
+
+  // Determine transport type from environment
+  const transportType = process.env.MCP_TRANSPORT || 'stdio';
+  const mcpApiKey = process.env.MCP_API_KEY;
+
+  if (transportType === 'httpStream') {
+    // HTTP Streaming transport for remote access (includes SSE endpoint for backward compatibility)
+    const port = parseInt(process.env.PORT || '3000', 10);
+
+    // Require API key for remote access
+    if (!mcpApiKey) {
+      throw new Error('MCP_API_KEY environment variable is required for httpStream transport');
+    }
+
+    mcp.start({
+      httpStream: {
+        port,
+      },
+      transportType: 'httpStream',
+    });
+
+    console.error(`Wahoo SYSTM MCP server running on HTTP Streaming at port ${port}`);
+    console.error('Endpoints:');
+    console.error(`  - MCP:    http://localhost:${port}/mcp`);
+    console.error(`  - SSE:    http://localhost:${port}/sse (backward compatibility)`);
+    console.error(`  - Health: http://localhost:${port}/health`);
+    console.error('Remote access enabled with API key authentication');
+  } else {
+    // stdio transport for local development
+    mcp.start({ transportType: 'stdio' });
+    console.error('Wahoo SYSTM MCP server running on stdio');
+  }
 }
 
 main().catch((error) => {

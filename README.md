@@ -96,6 +96,70 @@ Update the configuration file with the absolute path to the built server:
 
 Restart Claude Desktop to load the configuration.
 
+## Remote Deployment
+
+> **Note**: Remote MCP server support is currently experimental and under active development. Features and configuration may change.
+
+For access across multiple devices (desktop and mobile), you can deploy this MCP server remotely using Docker.
+
+### Quick Start with Docker
+
+1. **Generate API Key**:
+   ```bash
+   openssl rand -hex 32
+   ```
+
+2. **Run with Docker**:
+   ```bash
+   docker run -d \
+     -p 3000:3000 \
+     -e MCP_TRANSPORT=httpStream \
+     -e MCP_API_KEY=your-api-key \
+     -e WAHOO_USERNAME=your-email@example.com \
+     -e WAHOO_PASSWORD=your-password \
+     ghcr.io/joaodrp/wahoo-systm-mcp:latest
+   ```
+
+   **Endpoints exposed:**
+   - `/mcp` - MCP HTTP Streaming endpoint (recommended)
+   - `/sse` - SSE endpoint (backward compatibility)
+   - `/health` - Health check endpoint
+
+3. **Add HTTPS** (Production):
+   - Use a reverse proxy (Traefik, Nginx, Caddy) with Let's Encrypt
+   - Configure your domain to point to the server
+   - Ensure API key authentication is enabled
+
+### Client Configuration
+
+#### Claude Desktop
+
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "wahoo-systm": {
+      "url": "https://your-domain.com/mcp",
+      "apiKey": "your-api-key"
+    }
+  }
+}
+```
+
+#### Claude mobile (or any other MCP client)
+
+- Settings → Integrations → Add MCP Server
+- URL: `https://your-domain.com/mcp`
+- API Key: `your-api-key`
+
+### Transport Options
+
+Set via the `MCP_TRANSPORT` environment variable:
+
+- **`httpStream`** - Remote HTTP Streaming transport (required for remote access)
+- **`stdio`** - Local standard I/O transport (default, for local development)
+
 ### Environment Variables
 
 #### Option A (1Password)
@@ -531,10 +595,13 @@ This server uses the Wahoo SYSTM GraphQL API at `https://api.thesufferfest.com/g
 
 ## Security Notes
 
-- Credentials are only stored in memory during the session
+- **Local Development**: Credentials are only stored in memory during the session
+- **Remote Deployment**: Use encrypted secret management (e.g., Ansible Vault, Docker Secrets)
+- **API Keys**: Keep API keys secret and rotate them periodically
+- **HTTPS**: Always use HTTPS in production with a valid SSL certificate
 - The `.env` file is gitignored to prevent accidental commits
 - Authentication tokens are not persisted between server restarts
-- 1Password integration provides the most secure credential management
+- 1Password integration provides the most secure credential management for local development
 
 ## Acknowledgments
 

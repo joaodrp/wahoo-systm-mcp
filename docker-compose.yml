@@ -1,0 +1,13 @@
+services:
+  wahoo-systm-mcp:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - MCP_TRANSPORT=sse
+      - PORT=3000
+      - MCP_API_KEY=${MCP_API_KEY}
+      - WAHOO_USERNAME=${WAHOO_USERNAME}
+      - WAHOO_PASSWORD=${WAHOO_PASSWORD}
+      - TZ=Europe/Lisbon
+    restart: unless-stopped
