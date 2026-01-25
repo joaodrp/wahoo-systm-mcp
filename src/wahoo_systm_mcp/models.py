@@ -33,7 +33,7 @@ class PowerTestValue(BaseModel):
     """Power test result with status and values."""
 
     status: str
-    graph_value: int = Field(alias="graphValue")
+    graph_value: float = Field(alias="graphValue")
     value: int
 
     model_config = {"populate_by_name": True}
@@ -80,7 +80,7 @@ class EnhancedRiderProfile(RiderProfile):
     power_20m: PowerTestValue = Field(alias="power20m")
 
     # Heart rate data
-    lactate_threshold_heart_rate: int = Field(alias="lactateThresholdHeartRate")
+    lactate_threshold_heart_rate: float = Field(alias="lactateThresholdHeartRate")
     heart_rate_zones: list[HeartRateZone] = Field(default_factory=list, alias="heartRateZones")
 
     # Rider characteristics
@@ -350,7 +350,7 @@ class FitnessTestResults(BaseModel):
     power_1m: PowerTestValue = Field(alias="power1m")
     power_5m: PowerTestValue = Field(alias="power5m")
     power_20m: PowerTestValue = Field(alias="power20m")
-    lactate_threshold_heart_rate: int = Field(alias="lactateThresholdHeartRate")
+    lactate_threshold_heart_rate: float = Field(alias="lactateThresholdHeartRate")
     rider_type: RiderTypeInfo = Field(alias="riderType")
 
     model_config = {"populate_by_name": True}
@@ -437,7 +437,7 @@ class MostRecentTestData(BaseModel):
     power_1m: PowerTestValue = Field(alias="power1m")
     power_5m: PowerTestValue = Field(alias="power5m")
     power_20m: PowerTestValue = Field(alias="power20m")
-    lactate_threshold_heart_rate: int = Field(alias="lactateThresholdHeartRate")
+    lactate_threshold_heart_rate: float = Field(alias="lactateThresholdHeartRate")
     start_time: str = Field(alias="startTime")
     end_time: str = Field(alias="endTime")
 
