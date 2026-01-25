@@ -58,7 +58,7 @@ def _format_duration(seconds: int) -> str:
 
 
 @mcp.tool
-async def get_calendar(ctx: Context, start_date: str, end_date: str) -> str:
+async def get_calendar(ctx: Context, start_date: str, end_date: str) -> list[dict[str, Any]]:
     """Get planned workouts from Wahoo SYSTM calendar for a date range.
 
     Returns workout name, type, duration, planned date, and basic details.
@@ -69,7 +69,7 @@ async def get_calendar(ctx: Context, start_date: str, end_date: str) -> str:
     """
     client = _get_client(ctx)
     workouts = await client.get_calendar(start_date, end_date)
-    return json.dumps([w.model_dump(by_alias=True) for w in workouts], indent=2)
+    return [w.model_dump(by_alias=True) for w in workouts]
 
 
 @mcp.tool
@@ -78,7 +78,7 @@ async def schedule_workout(
     content_id: str,
     date: str,
     time_zone: str = "UTC",
-) -> str:
+) -> dict[str, Any]:
     """Schedule a workout from the library to your calendar for a specific date.
 
     Args:
@@ -88,15 +88,12 @@ async def schedule_workout(
     """
     client = _get_client(ctx)
     agenda_id = await client.schedule_workout(content_id, date, time_zone)
-    return json.dumps(
-        {
-            "success": True,
-            "agendaId": agenda_id,
-            "date": date,
-            "timezone": time_zone,
-        },
-        indent=2,
-    )
+    return {
+        "success": True,
+        "agendaId": agenda_id,
+        "date": date,
+        "timezone": time_zone,
+    }
 
 
 @mcp.tool
@@ -105,7 +102,7 @@ async def reschedule_workout(
     agenda_id: str,
     new_date: str,
     time_zone: str = "UTC",
-) -> str:
+) -> dict[str, Any]:
     """Move a scheduled workout to a different date.
 
     Args:
@@ -115,20 +112,17 @@ async def reschedule_workout(
     """
     client = _get_client(ctx)
     await client.reschedule_workout(agenda_id, new_date, time_zone)
-    return json.dumps(
-        {
-            "success": True,
-            "message": "Workout rescheduled successfully",
-            "agendaId": agenda_id,
-            "newDate": new_date,
-            "timezone": time_zone,
-        },
-        indent=2,
-    )
+    return {
+        "success": True,
+        "message": "Workout rescheduled successfully",
+        "agendaId": agenda_id,
+        "newDate": new_date,
+        "timezone": time_zone,
+    }
 
 
 @mcp.tool
-async def remove_workout(ctx: Context, agenda_id: str) -> str:
+async def remove_workout(ctx: Context, agenda_id: str) -> dict[str, Any]:
     """Remove a scheduled workout from your calendar.
 
     Args:
@@ -136,14 +130,11 @@ async def remove_workout(ctx: Context, agenda_id: str) -> str:
     """
     client = _get_client(ctx)
     await client.remove_workout(agenda_id)
-    return json.dumps(
-        {
-            "success": True,
-            "message": "Workout removed successfully",
-            "agendaId": agenda_id,
-        },
-        indent=2,
-    )
+    return {
+        "success": True,
+        "message": "Workout removed successfully",
+        "agendaId": agenda_id,
+    }
 
 
 # =============================================================================
@@ -163,8 +154,8 @@ async def get_workouts(
     channel: str | None = None,
     sort_by: Literal["name", "duration", "tss"] | None = None,
     sort_direction: Literal["asc", "desc"] | None = None,
-    limit: int | None = None,
-) -> str:
+    limit: int | None = 50,
+) -> dict[str, Any]:
     """Browse the complete workout library with advanced filtering.
 
     Returns workout metadata including duration, TSS, intensity, and 4DP ratings.
@@ -208,13 +199,10 @@ async def get_workouts(
 
     workouts = await client.get_workout_library(filters if filters else None)
 
-    return json.dumps(
-        {
-            "total": len(workouts),
-            "workouts": [w.model_dump(by_alias=True) for w in workouts],
-        },
-        indent=2,
-    )
+    return {
+        "total": len(workouts),
+        "workouts": [w.model_dump(by_alias=True) for w in workouts],
+    }
 
 
 @mcp.tool
@@ -231,8 +219,8 @@ async def get_cycling_workouts(
     intensity: Literal["High", "Medium", "Low"] | None = None,
     sort_by: Literal["name", "duration", "tss"] | None = None,
     sort_direction: Literal["asc", "desc"] | None = None,
-    limit: int | None = None,
-) -> str:
+    limit: int | None = 50,
+) -> dict[str, Any]:
     """Specialized cycling workout search with 4DP focus filtering.
 
     Automatically filters for cycling workouts only.
@@ -284,17 +272,14 @@ async def get_cycling_workouts(
 
     workouts = await client.get_cycling_workouts(filters if filters else None)
 
-    return json.dumps(
-        {
-            "total": len(workouts),
-            "workouts": [w.model_dump(by_alias=True) for w in workouts],
-        },
-        indent=2,
-    )
+    return {
+        "total": len(workouts),
+        "workouts": [w.model_dump(by_alias=True) for w in workouts],
+    }
 
 
 @mcp.tool
-async def get_workout_details(ctx: Context, workout_id: str) -> str:
+async def get_workout_details(ctx: Context, workout_id: str) -> dict[str, Any]:
     """Get detailed information about a specific workout.
 
     Includes intervals, power zones, equipment needed, and full workout structure.
@@ -304,7 +289,7 @@ async def get_workout_details(ctx: Context, workout_id: str) -> str:
     """
     client = _get_client(ctx)
     details = await client.get_workout_details(workout_id)
-    return json.dumps(details.model_dump(by_alias=True), indent=2)
+    return details.model_dump(by_alias=True)
 
 
 # =============================================================================
@@ -313,7 +298,7 @@ async def get_workout_details(ctx: Context, workout_id: str) -> str:
 
 
 @mcp.tool
-async def get_rider_profile(ctx: Context) -> str:
+async def get_rider_profile(ctx: Context) -> dict[str, Any]:
     """Get the rider 4DP profile (NM, AC, MAP, FTP).
 
     Includes rider type classification, strengths/weaknesses, and heart rate zones.
@@ -324,34 +309,31 @@ async def get_rider_profile(ctx: Context) -> str:
     if not profile:
         raise ToolError("No rider profile found. Complete a Full Frontal or Half Monty test first.")
 
-    return json.dumps(
-        {
-            "fourDP": {
-                "nm": {"watts": profile.nm, "score": profile.power_5s.graph_value},
-                "ac": {"watts": profile.ac, "score": profile.power_1m.graph_value},
-                "map": {"watts": profile.map_, "score": profile.power_5m.graph_value},
-                "ftp": {"watts": profile.ftp, "score": profile.power_20m.graph_value},
-            },
-            "riderType": {
-                "name": profile.rider_type.name,
-                "description": profile.rider_type.description,
-            },
-            "strengths": {
-                "name": profile.rider_weakness.strength_name,
-                "description": profile.rider_weakness.strength_description,
-                "summary": profile.rider_weakness.strength_summary,
-            },
-            "weaknesses": {
-                "name": profile.rider_weakness.name,
-                "description": profile.rider_weakness.weakness_description,
-                "summary": profile.rider_weakness.weakness_summary,
-            },
-            "lthr": profile.lactate_threshold_heart_rate,
-            "heartRateZones": [z.model_dump() for z in profile.heart_rate_zones],
-            "lastTestDate": _format_date(profile.start_time),
+    return {
+        "fourDP": {
+            "nm": {"watts": profile.nm, "score": profile.power_5s.graph_value},
+            "ac": {"watts": profile.ac, "score": profile.power_1m.graph_value},
+            "map": {"watts": profile.map_, "score": profile.power_5m.graph_value},
+            "ftp": {"watts": profile.ftp, "score": profile.power_20m.graph_value},
         },
-        indent=2,
-    )
+        "riderType": {
+            "name": profile.rider_type.name,
+            "description": profile.rider_type.description,
+        },
+        "strengths": {
+            "name": profile.rider_weakness.strength_name,
+            "description": profile.rider_weakness.strength_description,
+            "summary": profile.rider_weakness.strength_summary,
+        },
+        "weaknesses": {
+            "name": profile.rider_weakness.name,
+            "description": profile.rider_weakness.weakness_description,
+            "summary": profile.rider_weakness.weakness_summary,
+        },
+        "lthr": profile.lactate_threshold_heart_rate,
+        "heartRateZones": [z.model_dump() for z in profile.heart_rate_zones],
+        "lastTestDate": _format_date(profile.start_time),
+    }
 
 
 @mcp.tool
@@ -359,7 +341,7 @@ async def get_fitness_test_history(
     ctx: Context,
     page: int = 1,
     page_size: int = 15,
-) -> str:
+) -> dict[str, Any]:
     """Get history of completed Full Frontal and Half Monty fitness tests.
 
     Returns 4DP results, rider type classification, and test dates.
@@ -407,17 +389,14 @@ async def get_fitness_test_history(
 
         formatted_tests.append(formatted)
 
-    return json.dumps(
-        {
-            "tests": formatted_tests,
-            "total": total,
-        },
-        indent=2,
-    )
+    return {
+        "tests": formatted_tests,
+        "total": total,
+    }
 
 
 @mcp.tool
-async def get_fitness_test_details(ctx: Context, activity_id: str) -> str:
+async def get_fitness_test_details(ctx: Context, activity_id: str) -> dict[str, Any]:
     """Get detailed fitness test data.
 
     Includes second-by-second power/cadence/heart rate, power curve bests, and post-test analysis.
@@ -436,44 +415,39 @@ async def get_fitness_test_details(ctx: Context, activity_id: str) -> str:
         except json.JSONDecodeError:
             analysis_data = None
 
-    return json.dumps(
-        {
-            "name": details.name,
-            "date": _format_date(details.completed_date),
-            "duration": _format_duration(details.duration_seconds),
-            "distance": f"{details.distance_km:.2f} km",
-            "tss": details.tss,
-            "intensityFactor": details.intensity_factor,
-            "notes": details.notes,
-            "fourDP": {
-                "nm": {
-                    "watts": details.test_results.power_5s.value,
-                    "score": details.test_results.power_5s.graph_value,
-                },
-                "ac": {
-                    "watts": details.test_results.power_1m.value,
-                    "score": details.test_results.power_1m.graph_value,
-                },
-                "map": {
-                    "watts": details.test_results.power_5m.value,
-                    "score": details.test_results.power_5m.graph_value,
-                },
-                "ftp": {
-                    "watts": details.test_results.power_20m.value,
-                    "score": details.test_results.power_20m.graph_value,
-                },
+    return {
+        "name": details.name,
+        "date": _format_date(details.completed_date),
+        "duration": _format_duration(details.duration_seconds),
+        "distance": f"{details.distance_km:.2f} km",
+        "tss": details.tss,
+        "intensityFactor": details.intensity_factor,
+        "notes": details.notes,
+        "fourDP": {
+            "nm": {
+                "watts": details.test_results.power_5s.value,
+                "score": details.test_results.power_5s.graph_value,
             },
-            "lthr": details.test_results.lactate_threshold_heart_rate,
-            "riderType": details.test_results.rider_type.name,
-            "powerCurve": [
-                {"duration": pb.duration, "value": pb.value} for pb in details.power_bests
-            ],
-            "activityData": {
-                "power": details.power,
-                "cadence": details.cadence,
-                "heartRate": details.heart_rate,
+            "ac": {
+                "watts": details.test_results.power_1m.value,
+                "score": details.test_results.power_1m.graph_value,
             },
-            "analysis": analysis_data,
+            "map": {
+                "watts": details.test_results.power_5m.value,
+                "score": details.test_results.power_5m.graph_value,
+            },
+            "ftp": {
+                "watts": details.test_results.power_20m.value,
+                "score": details.test_results.power_20m.graph_value,
+            },
         },
-        indent=2,
-    )
+        "lthr": details.test_results.lactate_threshold_heart_rate,
+        "riderType": details.test_results.rider_type.name,
+        "powerCurve": [{"duration": pb.duration, "value": pb.value} for pb in details.power_bests],
+        "activityData": {
+            "power": details.power,
+            "cadence": details.cadence,
+            "heartRate": details.heart_rate,
+        },
+        "analysis": analysis_data,
+    }

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import json
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from fastmcp.exceptions import ToolError
 
 from wahoo_systm_mcp.models import (
     EnhancedRiderProfile,
@@ -280,9 +280,8 @@ class TestGetCalendar:
         result = await get_calendar(mock_context, "2024-01-01", "2024-01-31")
 
         mock_client.get_calendar.assert_called_once_with("2024-01-01", "2024-01-31")
-        data = json.loads(result)
-        assert len(data) == 1
-        assert data[0]["agendaId"] == "agenda123"
+        assert len(result) == 1
+        assert result[0]["agendaId"] == "agenda123"
 
     async def test_returns_empty_list(
         self,
@@ -293,8 +292,7 @@ class TestGetCalendar:
 
         result = await get_calendar(mock_context, "2024-01-01", "2024-01-31")
 
-        data = json.loads(result)
-        assert data == []
+        assert result == []
 
 
 class TestScheduleWorkout:
@@ -312,10 +310,9 @@ class TestScheduleWorkout:
         mock_client.schedule_workout.assert_called_once_with(
             "content123", "2024-01-15", "Europe/Lisbon"
         )
-        data = json.loads(result)
-        assert data["success"] is True
-        assert data["agendaId"] == "new-agenda-id"
-        assert data["timezone"] == "Europe/Lisbon"
+        assert result["success"] is True
+        assert result["agendaId"] == "new-agenda-id"
+        assert result["timezone"] == "Europe/Lisbon"
 
     async def test_default_timezone(
         self,
@@ -327,8 +324,7 @@ class TestScheduleWorkout:
         result = await schedule_workout(mock_context, "content123", "2024-01-15")
 
         mock_client.schedule_workout.assert_called_once_with("content123", "2024-01-15", "UTC")
-        data = json.loads(result)
-        assert data["timezone"] == "UTC"
+        assert result["timezone"] == "UTC"
 
 
 class TestRescheduleWorkout:
@@ -348,9 +344,8 @@ class TestRescheduleWorkout:
         mock_client.reschedule_workout.assert_called_once_with(
             "agenda123", "2024-02-01", "America/New_York"
         )
-        data = json.loads(result)
-        assert data["success"] is True
-        assert data["newDate"] == "2024-02-01"
+        assert result["success"] is True
+        assert result["newDate"] == "2024-02-01"
 
 
 class TestRemoveWorkout:
@@ -366,9 +361,8 @@ class TestRemoveWorkout:
         result = await remove_workout(mock_context, "agenda123")
 
         mock_client.remove_workout.assert_called_once_with("agenda123")
-        data = json.loads(result)
-        assert data["success"] is True
-        assert data["agendaId"] == "agenda123"
+        assert result["success"] is True
+        assert result["agendaId"] == "agenda123"
 
 
 # =============================================================================
@@ -390,9 +384,8 @@ class TestGetWorkouts:
         result = await get_workouts(mock_context)
 
         mock_client.get_workout_library.assert_called_once_with(None)
-        data = json.loads(result)
-        assert data["total"] == 1
-        assert data["workouts"][0]["name"] == "Nine Hammers"
+        assert result["total"] == 1
+        assert result["workouts"][0]["name"] == "Nine Hammers"
 
     async def test_passes_filters(
         self,
@@ -438,8 +431,7 @@ class TestGetCyclingWorkouts:
 
         call_args = mock_client.get_cycling_workouts.call_args[0][0]
         assert call_args["four_dp_focus"] == "FTP"
-        data = json.loads(result)
-        assert data["total"] == 1
+        assert result["total"] == 1
 
 
 class TestGetWorkoutDetails:
@@ -456,9 +448,8 @@ class TestGetWorkoutDetails:
         result = await get_workout_details(mock_context, "workout1")
 
         mock_client.get_workout_details.assert_called_once_with("workout1")
-        data = json.loads(result)
-        assert data["name"] == "Nine Hammers"
-        assert data["durationSeconds"] == 3600
+        assert result["name"] == "Nine Hammers"
+        assert result["durationSeconds"] == 3600
 
 
 # =============================================================================
@@ -479,12 +470,11 @@ class TestGetRiderProfile:
 
         result = await get_rider_profile(mock_context)
 
-        data = json.loads(result)
-        assert data["fourDP"]["nm"]["watts"] == 850
-        assert data["fourDP"]["ftp"]["score"] == 70
-        assert data["riderType"]["name"] == "Attacker"
-        assert data["lthr"] == 168
-        assert len(data["heartRateZones"]) == 2
+        assert result["fourDP"]["nm"]["watts"] == 850
+        assert result["fourDP"]["ftp"]["score"] == 70
+        assert result["riderType"]["name"] == "Attacker"
+        assert result["lthr"] == 168
+        assert len(result["heartRateZones"]) == 2
 
     async def test_raises_error_when_no_profile(
         self,
@@ -493,7 +483,7 @@ class TestGetRiderProfile:
     ) -> None:
         mock_client.get_enhanced_rider_profile = AsyncMock(return_value=None)
 
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ToolError) as exc_info:
             await get_rider_profile(mock_context)
 
         assert "No rider profile found" in str(exc_info.value)
@@ -515,10 +505,9 @@ class TestGetFitnessTestHistory:
         result = await get_fitness_test_history(mock_context)
 
         mock_client.get_fitness_test_history.assert_called_once_with(1, 15)
-        data = json.loads(result)
-        assert data["total"] == 1
-        assert data["tests"][0]["name"] == "Full Frontal"
-        assert data["tests"][0]["fourDP"]["nm"]["watts"] == 850
+        assert result["total"] == 1
+        assert result["tests"][0]["name"] == "Full Frontal"
+        assert result["tests"][0]["fourDP"]["nm"]["watts"] == 850
 
     async def test_pagination(
         self,
@@ -546,13 +535,12 @@ class TestGetFitnessTestDetails:
         result = await get_fitness_test_details(mock_context, "test1")
 
         mock_client.get_fitness_test_details.assert_called_once_with("test1")
-        data = json.loads(result)
-        assert data["name"] == "Full Frontal"
-        assert data["notes"] == "Felt strong"
-        assert data["fourDP"]["nm"]["watts"] == 850
-        assert len(data["powerCurve"]) == 2
-        assert data["activityData"]["power"] == [100, 150, 200]
-        assert data["analysis"]["summary"] == "Great test"
+        assert result["name"] == "Full Frontal"
+        assert result["notes"] == "Felt strong"
+        assert result["fourDP"]["nm"]["watts"] == 850
+        assert len(result["powerCurve"]) == 2
+        assert result["activityData"]["power"] == [100, 150, 200]
+        assert result["analysis"]["summary"] == "Great test"
 
     async def test_handles_invalid_analysis_json(
         self,
@@ -565,5 +553,4 @@ class TestGetFitnessTestDetails:
 
         result = await get_fitness_test_details(mock_context, "test1")
 
-        data = json.loads(result)
-        assert data["analysis"] is None
+        assert result["analysis"] is None
