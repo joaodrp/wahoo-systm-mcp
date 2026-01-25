@@ -124,7 +124,8 @@ Restart Claude Desktop to load the configuration.
 
 #### Optional Overrides
 
-These are advanced escape hatches. You should not need to set them in normal use. If something breaks, please open an issue; these can be used as a temporary workaround while the server is updated.
+> [!NOTE]
+> These are advanced escape hatches. You should not need to set them in normal use. If something breaks, please open an issue; these can be used as a temporary workaround while the server is updated.
 
 | Variable | Purpose |
 |----------|---------|
