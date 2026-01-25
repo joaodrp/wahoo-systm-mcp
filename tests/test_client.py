@@ -1110,6 +1110,7 @@ class TestErrorHandling:
             authenticated_client._client, "post", new_callable=AsyncMock
         ) as mock_post:
             mock_post.return_value = mock_response(workouts_response)
+            authenticated_client.get_workout_library = AsyncMock(return_value=[])
 
             with pytest.raises(WahooAPIError) as exc_info:
                 await authenticated_client.get_workout_details("nonexistent")

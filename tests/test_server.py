@@ -383,7 +383,7 @@ class TestGetWorkouts:
 
         result = await get_workouts(mock_context)
 
-        mock_client.get_workout_library.assert_called_once_with(None)
+        mock_client.get_workout_library.assert_called_once_with({"limit": 50})
         assert result["total"] == 1
         assert result["workouts"][0]["name"] == "Nine Hammers"
 
