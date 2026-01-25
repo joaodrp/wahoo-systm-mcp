@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import httpx
@@ -32,10 +33,10 @@ from wahoo_systm_mcp.models import (
 # =============================================================================
 
 API_URL = "https://api.thesufferfest.com/graphql"
-APP_VERSION = "7.101.1-web.3480-7-g4802ce80"
-INSTALL_ID = "F215B34567B35AC815329A53A2B696E5"
+APP_VERSION = os.environ.get("WAHOO_APP_VERSION", "7.101.1-web.3480-7-g4802ce80")
+INSTALL_ID = os.environ.get("WAHOO_INSTALL_ID")
 APP_PLATFORM = "web"
-DEFAULT_LOCALE = "en"
+DEFAULT_LOCALE = os.environ.get("WAHOO_LOCALE", "en")
 FULL_FRONTAL_ID = "dRcyg09t6K"
 HALF_MONTY_ID = "0SmbqUIZZo"
 
@@ -516,11 +517,13 @@ class WahooClient:
 
     def _app_information(self) -> dict[str, str]:
         """Build app information payload for GraphQL queries."""
-        return {
+        app_info = {
             "platform": APP_PLATFORM,
             "version": APP_VERSION,
-            "installId": INSTALL_ID,
         }
+        if INSTALL_ID:
+            app_info["installId"] = INSTALL_ID
+        return app_info
 
     async def _call_api(
         self,
@@ -547,8 +550,9 @@ class WahooClient:
         headers: dict[str, str] = {
             "Content-Type": "application/json",
             "X-App-Version": APP_VERSION,
-            "X-Install-Id": INSTALL_ID,
         }
+        if INSTALL_ID:
+            headers["X-Install-Id"] = INSTALL_ID
 
         if require_auth:
             token = self._require_auth()
