@@ -35,6 +35,9 @@ htmlcov/
 # Type checking
 .mypy_cache/
 
+# Linting
+.ruff_cache/
+
 # IDE
 .idea/
 .vscode/
