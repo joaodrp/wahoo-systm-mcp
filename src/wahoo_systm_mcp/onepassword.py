@@ -43,6 +43,10 @@ def get_credentials_from_1password(username_ref: str, password_ref: str) -> tupl
         password = password_result.stdout.strip()
 
         return username, password
+    except FileNotFoundError as e:
+        raise CredentialsError(
+            "1Password CLI not found. Install the `op` CLI and enable app integration."
+        ) from e
     except subprocess.CalledProcessError as e:
         error_message = e.stderr.strip() if e.stderr else str(e)
         raise CredentialsError(

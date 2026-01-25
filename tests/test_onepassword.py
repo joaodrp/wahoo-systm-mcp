@@ -78,6 +78,18 @@ class TestGetCredentialsFrom1Password:
 
             assert "Failed to retrieve credentials from 1Password" in str(exc_info.value)
 
+    def test_cli_not_found(self) -> None:
+        """Test missing 1Password CLI."""
+        with patch("wahoo_systm_mcp.onepassword.subprocess.run") as mock_run:
+            mock_run.side_effect = FileNotFoundError()
+
+            with pytest.raises(CredentialsError) as exc_info:
+                get_credentials_from_1password(
+                    "op://vault/item/username", "op://vault/item/password"
+                )
+
+            assert "1Password CLI not found" in str(exc_info.value)
+
 
 class TestGetCredentials:
     """Tests for get_credentials function."""
