@@ -116,19 +116,11 @@ class TestAuthentication:
         """Test successful authentication."""
         login_response = {
             "loginUser": {
-                "status": "success",
+                "status": "Success",
                 "message": "Logged in",
                 "token": "test-token-abc123",
                 "user": {
                     "id": "user123",
-                    "profiles": {
-                        "fitness": {
-                            "nm": 850,
-                            "ac": 420,
-                            "map": 310,
-                            "ftp": 260,
-                        }
-                    },
                 },
             }
         }
@@ -139,23 +131,22 @@ class TestAuthentication:
             await client.authenticate("test@example.com", "password123")
 
             assert client._token == "test-token-abc123"
-            assert client._rider_profile is not None
-            assert client._rider_profile.nm == 850
-            assert client._rider_profile.ftp == 260
+            assert client._rider_profile is None
 
             # Verify request
             mock_post.assert_called_once()
             call_args = mock_post.call_args
             assert call_args.args[0] == API_URL
             body = call_args.kwargs["json"]
-            assert body["variables"]["input"]["email"] == "test@example.com"
-            assert body["variables"]["input"]["password"] == "password123"
+            assert body["variables"]["username"] == "test@example.com"
+            assert body["variables"]["password"] == "password123"
+            assert body["variables"]["appInformation"]["platform"] == "web"
 
     async def test_authenticate_failure(self, client: WahooClient) -> None:
         """Test authentication failure."""
         login_response = {
             "loginUser": {
-                "status": "error",
+                "status": "Error",
                 "message": "Invalid credentials",
                 "token": "",
                 "user": {},
@@ -200,47 +191,43 @@ class TestGetCalendar:
     async def test_get_calendar_success(self, authenticated_client: WahooClient) -> None:
         """Test fetching calendar items."""
         calendar_response = {
-            "getUserPlansRange": {
-                "status": "success",
-                "message": None,
-                "items": [
-                    {
-                        "day": 1,
-                        "plannedDate": "2024-01-15",
-                        "rank": 1,
-                        "agendaId": "agenda123",
-                        "status": "scheduled",
-                        "type": "workout",
-                        "prospects": [
-                            {
-                                "type": "workout",
-                                "name": "Nine Hammers",
-                                "compatibility": "full",
-                                "description": "A classic",
-                                "style": "endurance",
-                                "intensity": {
-                                    "master": 4,
-                                    "nm": 3,
-                                    "ac": 4,
-                                    "map": 4,
-                                    "ftp": 3,
-                                },
-                                "plannedDuration": 3600,
-                                "durationType": "fixed",
-                                "contentId": "content1",
-                                "workoutId": "workout1",
-                            }
-                        ],
-                        "plan": {
-                            "id": "plan1",
-                            "name": "Base Training",
-                            "color": "#FF0000",
-                            "description": "Base building",
-                            "category": "endurance",
-                        },
-                    }
-                ],
-            }
+            "userPlan": [
+                {
+                    "day": 1,
+                    "plannedDate": "2024-01-15",
+                    "rank": 1,
+                    "agendaId": "agenda123",
+                    "status": "scheduled",
+                    "type": "workout",
+                    "prospects": [
+                        {
+                            "type": "workout",
+                            "name": "Nine Hammers",
+                            "compatibility": "full",
+                            "description": "A classic",
+                            "style": "endurance",
+                            "intensity": {
+                                "master": 4,
+                                "nm": 3,
+                                "ac": 4,
+                                "map": 4,
+                                "ftp": 3,
+                            },
+                            "plannedDuration": 3600,
+                            "durationType": "fixed",
+                            "contentId": "content1",
+                            "workoutId": "workout1",
+                        }
+                    ],
+                    "plan": {
+                        "id": "plan1",
+                        "name": "Base Training",
+                        "color": "#FF0000",
+                        "description": "Base building",
+                        "category": "endurance",
+                    },
+                }
+            ]
         }
 
         with patch.object(
@@ -257,13 +244,7 @@ class TestGetCalendar:
 
     async def test_get_calendar_empty(self, authenticated_client: WahooClient) -> None:
         """Test fetching empty calendar."""
-        calendar_response = {
-            "getUserPlansRange": {
-                "status": "success",
-                "message": None,
-                "items": [],
-            }
-        }
+        calendar_response = {"userPlan": []}
 
         with patch.object(
             authenticated_client._client, "post", new_callable=AsyncMock
@@ -742,9 +723,9 @@ class TestScheduleWorkout:
             # Verify request body
             call_args = mock_post.call_args
             body = call_args.kwargs["json"]
-            assert body["variables"]["input"]["contentId"] == "content123"
-            assert body["variables"]["input"]["date"] == "2024-02-15"
-            assert body["variables"]["input"]["timeZone"] == "Europe/Lisbon"
+            assert body["variables"]["contentId"] == "content123"
+            assert body["variables"]["date"] == "2024-02-15"
+            assert body["variables"]["timeZone"] == "Europe/Lisbon"
 
     async def test_schedule_workout_failure(self, authenticated_client: WahooClient) -> None:
         """Test scheduling failure."""
@@ -786,9 +767,9 @@ class TestRescheduleWorkout:
             # Verify request body
             call_args = mock_post.call_args
             body = call_args.kwargs["json"]
-            assert body["variables"]["input"]["agendaId"] == "agenda123"
-            assert body["variables"]["input"]["newDate"] == "2024-02-20"
-            assert body["variables"]["input"]["timeZone"] == "America/New_York"
+            assert body["variables"]["agendaId"] == "agenda123"
+            assert body["variables"]["date"] == "2024-02-20"
+            assert body["variables"]["timeZone"] == "America/New_York"
 
     async def test_reschedule_workout_failure(self, authenticated_client: WahooClient) -> None:
         """Test rescheduling failure."""
@@ -822,7 +803,7 @@ class TestRemoveWorkout:
             # Verify request body
             call_args = mock_post.call_args
             body = call_args.kwargs["json"]
-            assert body["variables"]["input"]["agendaId"] == "agenda123"
+            assert body["variables"]["agendaId"] == "agenda123"
 
     async def test_remove_workout_failure(self, authenticated_client: WahooClient) -> None:
         """Test removal failure."""
@@ -975,6 +956,7 @@ class TestGetFitnessTestHistory:
                         "distanceKm": 35.5,
                         "tss": 110,
                         "intensityFactor": 0.92,
+                        "workoutId": FULL_FRONTAL_ID,
                         "testResults": {
                             "power5s": {"status": "ok", "graphValue": 85, "value": 850},
                             "power1m": {"status": "ok", "graphValue": 80, "value": 420},
@@ -989,7 +971,7 @@ class TestGetFitnessTestHistory:
                         },
                     }
                 ],
-                "total": 1,
+                "count": 1,
             }
         }
 
@@ -1009,15 +991,15 @@ class TestGetFitnessTestHistory:
             # Verify workout IDs filter
             call_args = mock_post.call_args
             body = call_args.kwargs["json"]
-            assert FULL_FRONTAL_ID in body["variables"]["input"]["workoutIds"]
-            assert HALF_MONTY_ID in body["variables"]["input"]["workoutIds"]
+            assert FULL_FRONTAL_ID in body["variables"]["search"]["workoutIds"]
+            assert HALF_MONTY_ID in body["variables"]["search"]["workoutIds"]
 
     async def test_get_history_pagination(self, authenticated_client: WahooClient) -> None:
         """Test pagination parameters."""
         search_response = {
             "searchActivities": {
                 "activities": [],
-                "total": 0,
+                "count": 0,
             }
         }
 
@@ -1030,9 +1012,8 @@ class TestGetFitnessTestHistory:
 
             call_args = mock_post.call_args
             body = call_args.kwargs["json"]
-            # Page 3 with page_size 10 = offset 20
-            assert body["variables"]["input"]["offset"] == 20
-            assert body["variables"]["input"]["limit"] == 10
+            assert body["variables"]["page"]["page"] == 3
+            assert body["variables"]["page"]["pageSize"] == 10
 
 
 class TestGetFitnessTestDetails:
@@ -1041,7 +1022,7 @@ class TestGetFitnessTestDetails:
     async def test_get_details_success(self, authenticated_client: WahooClient) -> None:
         """Test fetching fitness test details."""
         activity_response = {
-            "getActivity": {
+            "activity": {
                 "id": "test1",
                 "name": "Full Frontal",
                 "completedDate": "2024-01-10T10:00:00Z",
@@ -1123,7 +1104,7 @@ class TestErrorHandling:
 
     async def test_workout_not_found(self, authenticated_client: WahooClient) -> None:
         """Test handling workout not found."""
-        workouts_response = {"getWorkouts": {"workouts": []}}
+        workouts_response = {"workouts": []}
 
         with patch.object(
             authenticated_client._client, "post", new_callable=AsyncMock
