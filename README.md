@@ -1,8 +1,19 @@
-# Wahoo SYSTM MCP Server
-
-## Overview
-
-The Wahoo SYSTM MCP Server is a Python-based Model Context Protocol server that bridges Large Language Models to the Wahoo SYSTM API, exposing training data and workout management as callable tools.
+<div align="center">
+  <h1>Wahoo SYSTM MCP Server</h1>
+  <p>Python MCP server bridging LLMs to the Wahoo SYSTM API for training data and workout management.</p>
+  <p>
+    <a href="https://github.com/joaodrp/wahoo-systm-mcp/actions/workflows/ci.yml">
+      <img alt="CI" src="https://github.com/joaodrp/wahoo-systm-mcp/actions/workflows/ci.yml/badge.svg">
+    </a>
+    <a href="https://github.com/joaodrp/wahoo-systm-mcp/releases">
+      <img alt="Release" src="https://img.shields.io/github/v/release/joaodrp/wahoo-systm-mcp">
+    </a>
+    <a href="LICENSE">
+      <img alt="License" src="https://img.shields.io/github/license/joaodrp/wahoo-systm-mcp">
+    </a>
+    <img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-blue">
+  </p>
+</div>
 
 Built with [FastMCP 3.0](https://github.com/jlowin/fastmcp) for a clean, modern implementation.
 
@@ -10,8 +21,8 @@ Built with [FastMCP 3.0](https://github.com/jlowin/fastmcp) for a clean, modern 
 
 - **Calendar Management**: View, schedule, reschedule, and remove planned workouts
 - **Workout Library**: Browse and search 1000+ workouts with advanced filtering (sport, duration, TSS, 4DP focus, intensity)
-- **Workout Details**: Access complete workout structures with graph triggers, equipment requirements, and key metrics
-- **Rider Profile**: Retrieve 4DP values, rider type classification, strengths/weaknesses, and heart rate zones
+- **Workout Details**: Access complete workout structures with interval targets, equipment requirements, and key metrics
+- **Rider Profile**: Retrieve current 4DP values, rider type classification, strengths/weaknesses, cTHR, and heart rate zones
 - **Fitness Test History**: Access Full Frontal and Half Monty test results with complete 4DP analysis
 - **AI Integration**: Returns structured JSON responses optimized for LLM consumption via MCP standard
 
@@ -136,11 +147,15 @@ The server automatically authenticates on startup and maintains the session for 
 
 - `get_workouts`: Browse entire workout library with filters for sport, duration, TSS, search terms, and sorting options
 - `get_cycling_workouts`: Specialized cycling workout search with 4DP focus, channel, category, and intensity filters
-- `get_workout_details`: Get complete workout information including graph triggers, equipment, and TSS
+- `get_workout_details`: Get complete workout information including interval targets, equipment, and TSS
 
 ### Rider Profile
 
-- `get_rider_profile`: Retrieve 4DP values (NM, AC, MAP, FTP), rider type classification, strengths/weaknesses, LTHR, and heart rate zones
+- `get_rider_profile`: Retrieve current 4DP values (NM, AC, MAP, FTP), rider type classification, strengths/weaknesses, cTHR, and heart rate zones
+
+Notes:
+- Heart rate zones are computed from cTHR to match the athlete profile UI.
+- The response includes the last test date for context.
 
 ### Fitness Tests
 
