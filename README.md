@@ -78,7 +78,8 @@ Update the configuration file with the absolute path to the project:
 
 ##### Option B: Plain Environment Variables
 
-> **Warning**: This option stores your credentials in plain text in the configuration file. Use Option A (1Password) for better security.
+> [!WARNING]
+> This option stores your credentials in plain text in the configuration file. Use Option A (1Password) for better security.
 
 ```json
 {
@@ -146,7 +147,8 @@ The server automatically authenticates on startup and maintains the session for 
 
 ### Workout Library
 
-> **Note**: Currently, only cycling has a specialized workout search tool (`get_cycling_workouts`) with sport-specific filters like 4DP focus and cycling categories. For other sports (Running, Strength, Yoga, Swimming), use the general `get_workouts` tool.
+> [!NOTE]
+> Currently, only cycling has a specialized workout search tool (`get_cycling_workouts`) with sport-specific filters like 4DP focus and cycling categories. For other sports (Running, Strength, Yoga, Swimming), use the general `get_workouts` tool.
 
 - `get_workouts`: Browse entire workout library with filters for sport, duration, TSS, search terms, and sorting options
 - `get_cycling_workouts`: Specialized cycling workout search with 4DP focus, channel, category, and intensity filters
@@ -156,9 +158,9 @@ The server automatically authenticates on startup and maintains the session for 
 
 - `get_rider_profile`: Retrieve current 4DP values (NM, AC, MAP, FTP), rider type classification, strengths/weaknesses, cTHR, and heart rate zones
 
-Notes:
-- Heart rate zones are computed from cTHR to match the athlete profile UI.
-- The response includes the last test date for context.
+> [!NOTE]
+> Heart rate zones are computed from cTHR to match the athlete profile UI.
+> The response includes the last test date for context.
 
 ### Fitness Tests
 
@@ -264,9 +266,10 @@ This server uses the Wahoo SYSTM GraphQL API at `https://api.thesufferfest.com/g
 
 ## Security Notes
 
-- Credentials are only stored in memory during the session
-- Authentication tokens are not persisted between server restarts
-- 1Password integration provides the most secure credential management
+> [!IMPORTANT]
+> - Credentials are only stored in memory during the session
+> - Authentication tokens are not persisted between server restarts
+> - 1Password integration provides the most secure credential management
 
 ## Acknowledgments
 
