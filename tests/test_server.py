@@ -115,7 +115,7 @@ def sample_workout_details() -> WorkoutDetails:
             tss=95,
             ratings=WorkoutRatings(nm=3, ac=4, map_=4, ftp=3),
         ),
-        triggers='{"intervals": []}',
+        graph_triggers=[{"time": 0, "value": 50, "type": "power"}],
     )
 
 
@@ -279,7 +279,7 @@ class TestGetCalendar:
 
         result = await get_calendar(mock_context, "2024-01-01", "2024-01-31")
 
-        mock_client.get_calendar.assert_called_once_with("2024-01-01", "2024-01-31")
+        mock_client.get_calendar.assert_called_once_with("2024-01-01", "2024-01-31", "UTC")
         assert len(result) == 1
         assert result[0]["agendaId"] == "agenda123"
 

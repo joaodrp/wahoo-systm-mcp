@@ -58,7 +58,9 @@ def _format_duration(seconds: int) -> str:
 
 
 @mcp.tool
-async def get_calendar(ctx: Context, start_date: str, end_date: str) -> list[dict[str, Any]]:
+async def get_calendar(
+    ctx: Context, start_date: str, end_date: str, time_zone: str = "UTC"
+) -> list[dict[str, Any]]:
     """Get planned workouts from Wahoo SYSTM calendar for a date range.
 
     Returns workout name, type, duration, planned date, and basic details.
@@ -66,9 +68,10 @@ async def get_calendar(ctx: Context, start_date: str, end_date: str) -> list[dic
     Args:
         start_date: Start date in YYYY-MM-DD format
         end_date: End date in YYYY-MM-DD format
+        time_zone: Timezone for the calendar (default: UTC)
     """
     client = _get_client(ctx)
-    workouts = await client.get_calendar(start_date, end_date)
+    workouts = await client.get_calendar(start_date, end_date, time_zone)
     return [w.model_dump(by_alias=True) for w in workouts]
 
 
