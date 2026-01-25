@@ -42,6 +42,9 @@ This server is designed for clients supporting the Model Context Protocol (MCP) 
 - Active Wahoo SYSTM account
 - (Recommended) 1Password CLI for secure credential storage
 
+> [!IMPORTANT]
+> This server does not persist your personal data. Credentials are used only in memory during a running session.
+
 ### Installation Steps
 
 #### 1. Clone and Install
