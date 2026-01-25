@@ -1620,7 +1620,6 @@ wheels = [
 
 [[package]]
 name = "wahoo-systm-mcp"
-version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },
