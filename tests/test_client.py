@@ -947,7 +947,7 @@ class TestGetLatestTestProfile:
         ) as mock_post:
             mock_post.return_value = mock_response(test_response)
 
-        profile = await authenticated_client.get_latest_test_profile()
+            profile = await authenticated_client.get_latest_test_profile()
 
             assert profile is None
 
