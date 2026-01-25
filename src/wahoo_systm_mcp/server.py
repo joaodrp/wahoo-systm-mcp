@@ -34,8 +34,10 @@ def _get_client(ctx: Context) -> WahooClient:
     return client
 
 
-def _format_date(iso_date: str) -> str:
+def _format_date(iso_date: str | None) -> str | None:
     """Format ISO date string to human-readable format."""
+    if not iso_date:
+        return None
     try:
         dt = datetime.fromisoformat(iso_date.replace("Z", "+00:00"))
         return dt.strftime("%B %d, %Y")
@@ -43,8 +45,10 @@ def _format_date(iso_date: str) -> str:
         return iso_date
 
 
-def _format_duration(seconds: int) -> str:
+def _format_duration(seconds: int | None) -> str | None:
     """Format duration in seconds to human-readable string."""
+    if seconds is None:
+        return None
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
     if hours > 0:
@@ -285,7 +289,7 @@ async def get_cycling_workouts(
 async def get_workout_details(ctx: Context, workout_id: str) -> dict[str, Any]:
     """Get detailed information about a specific workout.
 
-    Includes intervals, power zones, equipment needed, and full workout structure.
+    Includes graph triggers, equipment needed, and full workout structure.
 
     Args:
         workout_id: Workout ID from calendar or library (accepts both id and workoutId)
@@ -363,7 +367,7 @@ async def get_fitness_test_history(
             "name": test.name,
             "date": _format_date(test.completed_date),
             "duration": _format_duration(test.duration_seconds),
-            "distance": f"{test.distance_km:.2f} km",
+            "distance": f"{test.distance_km:.2f} km" if test.distance_km is not None else None,
             "tss": test.tss,
             "intensityFactor": test.intensity_factor,
         }
@@ -422,31 +426,41 @@ async def get_fitness_test_details(ctx: Context, activity_id: str) -> dict[str, 
         "name": details.name,
         "date": _format_date(details.completed_date),
         "duration": _format_duration(details.duration_seconds),
-        "distance": f"{details.distance_km:.2f} km",
+        "distance": f"{details.distance_km:.2f} km" if details.distance_km is not None else None,
         "tss": details.tss,
         "intensityFactor": details.intensity_factor,
         "notes": details.notes,
-        "fourDP": {
-            "nm": {
-                "watts": details.test_results.power_5s.value,
-                "score": details.test_results.power_5s.graph_value,
-            },
-            "ac": {
-                "watts": details.test_results.power_1m.value,
-                "score": details.test_results.power_1m.graph_value,
-            },
-            "map": {
-                "watts": details.test_results.power_5m.value,
-                "score": details.test_results.power_5m.graph_value,
-            },
-            "ftp": {
-                "watts": details.test_results.power_20m.value,
-                "score": details.test_results.power_20m.graph_value,
-            },
-        },
-        "lthr": details.test_results.lactate_threshold_heart_rate,
-        "riderType": details.test_results.rider_type.name,
-        "powerCurve": [{"duration": pb.duration, "value": pb.value} for pb in details.power_bests],
+        "fourDP": (
+            {
+                "nm": {
+                    "watts": details.test_results.power_5s.value,
+                    "score": details.test_results.power_5s.graph_value,
+                },
+                "ac": {
+                    "watts": details.test_results.power_1m.value,
+                    "score": details.test_results.power_1m.graph_value,
+                },
+                "map": {
+                    "watts": details.test_results.power_5m.value,
+                    "score": details.test_results.power_5m.graph_value,
+                },
+                "ftp": {
+                    "watts": details.test_results.power_20m.value,
+                    "score": details.test_results.power_20m.graph_value,
+                },
+            }
+            if details.test_results
+            else None
+        ),
+        "lthr": (
+            details.test_results.lactate_threshold_heart_rate if details.test_results else None
+        ),
+        "riderType": details.test_results.rider_type.name if details.test_results else None,
+        "powerCurve": (
+            [{"duration": pb.duration, "value": pb.value} for pb in details.power_bests]
+            if details.power_bests
+            else []
+        ),
         "activityData": {
             "power": details.power,
             "cadence": details.cadence,
