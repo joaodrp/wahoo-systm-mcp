@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 # =============================================================================
 # Core Types
@@ -104,13 +103,34 @@ class EnhancedRiderProfile(RiderProfile):
 class WorkoutIntensity(BaseModel):
     """Workout intensity ratings across energy systems."""
 
-    master: int
-    nm: int
-    ac: int
-    map_: int = Field(alias="map")
-    ftp: int
+    master: int | None = None
+    nm: int | None = None
+    ac: int | None = None
+    map_: int | None = Field(default=None, alias="map")
+    ftp: int | None = None
 
     model_config = {"populate_by_name": True}
+
+
+class WorkoutProspectMetrics(BaseModel):
+    """Metrics attached to a workout prospect."""
+
+    ratings: WorkoutRatings | None = None
+
+
+class TrainerSetting(BaseModel):
+    """Trainer settings for a workout prospect."""
+
+    mode: str | None = None
+    level: int | None = None
+
+
+class WorkoutGraphTrigger(BaseModel):
+    """Graph trigger data point for a workout."""
+
+    time: int
+    value: float | int
+    type: str
 
 
 class WorkoutProspect(BaseModel):
@@ -118,15 +138,20 @@ class WorkoutProspect(BaseModel):
 
     type: str
     name: str
-    compatibility: str
-    description: str
-    style: str
-    intensity: WorkoutIntensity
-    planned_duration: int = Field(alias="plannedDuration")
-    duration_type: str = Field(alias="durationType")
-    content_id: str = Field(alias="contentId")
-    workout_id: str = Field(alias="workoutId")
+    compatibility: str | None = None
+    description: str | None = None
+    style: str | None = None
+    intensity: WorkoutIntensity | None = None
+    trainer_setting: TrainerSetting | None = Field(default=None, alias="trainerSetting")
+    planned_duration: int | None = Field(default=None, alias="plannedDuration")
+    duration_type: str | None = Field(default=None, alias="durationType")
+    metrics: WorkoutProspectMetrics | None = None
+    content_id: str | None = Field(default=None, alias="contentId")
+    workout_id: str | None = Field(default=None, alias="workoutId")
     notes: str | None = None
+    four_dp_workout_graph: list[WorkoutGraphTrigger] | None = Field(
+        default=None, alias="fourDPWorkoutGraph"
+    )
 
     model_config = {"populate_by_name": True}
 
@@ -136,22 +161,42 @@ class PlanInfo(BaseModel):
 
     id: str
     name: str
-    color: str
-    description: str
-    category: str
+    color: str | None = None
+    description: str | None = None
+    category: str | None = None
+    grouping: str | None = None
+    level: str | None = None
+    type: str | None = None
+
+
+class PlanLinkData(BaseModel):
+    """Linked activity data for a calendar item."""
+
+    name: str | None = None
+    date: str | None = None
+    activity_id: str | None = Field(default=None, alias="activityId")
+    duration_seconds: int | None = Field(default=None, alias="durationSeconds")
+    style: str | None = None
+    deleted: bool | None = None
+
+    model_config = {"populate_by_name": True}
 
 
 class UserPlanItem(BaseModel):
     """A scheduled item in the user's training calendar."""
 
-    day: int
-    planned_date: str = Field(alias="plannedDate")
-    rank: int
-    agenda_id: str = Field(alias="agendaId")
-    status: str
-    type: str
-    prospects: list[WorkoutProspect]
-    plan: PlanInfo
+    day: int | None = None
+    planned_date: str | None = Field(default=None, alias="plannedDate")
+    rank: int | None = None
+    agenda_id: str | None = Field(default=None, alias="agendaId")
+    status: str | None = None
+    type: str | None = None
+    applied_time_zone: str | None = Field(default=None, alias="appliedTimeZone")
+    wahoo_workout_id: str | None = Field(default=None, alias="wahooWorkoutId")
+    completion_data: PlanLinkData | None = Field(default=None, alias="completionData")
+    link_data: PlanLinkData | None = Field(default=None, alias="linkData")
+    prospects: list[WorkoutProspect] | None = None
+    plan: PlanInfo | None = None
 
     model_config = {"populate_by_name": True}
 
@@ -159,24 +204,25 @@ class UserPlanItem(BaseModel):
 class WorkoutEquipment(BaseModel):
     """Equipment needed for a workout."""
 
-    name: str
-    description: str
+    name: str | None = None
+    description: str | None = None
+    thumbnail: str | None = None
 
 
 class WorkoutDescription(BaseModel):
     """Workout description section."""
 
-    title: str
-    body: str
+    title: str | None = None
+    body: str | None = None
 
 
 class WorkoutRatings(BaseModel):
     """4DP intensity ratings for a workout."""
 
-    nm: int
-    ac: int
-    map_: int = Field(alias="map")
-    ftp: int
+    nm: int | None = None
+    ac: int | None = None
+    map_: int | None = Field(default=None, alias="map")
+    ftp: int | None = None
 
     model_config = {"populate_by_name": True}
 
@@ -184,9 +230,9 @@ class WorkoutRatings(BaseModel):
 class WorkoutMetrics(BaseModel):
     """Workout training metrics."""
 
-    intensity_factor: float = Field(alias="intensityFactor")
-    tss: int
-    ratings: WorkoutRatings
+    intensity_factor: float | None = Field(default=None, alias="intensityFactor")
+    tss: int | None = None
+    ratings: WorkoutRatings | None = None
 
     model_config = {"populate_by_name": True}
 
@@ -196,25 +242,17 @@ class WorkoutDetails(BaseModel):
 
     id: str
     name: str
-    sport: str
-    short_description: str = Field(alias="shortDescription")
-    details: str
-    level: str
-    duration_seconds: int = Field(alias="durationSeconds")
-    equipment: list[WorkoutEquipment]
+    sport: str | None = None
+    short_description: str | None = Field(default=None, alias="shortDescription")
+    details: str | None = None
+    level: str | None = None
+    duration_seconds: int | None = Field(default=None, alias="durationSeconds")
+    equipment: list[WorkoutEquipment] | None = None
     descriptions: list[WorkoutDescription] | None = None
-    metrics: WorkoutMetrics
-    triggers: str  # JSON string containing interval data
+    metrics: WorkoutMetrics | None = None
+    graph_triggers: list[WorkoutGraphTrigger] | None = Field(default=None, alias="graphTriggers")
 
     model_config = {"populate_by_name": True}
-
-    @field_validator("triggers", mode="before")
-    @classmethod
-    def parse_triggers(cls, v: Any) -> str:
-        """Ensure triggers is a JSON string."""
-        if isinstance(v, dict):
-            return json.dumps(v)
-        return str(v) if v is not None else ""
 
 
 class LibraryMetrics(BaseModel):
@@ -233,12 +271,12 @@ class LibraryContent(BaseModel):
     id: str
     name: str
     media_type: str = Field(alias="mediaType")
-    channel: str
-    workout_type: str = Field(alias="workoutType")
-    category: str
-    level: str
-    duration: int
-    workout_id: str = Field(alias="workoutId")
+    channel: str | None = None
+    workout_type: str | None = Field(default=None, alias="workoutType")
+    category: str | None = None
+    level: str | None = None
+    duration: int | None = None
+    workout_id: str | None = Field(default=None, alias="workoutId")
     video_id: str | None = Field(default=None, alias="videoId")
     banner_image: str | None = Field(default=None, alias="bannerImage")
     poster_image: str | None = Field(default=None, alias="posterImage")
@@ -257,7 +295,7 @@ class SportInfo(BaseModel):
     id: str
     workout_type: str = Field(alias="workoutType")
     name: str
-    description: str
+    description: str | None = None
 
     model_config = {"populate_by_name": True}
 
@@ -267,7 +305,7 @@ class ChannelInfo(BaseModel):
 
     id: str
     name: str
-    description: str
+    description: str | None = None
 
 
 # =============================================================================
@@ -293,12 +331,15 @@ class FitnessTestResult(BaseModel):
 
     id: str
     name: str
-    completed_date: str = Field(alias="completedDate")
-    duration_seconds: int = Field(alias="durationSeconds")
-    distance_km: float = Field(alias="distanceKm")
-    tss: int
-    intensity_factor: float = Field(alias="intensityFactor")
+    completed_date: str | None = Field(default=None, alias="completedDate")
+    duration_seconds: int | None = Field(default=None, alias="durationSeconds")
+    distance_km: float | None = Field(default=None, alias="distanceKm")
+    tss: int | None = None
+    intensity_factor: float | None = Field(default=None, alias="intensityFactor")
     test_results: FitnessTestResults | None = Field(default=None, alias="testResults")
+    workout_id: str | None = Field(default=None, alias="workoutId")
+    content_id: str | None = Field(default=None, alias="contentId")
+    analysis: str | None = None
 
     model_config = {"populate_by_name": True}
 
@@ -315,19 +356,19 @@ class FitnessTestDetails(BaseModel):
 
     id: str
     name: str
-    completed_date: str = Field(alias="completedDate")
-    duration_seconds: int = Field(alias="durationSeconds")
-    distance_km: float = Field(alias="distanceKm")
-    tss: int
-    intensity_factor: float = Field(alias="intensityFactor")
-    notes: str
-    test_results: FitnessTestResults = Field(alias="testResults")
-    profile: RiderProfile
-    power: list[int]
-    cadence: list[int]
-    heart_rate: list[int] = Field(alias="heartRate")
-    power_bests: list[PowerBest] = Field(alias="powerBests")
-    analysis: str
+    completed_date: str | None = Field(default=None, alias="completedDate")
+    duration_seconds: int | None = Field(default=None, alias="durationSeconds")
+    distance_km: float | None = Field(default=None, alias="distanceKm")
+    tss: int | None = None
+    intensity_factor: float | None = Field(default=None, alias="intensityFactor")
+    notes: str | None = None
+    test_results: FitnessTestResults | None = Field(default=None, alias="testResults")
+    profile: RiderProfile | None = None
+    power: list[int] | None = None
+    cadence: list[int] | None = None
+    heart_rate: list[int] | None = Field(default=None, alias="heartRate")
+    power_bests: list[PowerBest] | None = Field(default=None, alias="powerBests")
+    analysis: str | None = None
 
     model_config = {"populate_by_name": True}
 
@@ -341,7 +382,7 @@ class LoginUserData(BaseModel):
     """Login response user data."""
 
     status: str
-    message: str
+    message: str | None = None
     token: str
     user: dict[str, Any]  # Contains nested profiles
 
@@ -445,7 +486,7 @@ class SearchActivitiesData(BaseModel):
     """Search activities response data."""
 
     activities: list[FitnessTestResult]
-    total: int
+    count: int
 
 
 class SearchActivitiesResponse(BaseModel):
@@ -459,36 +500,22 @@ class SearchActivitiesResponse(BaseModel):
 class GetActivityResponse(BaseModel):
     """GraphQL get activity response."""
 
-    get_activity: FitnessTestDetails = Field(alias="getActivity")
+    activity: FitnessTestDetails
 
     model_config = {"populate_by_name": True}
-
-
-class GetUserPlansRangeData(BaseModel):
-    """Get user plans range response data."""
-
-    status: str
-    message: str | None
-    items: list[UserPlanItem]
 
 
 class GetUserPlansRangeResponse(BaseModel):
     """GraphQL get user plans range response."""
 
-    get_user_plans_range: GetUserPlansRangeData = Field(alias="getUserPlansRange")
+    user_plan: list[UserPlanItem] = Field(alias="userPlan")
 
     model_config = {"populate_by_name": True}
-
-
-class WorkoutDetailsData(BaseModel):
-    """Get workouts response data."""
-
-    workouts: list[WorkoutDetails]
 
 
 class GetWorkoutsResponse(BaseModel):
     """GraphQL get workouts response."""
 
-    get_workouts: WorkoutDetailsData = Field(alias="getWorkouts")
+    workouts: list[WorkoutDetails]
 
     model_config = {"populate_by_name": True}

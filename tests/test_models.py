@@ -1,7 +1,5 @@
 """Tests for Pydantic models."""
 
-import json
-
 from wahoo_systm_mcp.models import (
     AddAgendaResponse,
     DeleteAgendaResponse,
@@ -273,16 +271,17 @@ class TestWorkoutDetails:
                 "tss": 95,
                 "ratings": {"nm": 3, "ac": 4, "map": 4, "ftp": 3},
             },
-            "triggers": '{"intervals": []}',
+            "graphTriggers": [{"time": 0, "value": 50, "type": "power"}],
         }
         details = WorkoutDetails.model_validate(data)
         assert details.name == "Nine Hammers"
         assert details.duration_seconds == 3600
         assert details.metrics.tss == 95
         assert details.metrics.ratings.map_ == 4
+        assert details.graph_triggers is not None
 
-    def test_triggers_dict_conversion(self) -> None:
-        """Test that dict triggers get converted to JSON string."""
+    def test_graph_triggers(self) -> None:
+        """Test that graph triggers are parsed."""
         data = {
             "id": "workout1",
             "name": "Test",
@@ -297,12 +296,11 @@ class TestWorkoutDetails:
                 "tss": 50,
                 "ratings": {"nm": 2, "ac": 2, "map": 2, "ftp": 2},
             },
-            "triggers": {"intervals": [{"start": 0, "end": 100}]},
+            "graphTriggers": [{"time": 0, "value": 100, "type": "power"}],
         }
         details = WorkoutDetails.model_validate(data)
-        assert isinstance(details.triggers, str)
-        parsed = json.loads(details.triggers)
-        assert "intervals" in parsed
+        assert details.graph_triggers is not None
+        assert details.graph_triggers[0].type == "power"
 
 
 class TestLibraryContent:
@@ -545,65 +543,59 @@ class TestGraphQLResponses:
                         "intensityFactor": 0.92,
                     }
                 ],
-                "total": 1,
+                "count": 1,
             }
         }
         response = SearchActivitiesResponse.model_validate(data)
-        assert response.search_activities.total == 1
+        assert response.search_activities.count == 1
         assert response.search_activities.activities[0].name == "Full Frontal"
 
     def test_get_user_plans_range_response(self) -> None:
         data = {
-            "getUserPlansRange": {
-                "status": "success",
-                "message": None,
-                "items": [
-                    {
-                        "day": 1,
-                        "plannedDate": "2024-01-15",
-                        "rank": 1,
-                        "agendaId": "agenda1",
-                        "status": "scheduled",
-                        "type": "workout",
-                        "prospects": [],
-                        "plan": {
-                            "id": "plan1",
-                            "name": "Base",
-                            "color": "#FF0000",
-                            "description": "Base plan",
-                            "category": "endurance",
-                        },
-                    }
-                ],
-            }
+            "userPlan": [
+                {
+                    "day": 1,
+                    "plannedDate": "2024-01-15",
+                    "rank": 1,
+                    "agendaId": "agenda1",
+                    "status": "scheduled",
+                    "type": "workout",
+                    "prospects": [],
+                    "plan": {
+                        "id": "plan1",
+                        "name": "Base",
+                        "color": "#FF0000",
+                        "description": "Base plan",
+                        "category": "endurance",
+                    },
+                }
+            ]
         }
         response = GetUserPlansRangeResponse.model_validate(data)
-        assert len(response.get_user_plans_range.items) == 1
-        assert response.get_user_plans_range.items[0].agenda_id == "agenda1"
+        assert len(response.user_plan) == 1
+        assert response.user_plan[0].agenda_id == "agenda1"
 
     def test_get_workouts_response(self) -> None:
         data = {
-            "getWorkouts": {
-                "workouts": [
-                    {
-                        "id": "w1",
-                        "name": "Nine Hammers",
-                        "sport": "cycling",
-                        "shortDescription": "Classic",
-                        "details": "Full details",
-                        "level": "advanced",
-                        "durationSeconds": 3600,
-                        "equipment": [],
-                        "metrics": {
-                            "intensityFactor": 0.85,
-                            "tss": 95,
-                            "ratings": {"nm": 3, "ac": 4, "map": 4, "ftp": 3},
-                        },
-                        "triggers": "{}",
-                    }
-                ]
-            }
+            "workouts": [
+                {
+                    "id": "w1",
+                    "name": "Nine Hammers",
+                    "sport": "cycling",
+                    "shortDescription": "Classic",
+                    "details": "Full details",
+                    "level": "advanced",
+                    "durationSeconds": 3600,
+                    "equipment": [],
+                    "metrics": {
+                        "intensityFactor": 0.85,
+                        "tss": 95,
+                        "ratings": {"nm": 3, "ac": 4, "map": 4, "ftp": 3},
+                    },
+                    "graphTriggers": [{"time": 0, "value": 50, "type": "power"}],
+                }
+            ]
         }
         response = GetWorkoutsResponse.model_validate(data)
-        assert len(response.get_workouts.workouts) == 1
-        assert response.get_workouts.workouts[0].name == "Nine Hammers"
+        assert len(response.workouts) == 1
+        assert response.workouts[0].name == "Nine Hammers"
