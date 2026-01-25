@@ -8,6 +8,7 @@ from typing import Any, Literal
 from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
 from fastmcp.server.lifespan import lifespan
+from pydantic import BaseModel
 
 from wahoo_systm_mcp.client import WahooClient, _calculate_heart_rate_zones
 from wahoo_systm_mcp.onepassword import get_credentials
@@ -56,6 +57,21 @@ def _format_duration(seconds: int | None) -> str | None:
     return f"{minutes}m"
 
 
+def _normalize_map_keys(value: Any) -> Any:
+    if isinstance(value, list):
+        return [_normalize_map_keys(item) for item in value]
+    if isinstance(value, dict):
+        normalized: dict[str, Any] = {}
+        for key, item in value.items():
+            normalized["map" if key == "map_" else key] = _normalize_map_keys(item)
+        return normalized
+    return value
+
+
+def _dump_snake(model: BaseModel) -> dict[str, Any]:
+    return _normalize_map_keys(model.model_dump())
+
+
 # =============================================================================
 # Calendar Tools
 # =============================================================================
@@ -76,7 +92,7 @@ async def get_calendar(
     """
     client = _get_client(ctx)
     workouts = await client.get_calendar(start_date, end_date, time_zone)
-    return [w.model_dump(by_alias=True) for w in workouts]
+    return [_dump_snake(w) for w in workouts]
 
 
 @mcp.tool
@@ -97,9 +113,9 @@ async def schedule_workout(
     agenda_id = await client.schedule_workout(content_id, date, time_zone)
     return {
         "success": True,
-        "agendaId": agenda_id,
+        "agenda_id": agenda_id,
         "date": date,
-        "timezone": time_zone,
+        "time_zone": time_zone,
     }
 
 
@@ -122,9 +138,9 @@ async def reschedule_workout(
     return {
         "success": True,
         "message": "Workout rescheduled successfully",
-        "agendaId": agenda_id,
-        "newDate": new_date,
-        "timezone": time_zone,
+        "agenda_id": agenda_id,
+        "new_date": new_date,
+        "time_zone": time_zone,
     }
 
 
@@ -140,7 +156,7 @@ async def remove_workout(ctx: Context, agenda_id: str) -> dict[str, Any]:
     return {
         "success": True,
         "message": "Workout removed successfully",
-        "agendaId": agenda_id,
+        "agenda_id": agenda_id,
     }
 
 
@@ -208,7 +224,7 @@ async def get_workouts(
 
     return {
         "total": len(workouts),
-        "workouts": [w.model_dump(by_alias=True) for w in workouts],
+        "workouts": [_dump_snake(w) for w in workouts],
     }
 
 
@@ -281,7 +297,7 @@ async def get_cycling_workouts(
 
     return {
         "total": len(workouts),
-        "workouts": [w.model_dump(by_alias=True) for w in workouts],
+        "workouts": [_dump_snake(w) for w in workouts],
     }
 
 
@@ -296,7 +312,7 @@ async def get_workout_details(ctx: Context, workout_id: str) -> dict[str, Any]:
     """
     client = _get_client(ctx)
     details = await client.get_workout_details(workout_id)
-    return details.model_dump(by_alias=True)
+    return _dump_snake(details)
 
 
 # =============================================================================
@@ -324,13 +340,13 @@ async def get_rider_profile(ctx: Context) -> dict[str, Any]:
     heart_rate_zones = _calculate_heart_rate_zones(lthr_value) if lthr_value else []
 
     return {
-        "fourDP": {
+        "four_dp": {
             "nm": {"watts": watts_profile.nm, "score": enhanced.power_5s.graph_value},
             "ac": {"watts": watts_profile.ac, "score": enhanced.power_1m.graph_value},
             "map": {"watts": watts_profile.map_, "score": enhanced.power_5m.graph_value},
             "ftp": {"watts": watts_profile.ftp, "score": enhanced.power_20m.graph_value},
         },
-        "riderType": {
+        "rider_type": {
             "name": enhanced.rider_type.name,
             "description": enhanced.rider_type.description,
         },
@@ -345,8 +361,8 @@ async def get_rider_profile(ctx: Context) -> dict[str, Any]:
             "summary": enhanced.rider_weakness.weakness_summary,
         },
         "lthr": lthr_value,
-        "heartRateZones": [z.model_dump() for z in heart_rate_zones],
-        "lastTestDate": _format_date(enhanced.start_time),
+        "heart_rate_zones": [z.model_dump() for z in heart_rate_zones],
+        "last_test_date": _format_date(enhanced.start_time),
     }
 
 
@@ -376,11 +392,11 @@ async def get_fitness_test_history(
             "duration": _format_duration(test.duration_seconds),
             "distance": f"{test.distance_km:.2f} km" if test.distance_km is not None else None,
             "tss": test.tss,
-            "intensityFactor": test.intensity_factor,
+            "intensity_factor": test.intensity_factor,
         }
 
         if test.test_results:
-            formatted["fourDP"] = {
+            formatted["four_dp"] = {
                 "nm": {
                     "watts": test.test_results.power_5s.value,
                     "score": test.test_results.power_5s.graph_value,
@@ -399,7 +415,7 @@ async def get_fitness_test_history(
                 },
             }
             formatted["lthr"] = test.test_results.lactate_threshold_heart_rate
-            formatted["riderType"] = test.test_results.rider_type.name
+            formatted["rider_type"] = test.test_results.rider_type.name
 
         formatted_tests.append(formatted)
 
@@ -435,9 +451,9 @@ async def get_fitness_test_details(ctx: Context, activity_id: str) -> dict[str, 
         "duration": _format_duration(details.duration_seconds),
         "distance": f"{details.distance_km:.2f} km" if details.distance_km is not None else None,
         "tss": details.tss,
-        "intensityFactor": details.intensity_factor,
+        "intensity_factor": details.intensity_factor,
         "notes": details.notes,
-        "fourDP": (
+        "four_dp": (
             {
                 "nm": {
                     "watts": details.test_results.power_5s.value,
@@ -462,16 +478,16 @@ async def get_fitness_test_details(ctx: Context, activity_id: str) -> dict[str, 
         "lthr": (
             details.test_results.lactate_threshold_heart_rate if details.test_results else None
         ),
-        "riderType": details.test_results.rider_type.name if details.test_results else None,
-        "powerCurve": (
+        "rider_type": details.test_results.rider_type.name if details.test_results else None,
+        "power_curve": (
             [{"duration": pb.duration, "value": pb.value} for pb in details.power_bests]
             if details.power_bests
             else []
         ),
-        "activityData": {
+        "activity_data": {
             "power": details.power,
             "cadence": details.cadence,
-            "heartRate": details.heart_rate,
+            "heart_rate": details.heart_rate,
         },
         "analysis": analysis_data,
     }

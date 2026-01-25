@@ -281,7 +281,7 @@ class TestGetCalendar:
 
         mock_client.get_calendar.assert_called_once_with("2024-01-01", "2024-01-31", "UTC")
         assert len(result) == 1
-        assert result[0]["agendaId"] == "agenda123"
+        assert result[0]["agenda_id"] == "agenda123"
 
     async def test_returns_empty_list(
         self,
@@ -311,8 +311,8 @@ class TestScheduleWorkout:
             "content123", "2024-01-15", "Europe/Lisbon"
         )
         assert result["success"] is True
-        assert result["agendaId"] == "new-agenda-id"
-        assert result["timezone"] == "Europe/Lisbon"
+        assert result["agenda_id"] == "new-agenda-id"
+        assert result["time_zone"] == "Europe/Lisbon"
 
     async def test_default_timezone(
         self,
@@ -324,7 +324,7 @@ class TestScheduleWorkout:
         result = await schedule_workout(mock_context, "content123", "2024-01-15")
 
         mock_client.schedule_workout.assert_called_once_with("content123", "2024-01-15", "UTC")
-        assert result["timezone"] == "UTC"
+        assert result["time_zone"] == "UTC"
 
 
 class TestRescheduleWorkout:
@@ -345,7 +345,7 @@ class TestRescheduleWorkout:
             "agenda123", "2024-02-01", "America/New_York"
         )
         assert result["success"] is True
-        assert result["newDate"] == "2024-02-01"
+        assert result["new_date"] == "2024-02-01"
 
 
 class TestRemoveWorkout:
@@ -362,7 +362,7 @@ class TestRemoveWorkout:
 
         mock_client.remove_workout.assert_called_once_with("agenda123")
         assert result["success"] is True
-        assert result["agendaId"] == "agenda123"
+        assert result["agenda_id"] == "agenda123"
 
 
 # =============================================================================
@@ -449,7 +449,7 @@ class TestGetWorkoutDetails:
 
         mock_client.get_workout_details.assert_called_once_with("workout1")
         assert result["name"] == "Nine Hammers"
-        assert result["durationSeconds"] == 3600
+        assert result["duration_seconds"] == 3600
 
 
 # =============================================================================
@@ -475,12 +475,12 @@ class TestGetRiderProfile:
 
         result = await get_rider_profile(mock_context)
 
-        assert result["fourDP"]["nm"]["watts"] == 900
-        assert result["fourDP"]["ftp"]["score"] == 70
-        assert result["riderType"]["name"] == "Attacker"
+        assert result["four_dp"]["nm"]["watts"] == 900
+        assert result["four_dp"]["ftp"]["score"] == 70
+        assert result["rider_type"]["name"] == "Attacker"
         assert result["lthr"] == 170
-        assert len(result["heartRateZones"]) == 5
-        assert result["heartRateZones"][0]["name"] == "Recovery"
+        assert len(result["heart_rate_zones"]) == 5
+        assert result["heart_rate_zones"][0]["name"] == "Recovery"
 
     async def test_raises_error_when_no_profile(
         self,
@@ -514,7 +514,7 @@ class TestGetFitnessTestHistory:
         mock_client.get_fitness_test_history.assert_called_once_with(1, 15)
         assert result["total"] == 1
         assert result["tests"][0]["name"] == "Full Frontal"
-        assert result["tests"][0]["fourDP"]["nm"]["watts"] == 850
+        assert result["tests"][0]["four_dp"]["nm"]["watts"] == 850
 
     async def test_pagination(
         self,
@@ -544,9 +544,9 @@ class TestGetFitnessTestDetails:
         mock_client.get_fitness_test_details.assert_called_once_with("test1")
         assert result["name"] == "Full Frontal"
         assert result["notes"] == "Felt strong"
-        assert result["fourDP"]["nm"]["watts"] == 850
-        assert len(result["powerCurve"]) == 2
-        assert result["activityData"]["power"] == [100, 150, 200]
+        assert result["four_dp"]["nm"]["watts"] == 850
+        assert len(result["power_curve"]) == 2
+        assert result["activity_data"]["power"] == [100, 150, 200]
         assert result["analysis"]["summary"] == "Great test"
 
     async def test_handles_invalid_analysis_json(
