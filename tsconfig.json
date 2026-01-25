@@ -1,8 +1,0 @@
-{
-  "extends": "@tsconfig/node20/tsconfig.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "declaration": true
-  },
-  "include": ["src/**/*", "vitest.config.ts", "eslint.config.mjs"]
-}
