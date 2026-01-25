@@ -311,8 +311,8 @@ async def get_rider_profile(ctx: Context) -> dict[str, Any]:
     Includes rider type classification, strengths/weaknesses, and heart rate zones.
     """
     client = _get_client(ctx)
-    enhanced = await client.get_enhanced_rider_profile()
-    current_profile = await client.get_rider_profile()
+    enhanced = await client.get_latest_test_profile()
+    current_profile = await client.get_current_profile()
 
     if not enhanced:
         raise ToolError("No rider profile found. Complete a Full Frontal or Half Monty test first.")

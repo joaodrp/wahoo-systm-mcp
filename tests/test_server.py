@@ -468,8 +468,8 @@ class TestGetRiderProfile:
     ) -> None:
         from wahoo_systm_mcp.models import RiderProfile
 
-        mock_client.get_enhanced_rider_profile = AsyncMock(return_value=sample_enhanced_profile)
-        mock_client.get_rider_profile = AsyncMock(
+        mock_client.get_latest_test_profile = AsyncMock(return_value=sample_enhanced_profile)
+        mock_client.get_current_profile = AsyncMock(
             return_value=RiderProfile(nm=900, ac=450, map=320, ftp=300, lthr=170)
         )
 
@@ -487,8 +487,8 @@ class TestGetRiderProfile:
         mock_context: MagicMock,
         mock_client: MagicMock,
     ) -> None:
-        mock_client.get_enhanced_rider_profile = AsyncMock(return_value=None)
-        mock_client.get_rider_profile = AsyncMock(return_value=None)
+        mock_client.get_latest_test_profile = AsyncMock(return_value=None)
+        mock_client.get_current_profile = AsyncMock(return_value=None)
 
         with pytest.raises(ToolError) as exc_info:
             await get_rider_profile(mock_context)

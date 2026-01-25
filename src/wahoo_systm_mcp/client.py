@@ -972,8 +972,8 @@ class WahooClient:
         if response.delete_agenda.status.lower() != "success":
             raise WahooAPIError("Failed to remove workout")
 
-    async def get_rider_profile(self) -> RiderProfile | None:
-        """Get the basic rider 4DP profile.
+    async def get_current_profile(self) -> RiderProfile | None:
+        """Get the current rider 4DP profile used for workout targets.
 
         Returns:
             The rider's 4DP profile (NM, AC, MAP, FTP) or None if not available.
@@ -1004,8 +1004,8 @@ class WahooClient:
 
         return self._rider_profile
 
-    async def get_enhanced_rider_profile(self) -> EnhancedRiderProfile | None:
-        """Get the enhanced rider profile with full test results and analysis.
+    async def get_latest_test_profile(self) -> EnhancedRiderProfile | None:
+        """Get the latest fitness test profile with analysis metadata.
 
         Returns:
             Enhanced profile including rider type, weakness analysis,

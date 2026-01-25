@@ -828,20 +828,20 @@ class TestRemoveWorkout:
 class TestGetRiderProfile:
     """Tests for get_rider_profile method."""
 
-    async def test_get_rider_profile_after_auth(self, authenticated_client: WahooClient) -> None:
-        """Test getting rider profile after authentication."""
+    async def test_get_current_profile_after_auth(self, authenticated_client: WahooClient) -> None:
+        """Test getting current profile after authentication."""
         from wahoo_systm_mcp.models import RiderProfile
 
         authenticated_client._rider_profile = RiderProfile(nm=850, ac=420, map=310, ftp=260)
 
-        profile = await authenticated_client.get_rider_profile()
+        profile = await authenticated_client.get_current_profile()
 
         assert profile is not None
         assert profile.nm == 850
         assert profile.ftp == 260
 
-    async def test_get_rider_profile_none(self, authenticated_client: WahooClient) -> None:
-        """Test fetching rider profile when not cached."""
+    async def test_get_current_profile_none(self, authenticated_client: WahooClient) -> None:
+        """Test fetching current profile when not cached."""
         authenticated_client._rider_profile = None
 
         response = {
@@ -859,15 +859,15 @@ class TestGetRiderProfile:
             authenticated_client._client, "post", new_callable=AsyncMock
         ) as mock_post:
             mock_post.return_value = mock_response(response)
-            profile = await authenticated_client.get_rider_profile()
+            profile = await authenticated_client.get_current_profile()
 
         assert profile is not None
         assert profile.ftp == 260
         assert authenticated_client._token == "new-token-xyz"
 
 
-class TestGetEnhancedRiderProfile:
-    """Tests for get_enhanced_rider_profile method."""
+class TestGetLatestTestProfile:
+    """Tests for get_latest_test_profile method."""
 
     async def test_get_enhanced_profile_success(self, authenticated_client: WahooClient) -> None:
         """Test getting enhanced rider profile."""
@@ -905,7 +905,7 @@ class TestGetEnhancedRiderProfile:
         ) as mock_post:
             mock_post.return_value = mock_response(test_response)
 
-            profile = await authenticated_client.get_enhanced_rider_profile()
+            profile = await authenticated_client.get_latest_test_profile()
 
             assert profile is not None
             assert profile.nm == 850
@@ -947,7 +947,7 @@ class TestGetEnhancedRiderProfile:
         ) as mock_post:
             mock_post.return_value = mock_response(test_response)
 
-            profile = await authenticated_client.get_enhanced_rider_profile()
+        profile = await authenticated_client.get_latest_test_profile()
 
             assert profile is None
 
