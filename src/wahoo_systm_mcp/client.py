@@ -93,6 +93,26 @@ mutation LoginUser($username: String!, $password: String!, $appInformation: AppI
 }
 """
 
+IMPERSONATE_MUTATION = """
+mutation Impersonate($appInformation: AppInformation!, $sessionToken: String!) {
+  impersonateUser(appInformation: $appInformation, sessionToken: $sessionToken) {
+    status
+    message
+    user {
+      profiles {
+        riderProfile {
+          nm
+          ac
+          map
+          ftp
+        }
+      }
+    }
+    token
+  }
+}
+"""
+
 MOST_RECENT_TEST_QUERY = """
 query MostRecentTest {
   mostRecentTest {
@@ -457,7 +477,7 @@ query GetActivity($activityId: ID!) {
 # =============================================================================
 
 
-def _calculate_heart_rate_zones(lthr: int) -> list[HeartRateZone]:
+def _calculate_heart_rate_zones(lthr: float) -> list[HeartRateZone]:
     """Calculate heart rate training zones based on lactate threshold heart rate.
 
     Uses standard zone percentages:
@@ -625,12 +645,7 @@ class WahooClient:
 
         self._token = response.login_user.token
 
-        # Extract rider profile from user data
-        user_data = response.login_user.user
-        profiles = user_data.get("profiles", {})
-        fitness = profiles.get("fitness")
-        if fitness:
-            self._rider_profile = RiderProfile.model_validate(fitness)
+        # Profile data is fetched on demand to ensure latest values.
 
     async def get_calendar(
         self, start_date: str, end_date: str, time_zone: str = "UTC"
@@ -959,6 +974,30 @@ class WahooClient:
         Returns:
             The rider's 4DP profile (NM, AC, MAP, FTP) or None if not available.
         """
+        if self._rider_profile:
+            return self._rider_profile
+
+        session_token = self._require_auth()
+        data = await self._call_api(
+            IMPERSONATE_MUTATION,
+            variables={
+                "appInformation": self._app_information(),
+                "sessionToken": session_token,
+            },
+            operation_name="Impersonate",
+            require_auth=False,
+        )
+
+        result = data.get("impersonateUser") or {}
+        token = result.get("token")
+        if token:
+            self._token = token
+
+        profiles = (result.get("user") or {}).get("profiles") or {}
+        rider_profile = profiles.get("riderProfile")
+        if rider_profile:
+            self._rider_profile = RiderProfile.model_validate(rider_profile)
+
         return self._rider_profile
 
     async def get_enhanced_rider_profile(self) -> EnhancedRiderProfile | None:

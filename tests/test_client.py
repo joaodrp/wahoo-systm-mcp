@@ -841,12 +841,29 @@ class TestGetRiderProfile:
         assert profile.ftp == 260
 
     async def test_get_rider_profile_none(self, authenticated_client: WahooClient) -> None:
-        """Test getting rider profile when not available."""
+        """Test fetching rider profile when not cached."""
         authenticated_client._rider_profile = None
 
-        profile = await authenticated_client.get_rider_profile()
+        response = {
+            "impersonateUser": {
+                "status": "Success",
+                "message": None,
+                "user": {
+                    "profiles": {"riderProfile": {"nm": 850, "ac": 420, "map": 310, "ftp": 260}},
+                },
+                "token": "new-token-xyz",
+            }
+        }
 
-        assert profile is None
+        with patch.object(
+            authenticated_client._client, "post", new_callable=AsyncMock
+        ) as mock_post:
+            mock_post.return_value = mock_response(response)
+            profile = await authenticated_client.get_rider_profile()
+
+        assert profile is not None
+        assert profile.ftp == 260
+        assert authenticated_client._token == "new-token-xyz"
 
 
 class TestGetEnhancedRiderProfile:
