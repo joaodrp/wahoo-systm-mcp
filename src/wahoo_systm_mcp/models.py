@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # =============================================================================
 # Core Types
@@ -125,6 +125,26 @@ class TrainerSetting(BaseModel):
     level: int | None = None
 
 
+def _normalize_graph_triggers(value: Any) -> Any:
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return value
+    if isinstance(value, dict):
+        times = value.get("time")
+        values = value.get("value")
+        types = value.get("type")
+        if (
+            not isinstance(times, list)
+            or not isinstance(values, list)
+            or not isinstance(types, list)
+        ):
+            return value
+        length = min(len(times), len(values), len(types))
+        return [{"time": times[i], "value": values[i], "type": types[i]} for i in range(length)]
+    return value
+
+
 class WorkoutGraphTrigger(BaseModel):
     """Graph trigger data point for a workout."""
 
@@ -152,6 +172,11 @@ class WorkoutProspect(BaseModel):
     four_dp_workout_graph: list[WorkoutGraphTrigger] | None = Field(
         default=None, alias="fourDPWorkoutGraph"
     )
+
+    @field_validator("four_dp_workout_graph", mode="before")
+    @classmethod
+    def normalize_four_dp_workout_graph(cls, value: Any) -> Any:
+        return _normalize_graph_triggers(value)
 
     model_config = {"populate_by_name": True}
 
@@ -251,6 +276,11 @@ class WorkoutDetails(BaseModel):
     descriptions: list[WorkoutDescription] | None = None
     metrics: WorkoutMetrics | None = None
     graph_triggers: list[WorkoutGraphTrigger] | None = Field(default=None, alias="graphTriggers")
+
+    @field_validator("graph_triggers", mode="before")
+    @classmethod
+    def normalize_graph_triggers(cls, value: Any) -> Any:
+        return _normalize_graph_triggers(value)
 
     model_config = {"populate_by_name": True}
 
