@@ -13,7 +13,7 @@ Built with [FastMCP 3.0](https://github.com/jlowin/fastmcp) for a clean, modern 
 - **Workout Details**: Access complete workout structures with intervals, power zones, and equipment requirements
 - **Rider Profile**: Retrieve 4DP values, rider type classification, strengths/weaknesses, and heart rate zones
 - **Fitness Test History**: Access Full Frontal and Half Monty test results with complete 4DP analysis
-- **AI Integration**: Returns JSON responses optimized for LLM consumption via MCP standard
+- **AI Integration**: Returns structured JSON responses optimized for LLM consumption via MCP standard
 
 ## Compatibility
 
@@ -182,7 +182,6 @@ wahoo-systm-mcp/
 │       └── onepassword.py     # 1Password credential retrieval
 ├── tests/
 │   ├── conftest.py            # Shared fixtures
-│   ├── fixtures/              # GraphQL response samples
 │   ├── test_client.py         # WahooClient tests
 │   ├── test_models.py         # Pydantic model tests
 │   ├── test_onepassword.py    # 1Password tests
