@@ -311,35 +311,38 @@ async def get_rider_profile(ctx: Context) -> dict[str, Any]:
     Includes rider type classification, strengths/weaknesses, and heart rate zones.
     """
     client = _get_client(ctx)
-    profile = await client.get_enhanced_rider_profile()
+    enhanced = await client.get_enhanced_rider_profile()
+    current_profile = await client.get_rider_profile()
 
-    if not profile:
+    if not enhanced:
         raise ToolError("No rider profile found. Complete a Full Frontal or Half Monty test first.")
+
+    watts_profile = current_profile or enhanced
 
     return {
         "fourDP": {
-            "nm": {"watts": profile.nm, "score": profile.power_5s.graph_value},
-            "ac": {"watts": profile.ac, "score": profile.power_1m.graph_value},
-            "map": {"watts": profile.map_, "score": profile.power_5m.graph_value},
-            "ftp": {"watts": profile.ftp, "score": profile.power_20m.graph_value},
+            "nm": {"watts": watts_profile.nm, "score": enhanced.power_5s.graph_value},
+            "ac": {"watts": watts_profile.ac, "score": enhanced.power_1m.graph_value},
+            "map": {"watts": watts_profile.map_, "score": enhanced.power_5m.graph_value},
+            "ftp": {"watts": watts_profile.ftp, "score": enhanced.power_20m.graph_value},
         },
         "riderType": {
-            "name": profile.rider_type.name,
-            "description": profile.rider_type.description,
+            "name": enhanced.rider_type.name,
+            "description": enhanced.rider_type.description,
         },
         "strengths": {
-            "name": profile.rider_weakness.strength_name,
-            "description": profile.rider_weakness.strength_description,
-            "summary": profile.rider_weakness.strength_summary,
+            "name": enhanced.rider_weakness.strength_name,
+            "description": enhanced.rider_weakness.strength_description,
+            "summary": enhanced.rider_weakness.strength_summary,
         },
         "weaknesses": {
-            "name": profile.rider_weakness.name,
-            "description": profile.rider_weakness.weakness_description,
-            "summary": profile.rider_weakness.weakness_summary,
+            "name": enhanced.rider_weakness.name,
+            "description": enhanced.rider_weakness.weakness_description,
+            "summary": enhanced.rider_weakness.weakness_summary,
         },
-        "lthr": profile.lactate_threshold_heart_rate,
-        "heartRateZones": [z.model_dump() for z in profile.heart_rate_zones],
-        "lastTestDate": _format_date(profile.start_time),
+        "lthr": enhanced.lactate_threshold_heart_rate,
+        "heartRateZones": [z.model_dump() for z in enhanced.heart_rate_zones],
+        "lastTestDate": _format_date(enhanced.start_time),
     }
 
 
