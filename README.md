@@ -10,7 +10,7 @@ Built with [FastMCP 3.0](https://github.com/jlowin/fastmcp) for a clean, modern 
 
 - **Calendar Management**: View, schedule, reschedule, and remove planned workouts
 - **Workout Library**: Browse and search 1000+ workouts with advanced filtering (sport, duration, TSS, 4DP focus, intensity)
-- **Workout Details**: Access complete workout structures with intervals, power zones, and equipment requirements
+- **Workout Details**: Access complete workout structures with graph triggers, equipment requirements, and key metrics
 - **Rider Profile**: Retrieve 4DP values, rider type classification, strengths/weaknesses, and heart rate zones
 - **Fitness Test History**: Access Full Frontal and Half Monty test results with complete 4DP analysis
 - **AI Integration**: Returns structured JSON responses optimized for LLM consumption via MCP standard
@@ -111,6 +111,14 @@ Restart Claude Desktop to load the configuration.
 | `WAHOO_USERNAME` | Wahoo SYSTM email address |
 | `WAHOO_PASSWORD` | Wahoo SYSTM password |
 
+#### Optional Overrides
+
+| Variable | Purpose |
+|----------|---------|
+| `WAHOO_APP_VERSION` | Override the app version sent to Wahoo SYSTM (defaults to the bundled value) |
+| `WAHOO_INSTALL_ID` | Optional install identifier (omitted if unset) |
+| `WAHOO_LOCALE` | Override the default locale (defaults to `en`) |
+
 The server automatically authenticates on startup and maintains the session for the duration of the process.
 
 ## Available Tools
@@ -128,7 +136,7 @@ The server automatically authenticates on startup and maintains the session for 
 
 - `get_workouts`: Browse entire workout library with filters for sport, duration, TSS, search terms, and sorting options
 - `get_cycling_workouts`: Specialized cycling workout search with 4DP focus, channel, category, and intensity filters
-- `get_workout_details`: Get complete workout information including intervals, power zones, equipment, and TSS
+- `get_workout_details`: Get complete workout information including graph triggers, equipment, and TSS
 
 ### Rider Profile
 
@@ -194,7 +202,7 @@ wahoo-systm-mcp/
 
 ```bash
 # Install all dependencies including dev
-uv sync --all-extras
+uv sync --dev
 
 # Run the server
 uv run python -m wahoo_systm_mcp
