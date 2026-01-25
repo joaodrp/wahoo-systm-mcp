@@ -470,7 +470,7 @@ class TestGetRiderProfile:
 
         mock_client.get_enhanced_rider_profile = AsyncMock(return_value=sample_enhanced_profile)
         mock_client.get_rider_profile = AsyncMock(
-            return_value=RiderProfile(nm=900, ac=450, map=320, ftp=300)
+            return_value=RiderProfile(nm=900, ac=450, map=320, ftp=300, lthr=170)
         )
 
         result = await get_rider_profile(mock_context)
@@ -478,8 +478,9 @@ class TestGetRiderProfile:
         assert result["fourDP"]["nm"]["watts"] == 900
         assert result["fourDP"]["ftp"]["score"] == 70
         assert result["riderType"]["name"] == "Attacker"
-        assert result["lthr"] == 168
-        assert len(result["heartRateZones"]) == 2
+        assert result["lthr"] == 170
+        assert len(result["heartRateZones"]) == 5
+        assert result["heartRateZones"][0]["name"] == "Recovery"
 
     async def test_raises_error_when_no_profile(
         self,

@@ -83,25 +83,25 @@ class TestCalculateHeartRateZones:
     def test_standard_lthr(self) -> None:
         """Test zone calculation with typical LTHR."""
         zones = _calculate_heart_rate_zones(165)
-        assert len(zones) == 6
+        assert len(zones) == 5
         assert zones[0].zone == 1
         assert zones[0].name == "Recovery"
         assert zones[0].min == 0
-        assert zones[0].max == 132  # int(165 * 0.81) - 1 = 133 - 1 = 132
-        assert zones[5].zone == 6
-        assert zones[5].name == "Anaerobic"
-        assert zones[5].max is None
+        assert zones[0].max == 114  # int(165 * 0.70) - 1 = 115 - 1 = 114
+        assert zones[4].zone == 5
+        assert zones[4].name == "Max"
+        assert zones[4].max is None
 
     def test_zone_boundaries(self) -> None:
         """Test that zones have correct boundary percentages."""
         lthr = 170
         zones = _calculate_heart_rate_zones(lthr)
-        # Zone 2: 81-89%
-        assert zones[1].min == int(lthr * 0.81)
-        assert zones[1].max == int(lthr * 0.89)
-        # Zone 4: 94-99%
-        assert zones[3].min == int(lthr * 0.94)
-        assert zones[3].max == int(lthr * 0.99)
+        # Zone 2: 70-87%
+        assert zones[1].min == int(lthr * 0.70) + 1
+        assert zones[1].max == int(lthr * 0.87) + 1
+        # Zone 4: 96-100%
+        assert zones[3].min == int(lthr * 0.96)
+        assert zones[3].max == int(lthr * 1.00)
 
 
 # =============================================================================
@@ -912,7 +912,7 @@ class TestGetEnhancedRiderProfile:
             assert profile.ftp == 260
             assert profile.rider_type.name == "Attacker"
             assert profile.lactate_threshold_heart_rate == 168
-            assert len(profile.heart_rate_zones) == 6
+            assert len(profile.heart_rate_zones) == 5
             assert profile.heart_rate_zones[0].name == "Recovery"
 
     async def test_get_enhanced_profile_no_test(self, authenticated_client: WahooClient) -> None:

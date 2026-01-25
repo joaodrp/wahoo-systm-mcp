@@ -9,7 +9,7 @@ from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
 from fastmcp.server.lifespan import lifespan
 
-from wahoo_systm_mcp.client import WahooClient
+from wahoo_systm_mcp.client import WahooClient, _calculate_heart_rate_zones
 from wahoo_systm_mcp.onepassword import get_credentials
 
 
@@ -318,6 +318,10 @@ async def get_rider_profile(ctx: Context) -> dict[str, Any]:
         raise ToolError("No rider profile found. Complete a Full Frontal or Half Monty test first.")
 
     watts_profile = current_profile or enhanced
+    lthr_value = (
+        current_profile.lthr if current_profile else None
+    ) or enhanced.lactate_threshold_heart_rate
+    heart_rate_zones = _calculate_heart_rate_zones(lthr_value) if lthr_value else []
 
     return {
         "fourDP": {
@@ -340,8 +344,8 @@ async def get_rider_profile(ctx: Context) -> dict[str, Any]:
             "description": enhanced.rider_weakness.weakness_description,
             "summary": enhanced.rider_weakness.weakness_summary,
         },
-        "lthr": enhanced.lactate_threshold_heart_rate,
-        "heartRateZones": [z.model_dump() for z in enhanced.heart_rate_zones],
+        "lthr": lthr_value,
+        "heartRateZones": [z.model_dump() for z in heart_rate_zones],
         "lastTestDate": _format_date(enhanced.start_time),
     }
 

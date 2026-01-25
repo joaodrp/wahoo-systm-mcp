@@ -105,6 +105,8 @@ mutation Impersonate($appInformation: AppInformation!, $sessionToken: String!) {
           ac
           map
           ftp
+          lthr
+          cadenceThreshold
         }
       }
     }
@@ -478,29 +480,31 @@ query GetActivity($activityId: ID!) {
 
 
 def _calculate_heart_rate_zones(lthr: float) -> list[HeartRateZone]:
-    """Calculate heart rate training zones based on lactate threshold heart rate.
+    """Calculate heart rate training zones based on cTHR (UI-aligned).
 
-    Uses standard zone percentages:
-    - Zone 1 (Recovery): < 81% LTHR
-    - Zone 2 (Endurance): 81-89% LTHR
-    - Zone 3 (Tempo): 90-93% LTHR
-    - Zone 4 (Threshold): 94-99% LTHR
-    - Zone 5 (VO2 Max): 100-105% LTHR
-    - Zone 6 (Anaerobic): > 105% LTHR
-
-    Args:
-        lthr: Lactate threshold heart rate in BPM.
-
-    Returns:
-        List of heart rate zones with calculated ranges.
+    Matches the athlete profile UI ranges:
+    - Z1 Recovery: < 70%
+    - Z2 Endurance: 70-87%
+    - Z3 Tempo: 88-95%
+    - Z4 Threshold: 96-100%
+    - Z5 Max: > 100%
     """
+    if lthr <= 0:
+        return []
+
+    min_endurance = int(lthr * 0.70)
+    max_endurance = int(lthr * 0.87) + 1
+    min_tempo = int(lthr * 0.88)
+    max_tempo = int(lthr * 0.95)
+    min_threshold = int(lthr * 0.96)
+    max_threshold = int(lthr * 1.00)
+
     return [
-        HeartRateZone(zone=1, name="Recovery", min=0, max=int(lthr * 0.81) - 1),
-        HeartRateZone(zone=2, name="Endurance", min=int(lthr * 0.81), max=int(lthr * 0.89)),
-        HeartRateZone(zone=3, name="Tempo", min=int(lthr * 0.90), max=int(lthr * 0.93)),
-        HeartRateZone(zone=4, name="Threshold", min=int(lthr * 0.94), max=int(lthr * 0.99)),
-        HeartRateZone(zone=5, name="VO2 Max", min=int(lthr * 1.00), max=int(lthr * 1.05)),
-        HeartRateZone(zone=6, name="Anaerobic", min=int(lthr * 1.06), max=None),
+        HeartRateZone(zone=1, name="Recovery", min=0, max=max(min_endurance - 1, 0)),
+        HeartRateZone(zone=2, name="Endurance", min=min_endurance + 1, max=max_endurance),
+        HeartRateZone(zone=3, name="Tempo", min=min_tempo, max=max_tempo),
+        HeartRateZone(zone=4, name="Threshold", min=min_threshold, max=max_threshold),
+        HeartRateZone(zone=5, name="Max", min=max_threshold + 1, max=None),
     ]
 
 

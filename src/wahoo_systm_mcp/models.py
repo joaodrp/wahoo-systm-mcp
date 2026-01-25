@@ -25,6 +25,8 @@ class RiderProfile(BaseModel):
     ac: int = Field(description="Anaerobic Capacity (1min)")
     map_: int = Field(alias="map", description="Maximal Aerobic Power (5min)")
     ftp: int = Field(description="Functional Threshold Power (20min)")
+    lthr: float | None = Field(default=None, alias="lthr")
+    cadence_threshold: int | None = Field(default=None, alias="cadenceThreshold")
 
     model_config = {"populate_by_name": True}
 
