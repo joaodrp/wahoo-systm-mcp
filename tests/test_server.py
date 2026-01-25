@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -12,15 +11,7 @@ from wahoo_systm_mcp.models import (
     EnhancedRiderProfile,
     FitnessTestDetails,
     FitnessTestResult,
-    FitnessTestResults,
-    HeartRateZone,
     LibraryContent,
-    LibraryMetrics,
-    PowerBest,
-    PowerTestValue,
-    RiderProfile,
-    RiderTypeInfo,
-    RiderWeaknessInfo,
     UserPlanItem,
     WorkoutDetails,
     WorkoutEquipment,

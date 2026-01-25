@@ -2,17 +2,12 @@
 
 import json
 
-import pytest
-
 from wahoo_systm_mcp.models import (
     AddAgendaResponse,
-    ChannelInfo,
     DeleteAgendaResponse,
     EnhancedRiderProfile,
     FitnessTestDetails,
     FitnessTestResult,
-    FitnessTestResults,
-    GetActivityResponse,
     GetUserPlansRangeResponse,
     GetWorkoutsResponse,
     HeartRateZone,
@@ -21,22 +16,16 @@ from wahoo_systm_mcp.models import (
     LoginResponse,
     MostRecentTestResponse,
     MoveAgendaResponse,
-    PlanInfo,
-    PowerBest,
     PowerTestValue,
     RiderProfile,
     RiderTypeInfo,
     RiderWeaknessInfo,
     SearchActivitiesResponse,
-    SportInfo,
     UserPlanItem,
     WahooCredentials,
     WorkoutDetails,
-    WorkoutEquipment,
     WorkoutIntensity,
-    WorkoutMetrics,
     WorkoutProspect,
-    WorkoutRatings,
 )
 
 

@@ -214,7 +214,7 @@ class WorkoutDetails(BaseModel):
         """Ensure triggers is a JSON string."""
         if isinstance(v, dict):
             return json.dumps(v)
-        return v
+        return str(v) if v is not None else ""
 
 
 class LibraryMetrics(BaseModel):
