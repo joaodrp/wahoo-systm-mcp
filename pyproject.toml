@@ -40,6 +40,7 @@ path = "src/wahoo_systm_mcp/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/wahoo_systm_mcp"]
+include = ["src/wahoo_systm_mcp/py.typed"]
 
 [tool.ruff]
 line-length = 100
