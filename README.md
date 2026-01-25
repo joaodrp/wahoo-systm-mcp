@@ -26,12 +26,9 @@ Built with [FastMCP 3.0](https://github.com/jlowin/fastmcp) for a clean, modern 
 - **Fitness Test History**: Access Full Frontal and Half Monty test results with complete 4DP analysis
 - **AI Integration**: Returns structured JSON responses optimized for LLM consumption via MCP standard
 
-## Compatibility
+## Compatible Clients
 
-This server is designed for clients supporting the Model Context Protocol (MCP) standard:
-
-- **Claude Desktop** - Officially supported and tested
-- **Other MCP clients** - Should work with any MCP-compatible client
+Any Model Context Protocol (MCP) compatible client should work. See the [Model Context Protocol: Getting Started](https://modelcontextprotocol.io/docs/getting-started/intro) introduction for a general overview.
 
 ## Setup Instructions
 
@@ -41,9 +38,6 @@ This server is designed for clients supporting the Model Context Protocol (MCP) 
 - [uv](https://docs.astral.sh/uv/) package manager
 - Active Wahoo SYSTM account
 - (Recommended) 1Password CLI for secure credential storage
-
-> [!IMPORTANT]
-> This server does not persist your personal data. Credentials are used only in memory during a running session.
 
 ### Installation Steps
 
@@ -55,7 +49,10 @@ cd wahoo-systm-mcp
 uv sync
 ```
 
-#### 2. Configure Claude Desktop
+#### 2. Configure Client
+
+> [!NOTE]
+> Here we use Claude Desktop as example. See your client's documentation for instructions on how to configure MCP servers.
 
 Update the configuration file with the absolute path to the project:
 
@@ -269,10 +266,9 @@ This server uses the Wahoo SYSTM GraphQL API at `https://api.thesufferfest.com/g
 
 ## Security Notes
 
-> [!IMPORTANT]
-> - Credentials are only stored in memory during the session
-> - Authentication tokens are not persisted between server restarts
-> - 1Password integration provides the most secure credential management
+- Credentials are only stored in memory during the session
+- Authentication tokens are not persisted between server restarts
+- 1Password integration provides the most secure credential management
 
 ## Acknowledgments
 
