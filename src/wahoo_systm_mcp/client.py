@@ -502,7 +502,12 @@ class WahooClient:
         if operation_name is not None:
             body["operationName"] = operation_name
 
-        response = await self._client.post(API_URL, json=body, headers=headers)
+        try:
+            response = await self._client.post(API_URL, json=body, headers=headers)
+        except httpx.TimeoutException as e:
+            raise WahooAPIError("API request timed out") from e
+        except httpx.HTTPError as e:
+            raise WahooAPIError(f"HTTP error while calling API: {e}") from e
 
         if response.status_code != 200:
             raise WahooAPIError(
@@ -510,7 +515,10 @@ class WahooClient:
                 status_code=response.status_code,
             )
 
-        result: dict[str, Any] = response.json()
+        try:
+            result: dict[str, Any] = response.json()
+        except ValueError as e:
+            raise WahooAPIError("API response was not valid JSON") from e
 
         if "errors" in result:
             errors = result["errors"]
@@ -592,8 +600,11 @@ class WahooClient:
     async def get_workout_details(self, workout_id: str) -> WorkoutDetails:
         """Get detailed information about a specific workout.
 
+        Accepts a workoutId, or a library content id (contentId). If a contentId is
+        provided, the library is queried to map it to a workoutId.
+
         Args:
-            workout_id: The workout ID.
+            workout_id: The workout ID or content ID.
 
         Returns:
             Detailed workout information.
@@ -601,6 +612,22 @@ class WahooClient:
         Raises:
             WahooAPIError: If workout not found or API error.
         """
+        workout = await self._get_workout_details_by_id(workout_id)
+        if workout:
+            return workout
+
+        # Try mapping contentId -> workoutId
+        content = await self.get_workout_library()
+        match = next((c for c in content if c.id == workout_id), None)
+        if match:
+            mapped = await self._get_workout_details_by_id(match.workout_id)
+            if mapped:
+                return mapped
+
+        raise WahooAPIError(f"Workout not found: {workout_id}")
+
+    async def _get_workout_details_by_id(self, workout_id: str) -> WorkoutDetails | None:
+        """Fetch workout details by workoutId, returning None when not found."""
         variables = {
             "input": {
                 "workoutIds": [workout_id],
@@ -615,11 +642,7 @@ class WahooClient:
 
         response = GetWorkoutsResponse.model_validate(data)
         workouts = response.get_workouts.workouts
-
-        if not workouts:
-            raise WahooAPIError(f"Workout not found: {workout_id}")
-
-        return workouts[0]
+        return workouts[0] if workouts else None
 
     async def get_workout_library(
         self, filters: dict[str, Any] | None = None
@@ -692,13 +715,17 @@ class WahooClient:
         if "min_tss" in filters:
             min_tss = filters["min_tss"]
             filtered = [
-                c for c in filtered if c.metrics and c.metrics.tss and c.metrics.tss >= min_tss
+                c
+                for c in filtered
+                if c.metrics and c.metrics.tss is not None and c.metrics.tss >= min_tss
             ]
 
         if "max_tss" in filters:
             max_tss = filters["max_tss"]
             filtered = [
-                c for c in filtered if c.metrics and c.metrics.tss and c.metrics.tss <= max_tss
+                c
+                for c in filtered
+                if c.metrics and c.metrics.tss is not None and c.metrics.tss <= max_tss
             ]
 
         if "search" in filters:
