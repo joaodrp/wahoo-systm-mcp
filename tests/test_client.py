@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -25,17 +26,24 @@ from wahoo_systm_mcp.client import (
 
 
 @pytest.fixture
-def client() -> WahooClient:
+async def client() -> AsyncIterator[WahooClient]:
     """Create a WahooClient instance."""
-    return WahooClient()
+    client = WahooClient()
+    try:
+        yield client
+    finally:
+        await client.close()
 
 
 @pytest.fixture
-def authenticated_client() -> WahooClient:
+async def authenticated_client() -> AsyncIterator[WahooClient]:
     """Create an authenticated WahooClient instance."""
     client = WahooClient()
     client._token = "test-token"
-    return client
+    try:
+        yield client
+    finally:
+        await client.close()
 
 
 def mock_response(data: dict[str, Any], status_code: int = 200) -> httpx.Response:
