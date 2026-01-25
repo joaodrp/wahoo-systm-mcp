@@ -1,0 +1,134 @@
+{
+  "manifest_version": "0.2",
+  "name": "wahoo-systm-mcp",
+  "display_name": "Wahoo SYSTM MCP",
+  "version": "1.0.0",
+  "description": "MCP server for Wahoo SYSTM training data and workout management",
+  "author": {
+    "name": "João Pereira",
+    "url": "https://github.com/joaodrp/wahoo-systm-mcp"
+  },
+  "homepage": "https://github.com/joaodrp/wahoo-systm-mcp",
+  "documentation": "https://github.com/joaodrp/wahoo-systm-mcp/blob/main/README.md",
+  "support": "https://github.com/joaodrp/wahoo-systm-mcp/issues",
+  "server": {
+    "type": "python",
+    "entry_point": "src/wahoo_systm_mcp/__main__.py",
+    "mcp_config": {
+      "command": "python",
+      "args": [
+        "-m",
+        "wahoo_systm_mcp"
+      ],
+      "env": {
+        "PYTHONPATH": "${__dirname}/src"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "get_calendar",
+      "description": "Retrieve planned workouts in a date range"
+    },
+    {
+      "name": "schedule_workout",
+      "description": "Add a workout to the calendar on a specific date"
+    },
+    {
+      "name": "reschedule_workout",
+      "description": "Move a scheduled workout to a new date"
+    },
+    {
+      "name": "remove_workout",
+      "description": "Remove a scheduled workout from the calendar"
+    },
+    {
+      "name": "get_workouts",
+      "description": "Browse the workout library with filters and sorting"
+    },
+    {
+      "name": "get_cycling_workouts",
+      "description": "Search cycling workouts with 4DP focus filters"
+    },
+    {
+      "name": "get_workout_details",
+      "description": "Get full workout details and interval targets"
+    },
+    {
+      "name": "get_rider_profile",
+      "description": "Retrieve current 4DP values and rider profile data"
+    },
+    {
+      "name": "get_fitness_test_history",
+      "description": "List completed fitness tests and results"
+    },
+    {
+      "name": "get_fitness_test_details",
+      "description": "Get detailed data for a specific fitness test"
+    }
+  ],
+  "user_config": {
+    "WAHOO_USERNAME_1P_REF": {
+      "type": "string",
+      "title": "1Password Username Reference",
+      "description": "1Password secret reference for the Wahoo SYSTM username",
+      "required": false,
+      "sensitive": true
+    },
+    "WAHOO_PASSWORD_1P_REF": {
+      "type": "string",
+      "title": "1Password Password Reference",
+      "description": "1Password secret reference for the Wahoo SYSTM password",
+      "required": false,
+      "sensitive": true
+    },
+    "WAHOO_USERNAME": {
+      "type": "string",
+      "title": "Wahoo SYSTM Username",
+      "description": "Wahoo SYSTM account email address",
+      "required": false,
+      "sensitive": true
+    },
+    "WAHOO_PASSWORD": {
+      "type": "string",
+      "title": "Wahoo SYSTM Password",
+      "description": "Wahoo SYSTM account password",
+      "required": false,
+      "sensitive": true
+    },
+    "WAHOO_APP_VERSION": {
+      "type": "string",
+      "title": "App Version Override",
+      "description": "Override the app version sent to Wahoo SYSTM (optional)",
+      "required": false,
+      "sensitive": false
+    },
+    "WAHOO_INSTALL_ID": {
+      "type": "string",
+      "title": "Install ID Override",
+      "description": "Override the install identifier sent to Wahoo SYSTM (optional)",
+      "required": false,
+      "sensitive": false
+    },
+    "WAHOO_LOCALE": {
+      "type": "string",
+      "title": "Locale Override",
+      "description": "Override the locale sent to Wahoo SYSTM (optional)",
+      "required": false,
+      "sensitive": false
+    }
+  },
+  "keywords": [
+    "wahoo",
+    "systm",
+    "mcp",
+    "cycling",
+    "training",
+    "workouts"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joaodrp/wahoo-systm-mcp"
+  }
+}
