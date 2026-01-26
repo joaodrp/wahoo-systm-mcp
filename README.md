@@ -113,26 +113,15 @@ Restart Claude Desktop to load the configuration.
 
 | Variable | Purpose |
 |----------|---------|
-| `WAHOO_USERNAME_1P_REF` | 1Password reference for Wahoo SYSTM username |
-| `WAHOO_PASSWORD_1P_REF` | 1Password reference for Wahoo SYSTM password |
+| `WAHOO_USERNAME_1P_REF` | 1Password reference for Wahoo SYSTM username (use this or Option B) |
+| `WAHOO_PASSWORD_1P_REF` | 1Password reference for Wahoo SYSTM password (use this or Option B) |
 
 #### Option B (Plain Environment Variables)
 
 | Variable | Purpose |
 |----------|---------|
-| `WAHOO_USERNAME` | Wahoo SYSTM email address |
-| `WAHOO_PASSWORD` | Wahoo SYSTM password |
-
-#### Optional Overrides
-
-> [!NOTE]
-> These are advanced escape hatches. You should not need to set them in normal use. If something breaks, please open an issue; these can be used as a temporary workaround while the server is updated.
-
-| Variable | Purpose |
-|----------|---------|
-| `WAHOO_APP_VERSION` | Override the app version sent to Wahoo SYSTM (defaults to the bundled value) |
-| `WAHOO_INSTALL_ID` | Optional install identifier (omitted if unset) |
-| `WAHOO_LOCALE` | Override the default locale (defaults to `en`) |
+| `WAHOO_USERNAME` | Wahoo SYSTM email address (use this or Option A) |
+| `WAHOO_PASSWORD` | Wahoo SYSTM password (use this or Option A) |
 
 The server automatically authenticates on startup and maintains the session for the duration of the process.
 
