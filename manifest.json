@@ -1,0 +1,108 @@
+{
+  "manifest_version": "0.4",
+  "name": "wahoo-systm-mcp",
+  "display_name": "Wahoo SYSTM MCP",
+  "version": "0.1.1",
+  "description": "MCP server for Wahoo SYSTM training data and workout management",
+  "author": {
+    "name": "João Pereira",
+    "url": "https://github.com/joaodrp"
+  },
+  "homepage": "https://github.com/joaodrp/wahoo-systm-mcp",
+  "documentation": "https://github.com/joaodrp/wahoo-systm-mcp/blob/main/README.md",
+  "support": "https://github.com/joaodrp/wahoo-systm-mcp/issues",
+  "server": {
+    "type": "uv",
+    "entry_point": "src/wahoo_systm_mcp/__main__.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "${__dirname}",
+        "--with",
+        ".",
+        "--python",
+        "3.12",
+        "python",
+        "-m",
+        "wahoo_systm_mcp"
+      ],
+      "env": {
+        "WAHOO_USERNAME": "${user_config.WAHOO_USERNAME}",
+        "WAHOO_PASSWORD": "${user_config.WAHOO_PASSWORD}",
+        "PYTHONIOENCODING": "utf-8"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "get_calendar",
+      "description": "Retrieve planned workouts in a date range"
+    },
+    {
+      "name": "schedule_workout",
+      "description": "Add a workout to the calendar on a specific date"
+    },
+    {
+      "name": "reschedule_workout",
+      "description": "Move a scheduled workout to a new date"
+    },
+    {
+      "name": "remove_workout",
+      "description": "Remove a scheduled workout from the calendar"
+    },
+    {
+      "name": "get_workouts",
+      "description": "Browse the workout library with filters and sorting"
+    },
+    {
+      "name": "get_cycling_workouts",
+      "description": "Search cycling workouts with 4DP focus filters"
+    },
+    {
+      "name": "get_workout_details",
+      "description": "Get full workout details and interval targets"
+    },
+    {
+      "name": "get_rider_profile",
+      "description": "Retrieve current 4DP values and rider profile data"
+    },
+    {
+      "name": "get_fitness_test_history",
+      "description": "List completed fitness tests and results"
+    },
+    {
+      "name": "get_fitness_test_details",
+      "description": "Get detailed data for a specific fitness test"
+    }
+  ],
+  "user_config": {
+    "WAHOO_USERNAME": {
+      "type": "string",
+      "title": "Wahoo SYSTM Username",
+      "description": "Wahoo SYSTM account email address",
+      "required": true,
+      "sensitive": true
+    },
+    "WAHOO_PASSWORD": {
+      "type": "string",
+      "title": "Wahoo SYSTM Password",
+      "description": "Wahoo SYSTM account password",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "keywords": ["wahoo", "systm", "cycling", "training", "workouts"],
+  "license": "MIT",
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "python": ">=3.11"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joaodrp/wahoo-systm-mcp"
+  }
+}

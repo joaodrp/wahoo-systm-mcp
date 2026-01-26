@@ -1,17 +1,15 @@
-## [0.1.1](https://github.com/joaodrp/wahoo-systm-mcp/compare/v0.1.0...v0.1.1) (2025-12-11)
-
-
-### Bug Fixes
-
-* resolve TypeScript compilation errors in imports and tests ([7b31078](https://github.com/joaodrp/wahoo-systm-mcp/commit/7b31078e87b0131316b5b34e41e71408acfce8d2))
-* resolve TypeScript compilation errors in test files ([f068007](https://github.com/joaodrp/wahoo-systm-mcp/commit/f068007be062692b28e664be66f9258adf9435ea))
-
 # Changelog
 
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.1] - 2024-12-11
+
+### Fixed
+
+- Resolve TypeScript compilation errors in imports and tests
 
 ## [0.1.0] - 2024-12-10
 
@@ -37,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - View heart rate zones and LTHR
 
 #### Security
-- 1Password CLI integration for secure credential storage
-- Plain environment variable option also supported
+- Plain environment variable credentials supported
 
+[0.1.1]: https://github.com/joaodrp/wahoo-systm-mcp/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/joaodrp/wahoo-systm-mcp/releases/tag/v0.1.0
