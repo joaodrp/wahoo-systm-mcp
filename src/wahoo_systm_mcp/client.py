@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from collections.abc import Mapping
 
 import httpx
 
@@ -27,6 +27,7 @@ from wahoo_systm_mcp.models import (
     UserPlanItem,
     WorkoutDetails,
 )
+from wahoo_systm_mcp.types import FilterValue, JSONObject, JSONValue
 
 # =============================================================================
 # Constants
@@ -552,10 +553,10 @@ class WahooClient:
     async def _call_api(
         self,
         query: str,
-        variables: dict[str, Any] | None = None,
+        variables: Mapping[str, JSONValue] | None = None,
         operation_name: str | None = None,
         require_auth: bool = True,
-    ) -> dict[str, Any]:
+    ) -> JSONObject:
         """Make a GraphQL API call.
 
         Args:
@@ -582,7 +583,7 @@ class WahooClient:
             token = self._require_auth()
             headers["Authorization"] = f"Bearer {token}"
 
-        body: dict[str, Any] = {"query": query}
+        body: JSONObject = {"query": query}
         if variables is not None:
             body["variables"] = variables
         if operation_name is not None:
@@ -602,17 +603,23 @@ class WahooClient:
             )
 
         try:
-            result: dict[str, Any] = response.json()
+            result = response.json()
         except ValueError as e:
             raise WahooAPIError("API response was not valid JSON") from e
 
-        if "errors" in result:
-            errors = result["errors"]
+        if not isinstance(result, dict):
+            raise WahooAPIError("API response was not a JSON object")
+
+        errors_value = result.get("errors")
+        if isinstance(errors_value, list) and errors_value:
+            errors = errors_value
             error_message = errors[0].get("message", "Unknown error") if errors else "Unknown error"
             raise WahooAPIError(f"GraphQL error: {error_message}")
 
-        data: dict[str, Any] = result.get("data", {})
-        return data
+        data_value = result.get("data")
+        if isinstance(data_value, dict):
+            return data_value
+        return {}
 
     async def authenticate(self, username: str, password: str) -> None:
         """Authenticate with Wahoo SYSTM.
@@ -624,7 +631,7 @@ class WahooClient:
         Raises:
             AuthenticationError: If authentication fails.
         """
-        variables = {
+        variables: dict[str, JSONValue] = {
             "username": username,
             "password": password,
             "appInformation": self._app_information(),
@@ -664,7 +671,7 @@ class WahooClient:
         Returns:
             List of scheduled workout items.
         """
-        variables = {
+        variables: dict[str, JSONValue] = {
             "startDate": start_date,
             "endDate": end_date,
             "queryParams": {"limit": 1000},
@@ -726,7 +733,7 @@ class WahooClient:
         return workouts[0] if workouts else None
 
     async def get_workout_library(
-        self, filters: dict[str, Any] | None = None
+        self, filters: dict[str, FilterValue] | None = None
     ) -> list[LibraryContent]:
         """Get workouts from the library with optional filtering.
 
@@ -748,7 +755,7 @@ class WahooClient:
         Returns:
             List of matching library content.
         """
-        variables = {
+        variables: dict[str, JSONValue] = {
             "locale": DEFAULT_LOCALE,
             "appInformation": self._app_information(),
         }
@@ -775,57 +782,78 @@ class WahooClient:
 
         if "sport" in filters:
             sport = filters["sport"]
-            filtered = [
-                c for c in filtered if c.workout_type and c.workout_type.lower() == sport.lower()
-            ]
+            if isinstance(sport, str):
+                filtered = [
+                    c
+                    for c in filtered
+                    if c.workout_type and c.workout_type.lower() == sport.lower()
+                ]
 
         if "channel" in filters:
             channel = filters["channel"]
-            filtered = [c for c in filtered if c.channel and c.channel.lower() == channel.lower()]
+            if isinstance(channel, str):
+                filtered = [
+                    c for c in filtered if c.channel and c.channel.lower() == channel.lower()
+                ]
 
         if "category" in filters:
             category = filters["category"]
-            filtered = [
-                c for c in filtered if c.category and c.category.lower() == category.lower()
-            ]
+            if isinstance(category, str):
+                filtered = [
+                    c for c in filtered if c.category and c.category.lower() == category.lower()
+                ]
 
         if "intensity" in filters:
             intensity = filters["intensity"]
-            filtered = [
-                c for c in filtered if c.intensity and c.intensity.lower() == intensity.lower()
-            ]
+            if isinstance(intensity, str):
+                filtered = [
+                    c for c in filtered if c.intensity and c.intensity.lower() == intensity.lower()
+                ]
 
         if "min_duration" in filters:
-            min_seconds = filters["min_duration"] * 60
-            filtered = [c for c in filtered if c.duration and c.duration >= min_seconds]
+            min_duration = filters["min_duration"]
+            if isinstance(min_duration, (int, float)):
+                min_seconds = min_duration * 60
+                filtered = [c for c in filtered if c.duration and c.duration >= min_seconds]
 
         if "max_duration" in filters:
-            max_seconds = filters["max_duration"] * 60
-            filtered = [c for c in filtered if c.duration and c.duration <= max_seconds]
+            max_duration = filters["max_duration"]
+            if isinstance(max_duration, (int, float)):
+                max_seconds = max_duration * 60
+                filtered = [c for c in filtered if c.duration and c.duration <= max_seconds]
 
         if "min_tss" in filters:
             min_tss = filters["min_tss"]
-            filtered = [
-                c
-                for c in filtered
-                if c.metrics and c.metrics.tss is not None and c.metrics.tss >= min_tss
-            ]
+            if isinstance(min_tss, (int, float)):
+                filtered = [
+                    c
+                    for c in filtered
+                    if c.metrics and c.metrics.tss is not None and c.metrics.tss >= min_tss
+                ]
 
         if "max_tss" in filters:
             max_tss = filters["max_tss"]
-            filtered = [
-                c
-                for c in filtered
-                if c.metrics and c.metrics.tss is not None and c.metrics.tss <= max_tss
-            ]
+            if isinstance(max_tss, (int, float)):
+                filtered = [
+                    c
+                    for c in filtered
+                    if c.metrics and c.metrics.tss is not None and c.metrics.tss <= max_tss
+                ]
 
         if "search" in filters:
-            search = filters["search"].lower()
-            filtered = [c for c in filtered if search in c.name.lower()]
+            search = filters["search"]
+            if isinstance(search, str):
+                filtered = [c for c in filtered if search.lower() in c.name.lower()]
 
         # Apply sorting
-        sort_by = filters.get("sort_by", "name")
-        sort_desc = filters.get("sort_direction", "asc") == "desc"
+        sort_by_value = filters.get("sort_by", "name")
+        sort_by = sort_by_value if isinstance(sort_by_value, str) else "name"
+        sort_direction_value = filters.get("sort_direction", "asc")
+        sort_desc = (
+            sort_direction_value.lower() == "desc"
+            if isinstance(sort_direction_value, str)
+            else False
+        )
 
         if sort_by == "name":
             filtered.sort(key=lambda c: c.name.lower(), reverse=sort_desc)
@@ -839,12 +867,14 @@ class WahooClient:
 
         # Apply limit
         if "limit" in filters:
-            filtered = filtered[: filters["limit"]]
+            limit = filters["limit"]
+            if isinstance(limit, int):
+                filtered = filtered[:limit]
 
         return filtered
 
     async def get_cycling_workouts(
-        self, filters: dict[str, Any] | None = None
+        self, filters: dict[str, FilterValue] | None = None
     ) -> list[LibraryContent]:
         """Get cycling workouts from the library.
 
@@ -864,19 +894,22 @@ class WahooClient:
 
         # Apply 4DP focus filter
         if filters and "four_dp_focus" in filters:
-            focus = filters["four_dp_focus"].upper()
+            focus_value = filters["four_dp_focus"]
+            if not isinstance(focus_value, str):
+                return content
+            focus = focus_value.upper()
             result = []
             for c in content:
                 if c.metrics and c.metrics.ratings:
                     rating = 0
                     if focus == "NM":
-                        rating = c.metrics.ratings.nm
+                        rating = c.metrics.ratings.nm or 0
                     elif focus == "AC":
-                        rating = c.metrics.ratings.ac
+                        rating = c.metrics.ratings.ac or 0
                     elif focus == "MAP":
-                        rating = c.metrics.ratings.map_
+                        rating = c.metrics.ratings.map_ or 0
                     elif focus == "FTP":
-                        rating = c.metrics.ratings.ftp
+                        rating = c.metrics.ratings.ftp or 0
                     if rating >= 4:
                         result.append(c)
             return result
@@ -992,15 +1025,22 @@ class WahooClient:
             require_auth=False,
         )
 
-        result = data.get("impersonateUser") or {}
-        token = result.get("token")
-        if token:
-            self._token = token
+        result_value = data.get("impersonateUser")
+        if not isinstance(result_value, dict):
+            return self._rider_profile
+        result = result_value
 
-        profiles = (result.get("user") or {}).get("profiles") or {}
-        rider_profile = profiles.get("riderProfile")
-        if rider_profile:
-            self._rider_profile = RiderProfile.model_validate(rider_profile)
+        token_value = result.get("token")
+        if isinstance(token_value, str) and token_value:
+            self._token = token_value
+
+        user_value = result.get("user")
+        if isinstance(user_value, dict):
+            profiles_value = user_value.get("profiles")
+            if isinstance(profiles_value, dict):
+                rider_profile_value = profiles_value.get("riderProfile")
+                if isinstance(rider_profile_value, dict):
+                    self._rider_profile = RiderProfile.model_validate(rider_profile_value)
 
         return self._rider_profile
 
@@ -1055,15 +1095,15 @@ class WahooClient:
         Returns:
             Tuple of (list of test results, count of returned tests).
         """
-        page_info = {"page": page, "pageSize": page_size}
-        search_params: dict[str, Any] = {
+        page_info: dict[str, JSONValue] = {"page": page, "pageSize": page_size}
+        search_params: dict[str, JSONValue] = {
             "filterKeys": [],
             "sortDirection": "Descending",
             "sortKey": "date",
             "workoutIds": [FULL_FRONTAL_ID, HALF_MONTY_ID],
         }
 
-        variables = {
+        variables: dict[str, JSONValue] = {
             "search": search_params,
             "page": page_info,
             "appInfo": self._app_information(),
@@ -1079,7 +1119,7 @@ class WahooClient:
         except WahooAPIError as exc:
             if "workoutIds" not in exc.message and "ActivitySearch" not in exc.message:
                 raise
-            fallback_search = {
+            fallback_search: dict[str, JSONValue] = {
                 "filterKeys": [],
                 "sortDirection": "Descending",
                 "sortKey": "date",

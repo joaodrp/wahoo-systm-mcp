@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -21,6 +21,7 @@ from wahoo_systm_mcp.client import (
     WahooClient,
     _calculate_heart_rate_zones,
 )
+from wahoo_systm_mcp.types import JSONObject
 
 # =============================================================================
 # Fixtures
@@ -48,7 +49,7 @@ async def authenticated_client() -> AsyncIterator[WahooClient]:
         await client.close()
 
 
-def mock_response(data: dict[str, Any], status_code: int = 200) -> httpx.Response:
+def mock_response(data: JSONObject, status_code: int = 200) -> httpx.Response:
     """Create a mock httpx.Response."""
     response = MagicMock(spec=httpx.Response)
     response.status_code = status_code
@@ -57,7 +58,7 @@ def mock_response(data: dict[str, Any], status_code: int = 200) -> httpx.Respons
     return response
 
 
-def mock_error_response(errors: list[dict[str, Any]]) -> httpx.Response:
+def mock_error_response(errors: list[JSONObject]) -> httpx.Response:
     """Create a mock httpx.Response with GraphQL errors."""
     response = MagicMock(spec=httpx.Response)
     response.status_code = 200

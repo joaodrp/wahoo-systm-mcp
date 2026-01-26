@@ -3,7 +3,7 @@
 import json
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any, Literal
+from typing import Literal
 
 from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
@@ -12,10 +12,11 @@ from pydantic import BaseModel
 
 from wahoo_systm_mcp.client import WahooClient, _calculate_heart_rate_zones
 from wahoo_systm_mcp.onepassword import get_credentials
+from wahoo_systm_mcp.types import FilterValue, JSONObject, JSONValue
 
 
 @lifespan
-async def app_lifespan(server: FastMCP) -> AsyncIterator[dict[str, Any]]:
+async def app_lifespan(server: FastMCP) -> AsyncIterator[dict[str, WahooClient]]:
     """Initialize shared resources for the server lifetime."""
     username, password = get_credentials()
     client = WahooClient()
@@ -57,19 +58,23 @@ def _format_duration(seconds: int | None) -> str | None:
     return f"{minutes}m"
 
 
-def _normalize_map_keys(value: Any) -> Any:
+def _normalize_map_keys(value: JSONValue) -> JSONValue:
     if isinstance(value, list):
         return [_normalize_map_keys(item) for item in value]
     if isinstance(value, dict):
-        normalized: dict[str, Any] = {}
+        normalized: JSONObject = {}
         for key, item in value.items():
             normalized["map" if key == "map_" else key] = _normalize_map_keys(item)
         return normalized
     return value
 
 
-def _dump_snake(model: BaseModel) -> dict[str, Any]:
-    return _normalize_map_keys(model.model_dump())
+def _dump_snake(model: BaseModel) -> JSONObject:
+    data: JSONObject = model.model_dump()
+    normalized = _normalize_map_keys(data)
+    if isinstance(normalized, dict):
+        return normalized
+    raise TypeError("Expected model dump to be a JSON object")
 
 
 # =============================================================================
@@ -80,7 +85,7 @@ def _dump_snake(model: BaseModel) -> dict[str, Any]:
 @mcp.tool
 async def get_calendar(
     ctx: Context, start_date: str, end_date: str, time_zone: str = "UTC"
-) -> list[dict[str, Any]]:
+) -> list[JSONObject]:
     """Get planned workouts from Wahoo SYSTM calendar for a date range.
 
     Returns workout name, type, duration, planned date, and basic details.
@@ -101,7 +106,7 @@ async def schedule_workout(
     content_id: str,
     date: str,
     time_zone: str = "UTC",
-) -> dict[str, Any]:
+) -> JSONObject:
     """Schedule a workout from the library to your calendar for a specific date.
 
     Args:
@@ -125,7 +130,7 @@ async def reschedule_workout(
     agenda_id: str,
     new_date: str,
     time_zone: str = "UTC",
-) -> dict[str, Any]:
+) -> JSONObject:
     """Move a scheduled workout to a different date.
 
     Args:
@@ -145,7 +150,7 @@ async def reschedule_workout(
 
 
 @mcp.tool
-async def remove_workout(ctx: Context, agenda_id: str) -> dict[str, Any]:
+async def remove_workout(ctx: Context, agenda_id: str) -> JSONObject:
     """Remove a scheduled workout from your calendar.
 
     Args:
@@ -178,7 +183,7 @@ async def get_workouts(
     sort_by: Literal["name", "duration", "tss"] | None = None,
     sort_direction: Literal["asc", "desc"] | None = None,
     limit: int | None = 50,
-) -> dict[str, Any]:
+) -> JSONObject:
     """Browse the complete workout library with advanced filtering.
 
     Returns workout metadata including duration, TSS, intensity, and 4DP ratings.
@@ -198,7 +203,7 @@ async def get_workouts(
     """
     client = _get_client(ctx)
 
-    filters: dict[str, Any] = {}
+    filters: dict[str, FilterValue] = {}
     if sport:
         filters["sport"] = sport
     if search:
@@ -243,7 +248,7 @@ async def get_cycling_workouts(
     sort_by: Literal["name", "duration", "tss"] | None = None,
     sort_direction: Literal["asc", "desc"] | None = None,
     limit: int | None = 50,
-) -> dict[str, Any]:
+) -> JSONObject:
     """Specialized cycling workout search with 4DP focus filtering.
 
     Automatically filters for cycling workouts only.
@@ -267,7 +272,7 @@ async def get_cycling_workouts(
     """
     client = _get_client(ctx)
 
-    filters: dict[str, Any] = {}
+    filters: dict[str, FilterValue] = {}
     if search:
         filters["search"] = search
     if min_duration is not None:
@@ -302,7 +307,7 @@ async def get_cycling_workouts(
 
 
 @mcp.tool
-async def get_workout_details(ctx: Context, workout_id: str) -> dict[str, Any]:
+async def get_workout_details(ctx: Context, workout_id: str) -> JSONObject:
     """Get detailed information about a specific workout.
 
     Includes graph triggers, equipment needed, and full workout structure.
@@ -321,7 +326,7 @@ async def get_workout_details(ctx: Context, workout_id: str) -> dict[str, Any]:
 
 
 @mcp.tool
-async def get_rider_profile(ctx: Context) -> dict[str, Any]:
+async def get_rider_profile(ctx: Context) -> JSONObject:
     """Get the rider 4DP profile (NM, AC, MAP, FTP).
 
     Includes rider type classification, strengths/weaknesses, and heart rate zones.
@@ -371,7 +376,7 @@ async def get_fitness_test_history(
     ctx: Context,
     page: int = 1,
     page_size: int = 15,
-) -> dict[str, Any]:
+) -> JSONObject:
     """Get history of completed Full Frontal and Half Monty fitness tests.
 
     Returns 4DP results, rider type classification, and test dates.
@@ -383,9 +388,9 @@ async def get_fitness_test_history(
     client = _get_client(ctx)
     activities, total = await client.get_fitness_test_history(page, page_size)
 
-    formatted_tests = []
+    formatted_tests: list[JSONValue] = []
     for test in activities:
-        formatted = {
+        formatted: JSONObject = {
             "id": test.id,
             "name": test.name,
             "date": _format_date(test.completed_date),
@@ -426,7 +431,7 @@ async def get_fitness_test_history(
 
 
 @mcp.tool
-async def get_fitness_test_details(ctx: Context, activity_id: str) -> dict[str, Any]:
+async def get_fitness_test_details(ctx: Context, activity_id: str) -> JSONObject:
     """Get detailed fitness test data.
 
     Includes second-by-second power/cadence/heart rate, power curve bests, and post-test analysis.
