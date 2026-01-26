@@ -77,6 +77,7 @@ exclude_lines = [
 ]
 
 [tool.semantic_release]
+commit_message = "chore(release): {version}"
 version_variables = [
     "src/wahoo_systm_mcp/__init__.py:__version__",
     "manifest.json:version",
