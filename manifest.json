@@ -1,12 +1,12 @@
 {
-  "manifest_version": "0.2",
+  "manifest_version": "0.3",
   "name": "wahoo-systm-mcp",
   "display_name": "Wahoo SYSTM MCP",
   "version": "1.0.0",
   "description": "MCP server for Wahoo SYSTM training data and workout management",
   "author": {
     "name": "João Pereira",
-    "url": "https://github.com/joaodrp/wahoo-systm-mcp"
+    "url": "https://github.com/joaodrp"
   },
   "homepage": "https://github.com/joaodrp/wahoo-systm-mcp",
   "documentation": "https://github.com/joaodrp/wahoo-systm-mcp/blob/main/README.md",
@@ -21,7 +21,11 @@
         "wahoo_systm_mcp"
       ],
       "env": {
-        "PYTHONPATH": "${__dirname}/src"
+        "PYTHONPATH": "${__dirname}/src",
+        "WAHOO_USERNAME_1P_REF": "${user_config.WAHOO_USERNAME_1P_REF}",
+        "WAHOO_PASSWORD_1P_REF": "${user_config.WAHOO_PASSWORD_1P_REF}",
+        "WAHOO_USERNAME": "${user_config.WAHOO_USERNAME}",
+        "WAHOO_PASSWORD": "${user_config.WAHOO_PASSWORD}"
       }
     }
   },
@@ -71,62 +75,50 @@
     "WAHOO_USERNAME_1P_REF": {
       "type": "string",
       "title": "1Password Username Reference",
-      "description": "1Password secret reference for the Wahoo SYSTM username",
+      "description": "1Password secret reference for the Wahoo SYSTM username (use 1Password refs or plain credentials, not both)",
       "required": false,
       "sensitive": true
     },
     "WAHOO_PASSWORD_1P_REF": {
       "type": "string",
       "title": "1Password Password Reference",
-      "description": "1Password secret reference for the Wahoo SYSTM password",
+      "description": "1Password secret reference for the Wahoo SYSTM password (use 1Password refs or plain credentials, not both)",
       "required": false,
       "sensitive": true
     },
     "WAHOO_USERNAME": {
       "type": "string",
       "title": "Wahoo SYSTM Username",
-      "description": "Wahoo SYSTM account email address",
+      "description": "Wahoo SYSTM account email address (use plain credentials or 1Password refs, not both)",
       "required": false,
       "sensitive": true
     },
     "WAHOO_PASSWORD": {
       "type": "string",
       "title": "Wahoo SYSTM Password",
-      "description": "Wahoo SYSTM account password",
+      "description": "Wahoo SYSTM account password (use plain credentials or 1Password refs, not both)",
       "required": false,
       "sensitive": true
-    },
-    "WAHOO_APP_VERSION": {
-      "type": "string",
-      "title": "App Version Override",
-      "description": "Override the app version sent to Wahoo SYSTM (optional)",
-      "required": false,
-      "sensitive": false
-    },
-    "WAHOO_INSTALL_ID": {
-      "type": "string",
-      "title": "Install ID Override",
-      "description": "Override the install identifier sent to Wahoo SYSTM (optional)",
-      "required": false,
-      "sensitive": false
-    },
-    "WAHOO_LOCALE": {
-      "type": "string",
-      "title": "Locale Override",
-      "description": "Override the locale sent to Wahoo SYSTM (optional)",
-      "required": false,
-      "sensitive": false
     }
   },
   "keywords": [
     "wahoo",
     "systm",
-    "mcp",
     "cycling",
     "training",
     "workouts"
   ],
   "license": "MIT",
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.11,<4.0"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/joaodrp/wahoo-systm-mcp"
