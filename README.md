@@ -15,8 +15,6 @@
   </p>
 </div>
 
-Built with [FastMCP 3.0](https://github.com/jlowin/fastmcp) for a clean, modern implementation.
-
 ## Key features
 
 - **Calendar Management**: View, schedule, reschedule, and remove planned workouts
