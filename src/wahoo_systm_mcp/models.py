@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field, field_validator
 
-from wahoo_systm_mcp.types import JSONObject, JSONValue
-
 # =============================================================================
 # Core Types
 # =============================================================================
@@ -127,7 +125,7 @@ class TrainerSetting(BaseModel):
     level: int | None = None
 
 
-def _normalize_graph_triggers(value: JSONValue) -> JSONValue:
+def _normalize_graph_triggers(value: object) -> object:
     if value is None:
         return None
     if isinstance(value, list):
@@ -177,7 +175,7 @@ class WorkoutProspect(BaseModel):
 
     @field_validator("four_dp_workout_graph", mode="before")
     @classmethod
-    def normalize_four_dp_workout_graph(cls, value: JSONValue) -> JSONValue:
+    def normalize_four_dp_workout_graph(cls, value: object) -> object:
         return _normalize_graph_triggers(value)
 
     model_config = {"populate_by_name": True}
@@ -281,7 +279,7 @@ class WorkoutDetails(BaseModel):
 
     @field_validator("graph_triggers", mode="before")
     @classmethod
-    def normalize_graph_triggers(cls, value: JSONValue) -> JSONValue:
+    def normalize_graph_triggers(cls, value: object) -> object:
         return _normalize_graph_triggers(value)
 
     model_config = {"populate_by_name": True}
@@ -416,7 +414,7 @@ class LoginUserData(BaseModel):
     status: str
     message: str | None = None
     token: str
-    user: JSONObject  # Contains nested profiles
+    user: dict[str, object]  # Contains nested profiles
 
 
 class LoginResponse(BaseModel):

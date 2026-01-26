@@ -3,7 +3,7 @@
 import json
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
@@ -12,7 +12,9 @@ from pydantic import BaseModel
 
 from wahoo_systm_mcp.client import WahooClient, _calculate_heart_rate_zones
 from wahoo_systm_mcp.onepassword import get_credentials
-from wahoo_systm_mcp.types import FilterValue, JSONObject, JSONValue
+
+if TYPE_CHECKING:
+    from wahoo_systm_mcp.types import FilterValue
 
 
 @lifespan
@@ -58,19 +60,19 @@ def _format_duration(seconds: int | None) -> str | None:
     return f"{minutes}m"
 
 
-def _normalize_map_keys(value: JSONValue) -> JSONValue:
+def _normalize_map_keys(value: object) -> object:
     if isinstance(value, list):
         return [_normalize_map_keys(item) for item in value]
     if isinstance(value, dict):
-        normalized: JSONObject = {}
+        normalized: dict[str, object] = {}
         for key, item in value.items():
             normalized["map" if key == "map_" else key] = _normalize_map_keys(item)
         return normalized
     return value
 
 
-def _dump_snake(model: BaseModel) -> JSONObject:
-    data: JSONObject = model.model_dump()
+def _dump_snake(model: BaseModel) -> dict[str, object]:
+    data: dict[str, object] = model.model_dump()
     normalized = _normalize_map_keys(data)
     if isinstance(normalized, dict):
         return normalized
@@ -85,7 +87,7 @@ def _dump_snake(model: BaseModel) -> JSONObject:
 @mcp.tool
 async def get_calendar(
     ctx: Context, start_date: str, end_date: str, time_zone: str = "UTC"
-) -> list[JSONObject]:
+) -> list[dict[str, object]]:
     """Get planned workouts from Wahoo SYSTM calendar for a date range.
 
     Returns workout name, type, duration, planned date, and basic details.
@@ -106,7 +108,7 @@ async def schedule_workout(
     content_id: str,
     date: str,
     time_zone: str = "UTC",
-) -> JSONObject:
+) -> dict[str, object]:
     """Schedule a workout from the library to your calendar for a specific date.
 
     Args:
@@ -130,7 +132,7 @@ async def reschedule_workout(
     agenda_id: str,
     new_date: str,
     time_zone: str = "UTC",
-) -> JSONObject:
+) -> dict[str, object]:
     """Move a scheduled workout to a different date.
 
     Args:
@@ -150,7 +152,7 @@ async def reschedule_workout(
 
 
 @mcp.tool
-async def remove_workout(ctx: Context, agenda_id: str) -> JSONObject:
+async def remove_workout(ctx: Context, agenda_id: str) -> dict[str, object]:
     """Remove a scheduled workout from your calendar.
 
     Args:
@@ -183,7 +185,7 @@ async def get_workouts(
     sort_by: Literal["name", "duration", "tss"] | None = None,
     sort_direction: Literal["asc", "desc"] | None = None,
     limit: int | None = 50,
-) -> JSONObject:
+) -> dict[str, object]:
     """Browse the complete workout library with advanced filtering.
 
     Returns workout metadata including duration, TSS, intensity, and 4DP ratings.
@@ -248,7 +250,7 @@ async def get_cycling_workouts(
     sort_by: Literal["name", "duration", "tss"] | None = None,
     sort_direction: Literal["asc", "desc"] | None = None,
     limit: int | None = 50,
-) -> JSONObject:
+) -> dict[str, object]:
     """Specialized cycling workout search with 4DP focus filtering.
 
     Automatically filters for cycling workouts only.
@@ -307,7 +309,7 @@ async def get_cycling_workouts(
 
 
 @mcp.tool
-async def get_workout_details(ctx: Context, workout_id: str) -> JSONObject:
+async def get_workout_details(ctx: Context, workout_id: str) -> dict[str, object]:
     """Get detailed information about a specific workout.
 
     Includes graph triggers, equipment needed, and full workout structure.
@@ -326,7 +328,7 @@ async def get_workout_details(ctx: Context, workout_id: str) -> JSONObject:
 
 
 @mcp.tool
-async def get_rider_profile(ctx: Context) -> JSONObject:
+async def get_rider_profile(ctx: Context) -> dict[str, object]:
     """Get the rider 4DP profile (NM, AC, MAP, FTP).
 
     Includes rider type classification, strengths/weaknesses, and heart rate zones.
@@ -376,7 +378,7 @@ async def get_fitness_test_history(
     ctx: Context,
     page: int = 1,
     page_size: int = 15,
-) -> JSONObject:
+) -> dict[str, object]:
     """Get history of completed Full Frontal and Half Monty fitness tests.
 
     Returns 4DP results, rider type classification, and test dates.
@@ -388,9 +390,9 @@ async def get_fitness_test_history(
     client = _get_client(ctx)
     activities, total = await client.get_fitness_test_history(page, page_size)
 
-    formatted_tests: list[JSONValue] = []
+    formatted_tests: list[dict[str, object]] = []
     for test in activities:
-        formatted: JSONObject = {
+        formatted: dict[str, object] = {
             "id": test.id,
             "name": test.name,
             "date": _format_date(test.completed_date),
@@ -431,7 +433,7 @@ async def get_fitness_test_history(
 
 
 @mcp.tool
-async def get_fitness_test_details(ctx: Context, activity_id: str) -> JSONObject:
+async def get_fitness_test_details(ctx: Context, activity_id: str) -> dict[str, object]:
     """Get detailed fitness test data.
 
     Includes second-by-second power/cadence/heart rate, power curve bests, and post-test analysis.
@@ -449,6 +451,16 @@ async def get_fitness_test_details(ctx: Context, activity_id: str) -> JSONObject
             analysis_data = json.loads(details.analysis)
         except json.JSONDecodeError:
             analysis_data = None
+
+    power_values: list[int] | None = None
+    cadence_values: list[int] | None = None
+    heart_rate_values: list[int] | None = None
+    if details.power is not None:
+        power_values = [value for value in details.power]
+    if details.cadence is not None:
+        cadence_values = [value for value in details.cadence]
+    if details.heart_rate is not None:
+        heart_rate_values = [value for value in details.heart_rate]
 
     return {
         "name": details.name,
@@ -490,9 +502,9 @@ async def get_fitness_test_details(ctx: Context, activity_id: str) -> JSONObject
             else []
         ),
         "activity_data": {
-            "power": details.power,
-            "cadence": details.cadence,
-            "heart_rate": details.heart_rate,
+            "power": power_values,
+            "cadence": cadence_values,
+            "heart_rate": heart_rate_values,
         },
         "analysis": analysis_data,
     }

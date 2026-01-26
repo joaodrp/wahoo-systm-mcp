@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 import httpx
 
@@ -27,7 +27,9 @@ from wahoo_systm_mcp.models import (
     UserPlanItem,
     WorkoutDetails,
 )
-from wahoo_systm_mcp.types import FilterValue, JSONObject, JSONValue
+
+if TYPE_CHECKING:
+    from wahoo_systm_mcp.types import FilterValue, JSONObject, JSONValue
 
 # =============================================================================
 # Constants
@@ -540,9 +542,9 @@ class WahooClient:
             raise AuthenticationError("Not authenticated. Call authenticate() first.")
         return self._token
 
-    def _app_information(self) -> dict[str, str]:
+    def _app_information(self) -> JSONObject:
         """Build app information payload for GraphQL queries."""
-        app_info = {
+        app_info: JSONObject = {
             "platform": APP_PLATFORM,
             "version": APP_VERSION,
         }
@@ -553,7 +555,7 @@ class WahooClient:
     async def _call_api(
         self,
         query: str,
-        variables: Mapping[str, JSONValue] | None = None,
+        variables: JSONObject | None = None,
         operation_name: str | None = None,
         require_auth: bool = True,
     ) -> JSONObject:
@@ -631,7 +633,7 @@ class WahooClient:
         Raises:
             AuthenticationError: If authentication fails.
         """
-        variables: dict[str, JSONValue] = {
+        variables: JSONObject = {
             "username": username,
             "password": password,
             "appInformation": self._app_information(),
@@ -671,10 +673,11 @@ class WahooClient:
         Returns:
             List of scheduled workout items.
         """
-        variables: dict[str, JSONValue] = {
+        query_params: JSONObject = {"limit": 1000}
+        variables: JSONObject = {
             "startDate": start_date,
             "endDate": end_date,
-            "queryParams": {"limit": 1000},
+            "queryParams": query_params,
             "timezone": time_zone,
         }
 
@@ -718,8 +721,9 @@ class WahooClient:
 
     async def _get_workout_details_by_id(self, workout_id: str) -> WorkoutDetails | None:
         """Fetch workout details by workoutId, returning None when not found."""
-        variables = {
-            "ids": [workout_id],
+        ids: list[JSONValue] = [workout_id]
+        variables: JSONObject = {
+            "ids": ids,
         }
 
         data = await self._call_api(
@@ -755,7 +759,7 @@ class WahooClient:
         Returns:
             List of matching library content.
         """
-        variables: dict[str, JSONValue] = {
+        variables: JSONObject = {
             "locale": DEFAULT_LOCALE,
             "appInformation": self._app_information(),
         }
@@ -930,7 +934,7 @@ class WahooClient:
         Raises:
             WahooAPIError: If scheduling fails.
         """
-        variables = {
+        variables: JSONObject = {
             "contentId": content_id,
             "date": date,
             "timeZone": time_zone,
@@ -964,7 +968,7 @@ class WahooClient:
         Raises:
             WahooAPIError: If rescheduling fails.
         """
-        variables = {
+        variables: JSONObject = {
             "agendaId": agenda_id,
             "date": new_date,
             "timeZone": time_zone,
@@ -990,7 +994,7 @@ class WahooClient:
         Raises:
             WahooAPIError: If removal fails.
         """
-        variables = {
+        variables: JSONObject = {
             "agendaId": agenda_id,
         }
 
@@ -1015,12 +1019,13 @@ class WahooClient:
             return self._rider_profile
 
         session_token = self._require_auth()
+        variables: JSONObject = {
+            "appInformation": self._app_information(),
+            "sessionToken": session_token,
+        }
         data = await self._call_api(
             IMPERSONATE_MUTATION,
-            variables={
-                "appInformation": self._app_information(),
-                "sessionToken": session_token,
-            },
+            variables=variables,
             operation_name="Impersonate",
             require_auth=False,
         )
@@ -1095,15 +1100,16 @@ class WahooClient:
         Returns:
             Tuple of (list of test results, count of returned tests).
         """
-        page_info: dict[str, JSONValue] = {"page": page, "pageSize": page_size}
+        page_info: JSONObject = {"page": page, "pageSize": page_size}
+        workout_ids: list[JSONValue] = [FULL_FRONTAL_ID, HALF_MONTY_ID]
         search_params: dict[str, JSONValue] = {
             "filterKeys": [],
             "sortDirection": "Descending",
             "sortKey": "date",
-            "workoutIds": [FULL_FRONTAL_ID, HALF_MONTY_ID],
+            "workoutIds": workout_ids,
         }
 
-        variables: dict[str, JSONValue] = {
+        variables: JSONObject = {
             "search": search_params,
             "page": page_info,
             "appInfo": self._app_information(),
@@ -1119,7 +1125,7 @@ class WahooClient:
         except WahooAPIError as exc:
             if "workoutIds" not in exc.message and "ActivitySearch" not in exc.message:
                 raise
-            fallback_search: dict[str, JSONValue] = {
+            fallback_search: JSONObject = {
                 "filterKeys": [],
                 "sortDirection": "Descending",
                 "sortKey": "date",
@@ -1151,7 +1157,7 @@ class WahooClient:
         Raises:
             WahooAPIError: If activity not found or API error.
         """
-        variables = {
+        variables: JSONObject = {
             "activityId": activity_id,
         }
 

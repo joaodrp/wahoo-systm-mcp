@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
+
+    from wahoo_systm_mcp.types import JSONObject
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -21,7 +23,6 @@ from wahoo_systm_mcp.client import (
     WahooClient,
     _calculate_heart_rate_zones,
 )
-from wahoo_systm_mcp.types import JSONObject
 
 # =============================================================================
 # Fixtures
