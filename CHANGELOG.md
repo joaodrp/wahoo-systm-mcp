@@ -49,8 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - View heart rate zones and LTHR
 
 #### Security
-- 1Password CLI integration for secure credential storage
-- Plain environment variable option also supported
+- Plain environment variable credentials supported
 
 [1.0.0]: https://github.com/joaodrp/wahoo-systm-mcp/compare/v0.1.1...v1.0.0
 [0.1.1]: https://github.com/joaodrp/wahoo-systm-mcp/compare/v0.1.0...v0.1.1

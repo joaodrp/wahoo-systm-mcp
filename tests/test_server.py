@@ -7,30 +7,32 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from fastmcp.exceptions import ToolError
 
-from wahoo_systm_mcp.models import (
+from wahoo_systm_mcp.client.models import (
     EnhancedRiderProfile,
     FitnessTestDetails,
     FitnessTestResult,
     LibraryContent,
     UserPlanItem,
     WorkoutDetails,
-    WorkoutEquipment,
-    WorkoutMetrics,
-    WorkoutRatings,
 )
-from wahoo_systm_mcp.server import (
-    _format_date,
-    _format_duration,
+from wahoo_systm_mcp.server.lifecycle import app_lifespan
+from wahoo_systm_mcp.tools.calendar import (
     get_calendar,
-    get_cycling_workouts,
-    get_fitness_test_details,
-    get_fitness_test_history,
-    get_rider_profile,
-    get_workout_details,
-    get_workouts,
     remove_workout,
     reschedule_workout,
     schedule_workout,
+)
+from wahoo_systm_mcp.tools.library import (
+    get_cycling_workouts,
+    get_workout_details,
+    get_workouts,
+)
+from wahoo_systm_mcp.tools.profile import (
+    _format_date,
+    _format_duration,
+    get_fitness_test_details,
+    get_fitness_test_history,
+    get_rider_profile,
 )
 
 # =============================================================================
@@ -101,21 +103,23 @@ def sample_library_content() -> LibraryContent:
 @pytest.fixture
 def sample_workout_details() -> WorkoutDetails:
     """Create a sample WorkoutDetails for testing."""
-    return WorkoutDetails(
-        id="workout1",
-        name="Nine Hammers",
-        sport="cycling",
-        short_description="A classic Sufferfest workout",
-        details="Full details here",
-        level="advanced",
-        duration_seconds=3600,
-        equipment=[WorkoutEquipment(name="Trainer", description="Smart trainer")],
-        metrics=WorkoutMetrics(
-            intensity_factor=0.85,
-            tss=95,
-            ratings=WorkoutRatings(nm=3, ac=4, map_=4, ftp=3),
-        ),
-        graph_triggers=[{"time": 0, "value": 50, "type": "power"}],
+    return WorkoutDetails.model_validate(
+        {
+            "id": "workout1",
+            "name": "Nine Hammers",
+            "sport": "cycling",
+            "shortDescription": "A classic Sufferfest workout",
+            "details": "Full details here",
+            "level": "advanced",
+            "durationSeconds": 3600,
+            "equipment": [{"name": "Trainer", "description": "Smart trainer"}],
+            "metrics": {
+                "intensityFactor": 0.85,
+                "tss": 95,
+                "ratings": {"nm": 3, "ac": 4, "map": 4, "ftp": 3},
+            },
+            "graphTriggers": [{"time": 0, "value": 50, "type": "power"}],
+        }
     )
 
 
@@ -234,18 +238,20 @@ class TestFormatDate:
 
     def test_iso_date_with_z(self) -> None:
         result = _format_date("2024-01-15T10:30:00Z")
+        assert result is not None
         assert "January" in result
         assert "15" in result
         assert "2024" in result
 
     def test_iso_date_with_offset(self) -> None:
         result = _format_date("2024-06-20T15:00:00+02:00")
+        assert result is not None
         assert "June" in result
         assert "20" in result
 
     def test_invalid_date(self) -> None:
         result = _format_date("invalid-date")
-        assert result == "invalid-date"
+        assert result is None
 
 
 class TestFormatDuration:
@@ -259,6 +265,24 @@ class TestFormatDuration:
 
     def test_exact_hour(self) -> None:
         assert _format_duration(3600) == "1h 0m"
+
+
+# =============================================================================
+# Lifespan Tests
+# =============================================================================
+
+
+class TestAppLifespan:
+    """Tests for app_lifespan credential checks."""
+
+    @pytest.mark.asyncio
+    async def test_missing_credentials_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("WAHOO_USERNAME", raising=False)
+        monkeypatch.delenv("WAHOO_PASSWORD", raising=False)
+
+        with pytest.raises(KeyError):
+            async with app_lifespan(MagicMock()):
+                pass
 
 
 # =============================================================================
@@ -281,7 +305,7 @@ class TestGetCalendar:
 
         mock_client.get_calendar.assert_called_once_with("2024-01-01", "2024-01-31", "UTC")
         assert len(result) == 1
-        assert result[0]["agenda_id"] == "agenda123"
+        assert result[0].agenda_id == "agenda123"
 
     async def test_returns_empty_list(
         self,
@@ -310,9 +334,9 @@ class TestScheduleWorkout:
         mock_client.schedule_workout.assert_called_once_with(
             "content123", "2024-01-15", "Europe/Lisbon"
         )
-        assert result["success"] is True
-        assert result["agenda_id"] == "new-agenda-id"
-        assert result["time_zone"] == "Europe/Lisbon"
+        assert result.success is True
+        assert result.agenda_id == "new-agenda-id"
+        assert result.time_zone == "Europe/Lisbon"
 
     async def test_default_timezone(
         self,
@@ -324,7 +348,7 @@ class TestScheduleWorkout:
         result = await schedule_workout(mock_context, "content123", "2024-01-15")
 
         mock_client.schedule_workout.assert_called_once_with("content123", "2024-01-15", "UTC")
-        assert result["time_zone"] == "UTC"
+        assert result.time_zone == "UTC"
 
 
 class TestRescheduleWorkout:
@@ -344,8 +368,8 @@ class TestRescheduleWorkout:
         mock_client.reschedule_workout.assert_called_once_with(
             "agenda123", "2024-02-01", "America/New_York"
         )
-        assert result["success"] is True
-        assert result["new_date"] == "2024-02-01"
+        assert result.success is True
+        assert result.new_date == "2024-02-01"
 
 
 class TestRemoveWorkout:
@@ -361,8 +385,8 @@ class TestRemoveWorkout:
         result = await remove_workout(mock_context, "agenda123")
 
         mock_client.remove_workout.assert_called_once_with("agenda123")
-        assert result["success"] is True
-        assert result["agenda_id"] == "agenda123"
+        assert result.success is True
+        assert result.agenda_id == "agenda123"
 
 
 # =============================================================================
@@ -384,8 +408,8 @@ class TestGetWorkouts:
         result = await get_workouts(mock_context)
 
         mock_client.get_workout_library.assert_called_once_with({"limit": 50})
-        assert result["total"] == 1
-        assert result["workouts"][0]["name"] == "Nine Hammers"
+        assert result.total == 1
+        assert result.workouts[0].name == "Nine Hammers"
 
     async def test_passes_filters(
         self,
@@ -431,7 +455,7 @@ class TestGetCyclingWorkouts:
 
         call_args = mock_client.get_cycling_workouts.call_args[0][0]
         assert call_args["four_dp_focus"] == "FTP"
-        assert result["total"] == 1
+        assert result.total == 1
 
 
 class TestGetWorkoutDetails:
@@ -448,8 +472,8 @@ class TestGetWorkoutDetails:
         result = await get_workout_details(mock_context, "workout1")
 
         mock_client.get_workout_details.assert_called_once_with("workout1")
-        assert result["name"] == "Nine Hammers"
-        assert result["duration_seconds"] == 3600
+        assert result.name == "Nine Hammers"
+        assert result.duration_seconds == 3600
 
 
 # =============================================================================
@@ -466,7 +490,7 @@ class TestGetRiderProfile:
         mock_client: MagicMock,
         sample_enhanced_profile: EnhancedRiderProfile,
     ) -> None:
-        from wahoo_systm_mcp.models import RiderProfile
+        from wahoo_systm_mcp.client.models import RiderProfile
 
         mock_client.get_latest_test_profile = AsyncMock(return_value=sample_enhanced_profile)
         mock_client.get_current_profile = AsyncMock(
@@ -475,12 +499,12 @@ class TestGetRiderProfile:
 
         result = await get_rider_profile(mock_context)
 
-        assert result["four_dp"]["nm"]["watts"] == 900
-        assert result["four_dp"]["ftp"]["score"] == 70
-        assert result["rider_type"]["name"] == "Attacker"
-        assert result["lthr"] == 170
-        assert len(result["heart_rate_zones"]) == 5
-        assert result["heart_rate_zones"][0]["name"] == "Recovery"
+        assert result.four_dp.nm.watts == 900
+        assert result.four_dp.ftp.score == 70
+        assert result.rider_type.name == "Attacker"
+        assert result.lthr == 170
+        assert len(result.heart_rate_zones) == 5
+        assert result.heart_rate_zones[0].name == "Recovery"
 
     async def test_raises_error_when_no_profile(
         self,
@@ -512,9 +536,11 @@ class TestGetFitnessTestHistory:
         result = await get_fitness_test_history(mock_context)
 
         mock_client.get_fitness_test_history.assert_called_once_with(1, 15)
-        assert result["total"] == 1
-        assert result["tests"][0]["name"] == "Full Frontal"
-        assert result["tests"][0]["four_dp"]["nm"]["watts"] == 850
+        assert result.total == 1
+        assert result.tests[0].name == "Full Frontal"
+        four_dp = result.tests[0].four_dp
+        assert four_dp is not None
+        assert four_dp.nm.watts == 850
 
     async def test_pagination(
         self,
@@ -542,12 +568,17 @@ class TestGetFitnessTestDetails:
         result = await get_fitness_test_details(mock_context, "test1")
 
         mock_client.get_fitness_test_details.assert_called_once_with("test1")
-        assert result["name"] == "Full Frontal"
-        assert result["notes"] == "Felt strong"
-        assert result["four_dp"]["nm"]["watts"] == 850
-        assert len(result["power_curve"]) == 2
-        assert result["activity_data"]["power"] == [100, 150, 200]
-        assert result["analysis"]["summary"] == "Great test"
+        assert result.name == "Full Frontal"
+        assert result.notes == "Felt strong"
+        four_dp = result.four_dp
+        assert four_dp is not None
+        assert four_dp.nm.watts == 850
+        assert len(result.power_curve) == 2
+        assert result.activity_data.power == [100, 150, 200]
+        analysis = result.analysis
+        assert analysis is not None
+        assert isinstance(analysis, dict)
+        assert analysis["summary"] == "Great test"
 
     async def test_handles_invalid_analysis_json(
         self,
@@ -560,4 +591,4 @@ class TestGetFitnessTestDetails:
 
         result = await get_fitness_test_details(mock_context, "test1")
 
-        assert result["analysis"] is None
+        assert result.analysis is None

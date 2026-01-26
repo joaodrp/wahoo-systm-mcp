@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
-import httpx
+from httpx import AsyncClient, HTTPError, TimeoutException
 
-from wahoo_systm_mcp.models import (
+from wahoo_systm_mcp.client.config import ClientConfig
+from wahoo_systm_mcp.client.models import (
     AddAgendaResponse,
     DeleteAgendaResponse,
     EnhancedRiderProfile,
@@ -15,6 +15,7 @@ from wahoo_systm_mcp.models import (
     FitnessTestResult,
     GetActivityResponse,
     GetUserPlansRangeResponse,
+    GetWorkoutActivitiesResponse,
     GetWorkoutsResponse,
     HeartRateZone,
     LibraryContent,
@@ -23,36 +24,44 @@ from wahoo_systm_mcp.models import (
     MostRecentTestResponse,
     MoveAgendaResponse,
     RiderProfile,
-    SearchActivitiesResponse,
     UserPlanItem,
     WorkoutDetails,
 )
+from wahoo_systm_mcp.client.queries import (
+    ADD_AGENDA_MUTATION,
+    DELETE_AGENDA_MUTATION,
+    GET_ACTIVITY_QUERY,
+    GET_USER_PLANS_RANGE_QUERY,
+    GET_WORKOUT_ACTIVITIES_QUERY,
+    GET_WORKOUTS_QUERY,
+    IMPERSONATE_MUTATION,
+    LIBRARY_QUERY,
+    LOGIN_MUTATION,
+    MOST_RECENT_TEST_QUERY,
+    MOVE_AGENDA_MUTATION,
+)
 
 if TYPE_CHECKING:
-    from wahoo_systm_mcp.types import FilterValue, JSONObject, JSONValue
+    from wahoo_systm_mcp.types import FilterParams, JSONObject, JSONValue
 
 # =============================================================================
 # Constants
 # =============================================================================
 
-API_URL = "https://api.thesufferfest.com/graphql"
-APP_VERSION = os.environ.get("WAHOO_APP_VERSION", "7.101.1-web.3480-7-g4802ce80")
-INSTALL_ID = os.environ.get("WAHOO_INSTALL_ID")
-APP_PLATFORM = "web"
-DEFAULT_LOCALE = os.environ.get("WAHOO_LOCALE", "en")
 FULL_FRONTAL_ID = "dRcyg09t6K"
 HALF_MONTY_ID = "0SmbqUIZZo"
 
 # Channel ID to human-readable name mapping
 CHANNEL_ID_TO_NAME: dict[str, str] = {
-    "x7jJSqJlR2": "The Sufferfest",
-    "D5AqJINiQv": "Inspiration",
-    "LuAEHZcJSj": "Wahoo Fitness",
-    "Kl1DkB3DPD": "A Week With",
-    "NTuG2YEP1D": "ProRides",
-    "uKnrlcf5rC": "On Location",
-    "EXy8gSV1lZ": "NoVid",
-    "HJv77IZQBt": "Fitness Test",
+    "MvDmhsvEBR": "The Sufferfest",
+    "y11gocEkS1": "Inspiration",
+    "Ct5ivN5m1p": "A Week With",
+    "zG7zYnMbH9": "ProRides",
+    "0MEmGeS5js": "On Location",
+    "Wmrk3N9mqG": "NoVid",
+    "Fw2pE7Dp04": "Fitness Test",
+    "XovWbVRkx6": "Getting Started",
+    "tXmnHtjJAK": "Wahoo RGT",
 }
 
 # Human-readable name to channel ID mapping
@@ -77,404 +86,6 @@ class AuthenticationError(WahooAPIError):
     """Raised when authentication fails or token is missing."""
 
     pass
-
-
-# =============================================================================
-# GraphQL Queries
-# =============================================================================
-
-LOGIN_MUTATION = """
-mutation LoginUser($username: String!, $password: String!, $appInformation: AppInformation!) {
-  loginUser(username: $username, password: $password, appInformation: $appInformation) {
-    status
-    message
-    token
-    user {
-      id
-    }
-  }
-}
-"""
-
-IMPERSONATE_MUTATION = """
-mutation Impersonate($appInformation: AppInformation!, $sessionToken: String!) {
-  impersonateUser(appInformation: $appInformation, sessionToken: $sessionToken) {
-    status
-    message
-    user {
-      profiles {
-        riderProfile {
-          nm
-          ac
-          map
-          ftp
-          lthr
-          cadenceThreshold
-        }
-      }
-    }
-    token
-  }
-}
-"""
-
-MOST_RECENT_TEST_QUERY = """
-query MostRecentTest {
-  mostRecentTest {
-    status
-    message
-    fitnessTestRidden
-    riderType {
-      name
-      description
-      icon
-    }
-    riderWeakness {
-      name
-      description
-      weaknessSummary
-      weaknessDescription
-      strengthName
-      strengthDescription
-      strengthSummary
-    }
-    power5s {
-      status
-      graphValue
-      value
-    }
-    power1m {
-      status
-      graphValue
-      value
-    }
-    power5m {
-      status
-      graphValue
-      value
-    }
-    power20m {
-      status
-      graphValue
-      value
-    }
-    lactateThresholdHeartRate
-    startTime
-    endTime
-  }
-}
-"""
-
-GET_USER_PLANS_RANGE_QUERY = """
-query GetUserPlansRange(
-  $startDate: Date,
-  $endDate: Date,
-  $queryParams: QueryParams,
-  $timezone: TimeZone
-) {
-  userPlan(
-    startDate: $startDate,
-    endDate: $endDate,
-    queryParams: $queryParams,
-    timezone: $timezone
-  ) {
-    day
-    plannedDate
-    rank
-    agendaId
-    status
-    type
-    appliedTimeZone
-    wahooWorkoutId
-    completionData {
-      name
-      date
-      activityId
-      durationSeconds
-      style
-      deleted
-    }
-    prospects {
-      type
-      name
-      compatibility
-      description
-      style
-      intensity {
-        master
-        nm
-        ac
-        map
-        ftp
-      }
-      trainerSetting {
-        mode
-        level
-      }
-      plannedDuration
-      durationType
-      metrics {
-        ratings {
-          nm
-          ac
-          map
-          ftp
-        }
-      }
-      contentId
-      workoutId
-      notes
-      fourDPWorkoutGraph {
-        time
-        value
-        type
-      }
-    }
-    plan {
-      id
-      name
-      color
-      description
-      category
-      grouping
-      level
-      type
-    }
-    linkData {
-      name
-      date
-      activityId
-      durationSeconds
-      style
-      deleted
-    }
-  }
-}
-"""
-
-GET_WORKOUTS_QUERY = """
-query GetWorkoutCollection($ids: [ID], $queryParams: QueryParams) {
-  workouts(ids: $ids, queryParams: $queryParams) {
-    id
-    name
-    sport
-    shortDescription
-    details
-    level
-    durationSeconds
-    equipment {
-      name
-      description
-      thumbnail
-    }
-    metrics {
-      intensityFactor
-      tss
-      ratings {
-        nm
-        ac
-        map
-        ftp
-      }
-    }
-    graphTriggers {
-      time
-      value
-      type
-    }
-  }
-}
-"""
-
-LIBRARY_QUERY = """
-query Library($locale: Locale!, $queryParams: QueryParams, $appInformation: AppInformation!) {
-  library(locale: $locale, queryParams: $queryParams, appInformation: $appInformation) {
-    content {
-      id
-      name
-      mediaType
-      channel
-      workoutType
-      category
-      level
-      duration
-      workoutId
-      videoId
-      bannerImage
-      posterImage
-      defaultImage
-      intensity
-      tags
-      descriptions {
-        title
-        body
-      }
-      metrics {
-        tss
-        intensityFactor
-        ratings {
-          nm
-          ac
-          map
-          ftp
-        }
-      }
-    }
-    sports {
-      id
-      workoutType
-      name
-      description
-    }
-    channels {
-      id
-      name
-      description
-    }
-  }
-}
-"""
-
-ADD_AGENDA_MUTATION = """
-mutation AddAgenda($contentId: ID!, $date: Date!, $timeZone: TimeZone) {
-  addAgenda(contentId: $contentId, date: $date, timeZone: $timeZone) {
-    status
-    message
-    agendaId
-  }
-}
-"""
-
-MOVE_AGENDA_MUTATION = """
-mutation MoveAgenda($agendaId: ID!, $date: Date!, $timeZone: TimeZone) {
-  moveAgenda(agendaId: $agendaId, date: $date, timeZone: $timeZone) {
-    status
-  }
-}
-"""
-
-DELETE_AGENDA_MUTATION = """
-mutation DeleteAgenda($agendaId: ID!) {
-  deleteAgenda(agendaId: $agendaId) {
-    status
-  }
-}
-"""
-
-SEARCH_ACTIVITIES_QUERY = """
-query SearchActivities(
-  $search: ActivitySearch!,
-  $page: PageInformation!,
-  $appInfo: AppInformation!,
-  $includeGraphs: Boolean
-) {
-  searchActivities(
-    searchParams: $search,
-    pageInformation: $page,
-    appInformation: $appInfo,
-    includeGraphs: $includeGraphs
-  ) {
-    activities {
-      id
-      name
-      completedDate
-      durationSeconds
-      distanceKm
-      tss
-      intensityFactor
-      analysis
-      workoutId
-      contentId
-      testResults {
-        power5s {
-          status
-          graphValue
-          value
-        }
-        power1m {
-          status
-          graphValue
-          value
-        }
-        power5m {
-          status
-          graphValue
-          value
-        }
-        power20m {
-          status
-          graphValue
-          value
-        }
-        lactateThresholdHeartRate
-        riderType {
-          name
-          description
-          icon
-        }
-      }
-    }
-    count
-  }
-}
-"""
-
-GET_ACTIVITY_QUERY = """
-query GetActivity($activityId: ID!) {
-  activity(id: $activityId) {
-    id
-    name
-    completedDate
-    durationSeconds
-    distanceKm
-    tss
-    intensityFactor
-    notes
-    testResults {
-      power5s {
-        status
-        graphValue
-        value
-      }
-      power1m {
-        status
-        graphValue
-        value
-      }
-      power5m {
-        status
-        graphValue
-        value
-      }
-      power20m {
-        status
-        graphValue
-        value
-      }
-      lactateThresholdHeartRate
-      riderType {
-        name
-        description
-        icon
-      }
-    }
-    profile {
-      nm
-      ac
-      map
-      ftp
-    }
-    power
-    cadence
-    heartRate
-    powerBests {
-      duration
-      value
-    }
-    analysis
-  }
-}
-"""
 
 
 # =============================================================================
@@ -519,11 +130,12 @@ def _calculate_heart_rate_zones(lthr: float) -> list[HeartRateZone]:
 class WahooClient:
     """Async client for the Wahoo SYSTM GraphQL API."""
 
-    def __init__(self) -> None:
+    def __init__(self, config: ClientConfig | None = None) -> None:
         """Initialize the client."""
+        self._config = config or ClientConfig.from_env()
         self._token: str | None = None
         self._rider_profile: RiderProfile | None = None
-        self._client: httpx.AsyncClient = httpx.AsyncClient(timeout=30.0)
+        self._client: AsyncClient = AsyncClient(timeout=self._config.timeout)
 
     async def close(self) -> None:
         """Close the HTTP client."""
@@ -545,11 +157,11 @@ class WahooClient:
     def _app_information(self) -> JSONObject:
         """Build app information payload for GraphQL queries."""
         app_info: JSONObject = {
-            "platform": APP_PLATFORM,
-            "version": APP_VERSION,
+            "platform": self._config.app_platform,
+            "version": self._config.app_version,
         }
-        if INSTALL_ID:
-            app_info["installId"] = INSTALL_ID
+        if self._config.install_id:
+            app_info["installId"] = self._config.install_id
         return app_info
 
     async def _call_api(
@@ -576,10 +188,10 @@ class WahooClient:
         """
         headers: dict[str, str] = {
             "Content-Type": "application/json",
-            "X-App-Version": APP_VERSION,
+            "X-App-Version": self._config.app_version,
         }
-        if INSTALL_ID:
-            headers["X-Install-Id"] = INSTALL_ID
+        if self._config.install_id:
+            headers["X-Install-Id"] = self._config.install_id
 
         if require_auth:
             token = self._require_auth()
@@ -592,10 +204,10 @@ class WahooClient:
             body["operationName"] = operation_name
 
         try:
-            response = await self._client.post(API_URL, json=body, headers=headers)
-        except httpx.TimeoutException as e:
+            response = await self._client.post(self._config.api_url, json=body, headers=headers)
+        except TimeoutException as e:
             raise WahooAPIError("API request timed out") from e
-        except httpx.HTTPError as e:
+        except HTTPError as e:
             raise WahooAPIError(f"HTTP error while calling API: {e}") from e
 
         if response.status_code != 200:
@@ -737,7 +349,7 @@ class WahooClient:
         return workouts[0] if workouts else None
 
     async def get_workout_library(
-        self, filters: dict[str, FilterValue] | None = None
+        self, filters: FilterParams | None = None
     ) -> list[LibraryContent]:
         """Get workouts from the library with optional filtering.
 
@@ -760,7 +372,7 @@ class WahooClient:
             List of matching library content.
         """
         variables: JSONObject = {
-            "locale": DEFAULT_LOCALE,
+            "locale": self._config.default_locale,
             "appInformation": self._app_information(),
         }
 
@@ -878,7 +490,7 @@ class WahooClient:
         return filtered
 
     async def get_cycling_workouts(
-        self, filters: dict[str, FilterValue] | None = None
+        self, filters: FilterParams | None = None
     ) -> list[LibraryContent]:
         """Get cycling workouts from the library.
 
@@ -893,7 +505,7 @@ class WahooClient:
         Returns:
             List of matching cycling workouts.
         """
-        cycling_filters = {"sport": "Cycling", **(filters or {})}
+        cycling_filters: FilterParams = {"sport": "Cycling", **(filters or {})}
         content = await self.get_workout_library(cycling_filters)
 
         # Apply 4DP focus filter
@@ -1093,57 +705,31 @@ class WahooClient:
     ) -> tuple[list[FitnessTestResult], int]:
         """Get history of completed fitness tests.
 
+        Fetches activities completed using Full Frontal or Half Monty workouts.
+
         Args:
             page: Page number (1-indexed).
             page_size: Number of results per page.
 
         Returns:
-            Tuple of (list of test results, count of returned tests).
+            Tuple of (list of test results, total count of fitness tests).
         """
-        page_info: JSONObject = {"page": page, "pageSize": page_size}
-        workout_ids: list[JSONValue] = [FULL_FRONTAL_ID, HALF_MONTY_ID]
-        search_params: dict[str, JSONValue] = {
-            "filterKeys": [],
-            "sortDirection": "Descending",
-            "sortKey": "date",
-            "workoutIds": workout_ids,
-        }
-
         variables: JSONObject = {
-            "search": search_params,
-            "page": page_info,
-            "appInfo": self._app_information(),
-            "includeGraphs": False,
+            "workoutIds": [FULL_FRONTAL_ID, HALF_MONTY_ID],
+            "pageInformation": {"page": page, "pageSize": page_size},
         }
 
-        try:
-            data = await self._call_api(
-                SEARCH_ACTIVITIES_QUERY,
-                variables=variables,
-                operation_name="SearchActivities",
-            )
-        except WahooAPIError as exc:
-            if "workoutIds" not in exc.message and "ActivitySearch" not in exc.message:
-                raise
-            fallback_search: JSONObject = {
-                "filterKeys": [],
-                "sortDirection": "Descending",
-                "sortKey": "date",
-            }
-            variables["search"] = fallback_search
-            data = await self._call_api(
-                SEARCH_ACTIVITIES_QUERY,
-                variables=variables,
-                operation_name="SearchActivities",
-            )
+        data = await self._call_api(
+            GET_WORKOUT_ACTIVITIES_QUERY,
+            variables=variables,
+            operation_name="GetWorkoutActivities",
+        )
 
-        response = SearchActivitiesResponse.model_validate(data)
-        activities = [
-            activity
-            for activity in response.search_activities.activities
-            if activity.workout_id in {FULL_FRONTAL_ID, HALF_MONTY_ID}
-        ]
-        return activities, len(activities)
+        response = GetWorkoutActivitiesResponse.model_validate(data)
+        return (
+            response.get_workout_activities.activities,
+            response.get_workout_activities.count,
+        )
 
     async def get_fitness_test_details(self, activity_id: str) -> FitnessTestDetails:
         """Get detailed data for a specific fitness test.

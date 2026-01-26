@@ -19,11 +19,30 @@ jobs:
         with:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
       - name: Install dependencies
         run: uv sync --all-extras
       - name: Build
         run: uv build
       - name: Python Semantic Release
+        id: release
         uses: python-semantic-release/python-semantic-release@v10
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pack MCPB
+        if: steps.release.outputs.released == 'true'
+        run: |
+          npm install -g @anthropic-ai/mcpb
+          mcpb pack
+          mkdir -p dist
+          shopt -s nullglob
+          for file in *.mcpb; do
+            mv "$file" dist/
+          done
+      - name: Upload MCPB to GitHub Release
+        if: steps.release.outputs.released == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ steps.release.outputs.tag }}" dist/*.mcpb

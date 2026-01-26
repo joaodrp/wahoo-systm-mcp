@@ -4,7 +4,7 @@ dynamic = ["version"]
 description = "MCP server for Wahoo SYSTM workout platform"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.15"
 authors = [{ name = "Joao Pereira" }]
 keywords = ["mcp", "wahoo", "systm", "workout", "cycling", "ai"]
 classifiers = [
@@ -15,12 +15,17 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "fastmcp>=3.0.0b1,<4.0.0",
     "httpx>=0.28.1,<1.0.0",
     "pydantic>=2.12.5,<3.0.0",
 ]
+
+[project.scripts]
+wahoo-systm-mcp = "wahoo_systm_mcp.__main__:main"
+wahoo-systm-mcp-server = "wahoo_systm_mcp.main:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -44,6 +49,9 @@ select = ["E", "F", "I", "UP", "B", "SIM", "TCH"]
 [tool.ruff.lint.isort]
 known-first-party = ["wahoo_systm_mcp"]
 
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+
 [tool.mypy]
 python_version = "3.11"
 strict = true
@@ -54,7 +62,8 @@ mypy_path = "src"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
-addopts = "--cov=src/wahoo_systm_mcp --cov-report=term-missing --cov-fail-under=80"
+addopts = "--import-mode=importlib --cov=src/wahoo_systm_mcp --cov-report=term-missing --cov-fail-under=80 -m 'not integration'"
+markers = ["integration: tests requiring real Wahoo SYSTM API credentials"]
 
 [tool.coverage.run]
 source = ["src/wahoo_systm_mcp"]

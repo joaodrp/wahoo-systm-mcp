@@ -11,13 +11,13 @@
     <a href="LICENSE">
       <img alt="License" src="https://img.shields.io/github/license/joaodrp/wahoo-systm-mcp">
     </a>
-    <img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-blue">
+    <img alt="Python" src="https://img.shields.io/badge/python-3.11--3.14-blue">
   </p>
 </div>
 
 Built with [FastMCP 3.0](https://github.com/jlowin/fastmcp) for a clean, modern implementation.
 
-## Key Features
+## Key features
 
 - **Calendar Management**: View, schedule, reschedule, and remove planned workouts
 - **Workout Library**: Browse and search 1000+ workouts with advanced filtering (sport, duration, TSS, 4DP focus, intensity)
@@ -26,22 +26,34 @@ Built with [FastMCP 3.0](https://github.com/jlowin/fastmcp) for a clean, modern 
 - **Fitness Test History**: Access Full Frontal and Half Monty test results with complete 4DP analysis
 - **AI Integration**: Returns structured JSON responses optimized for LLM consumption via MCP standard
 
-## Compatible Clients
+## Compatible clients
 
 Any Model Context Protocol (MCP) compatible client should work. See the [Model Context Protocol: Getting Started](https://modelcontextprotocol.io/docs/getting-started/intro) introduction for a general overview.
 
-## Setup Instructions
+## Setup instructions
 
 ### Prerequisites
 
-- Python 3.11 or later
-- [uv](https://docs.astral.sh/uv/) package manager
-- Active Wahoo SYSTM account
-- (Recommended) 1Password CLI for secure credential storage
+- Active [Wahoo SYSTM](https://systm.wahoofitness.com/) account
 
-### Installation Steps
+### Installation options
 
-#### 1. Clone and Install
+Choose one of the following methods based on your MCP client:
+
+#### Option A: MCPB bundle (recommended for Claude Desktop)
+
+No dependencies required. Download the `.mcpb` bundle from the
+[Releases](https://github.com/joaodrp/wahoo-systm-mcp/releases) page,
+double-click to open with Claude Desktop, and follow the prompts to enter
+your credentials.
+
+#### Option B: Direct install via uvx
+
+Requires [uv](https://docs.astral.sh/uv/) to be installed. No local clone needed. See client-specific instructions below.
+
+#### Option C: Local clone (for development)
+
+Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 git clone https://github.com/joaodrp/wahoo-systm-mcp.git
@@ -49,44 +61,24 @@ cd wahoo-systm-mcp
 uv sync
 ```
 
-#### 2. Configure Client
+### Client configuration
 
-> [!NOTE]
-> Here we use Claude Desktop as example. See your client's documentation for instructions on how to configure MCP servers.
+<details>
+<summary><strong>Claude Desktop</strong></summary>
 
-Update the configuration file with the absolute path to the project:
+Use Option A (MCPB Bundle) above for the easiest setup.
 
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
+#### Manual configuration (alternative)
 
-##### Option A: 1Password Integration (Recommended)
-
-```json
-{
-  "mcpServers": {
-    "wahoo-systm": {
-      "command": "uv",
-      "args": ["run", "--directory", "/absolute/path/to/wahoo-systm-mcp", "python", "-m", "wahoo_systm_mcp"],
-      "env": {
-        "WAHOO_USERNAME_1P_REF": "op://Your-Vault/Your-Item/username",
-        "WAHOO_PASSWORD_1P_REF": "op://Your-Vault/Your-Item/password"
-      }
-    }
-  }
-}
-```
-
-##### Option B: Plain Environment Variables
-
-> [!WARNING]
-> This option stores your credentials in plain text in the configuration file. Use Option A (1Password) for better security.
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "wahoo-systm": {
-      "command": "uv",
-      "args": ["run", "--directory", "/absolute/path/to/wahoo-systm-mcp", "python", "-m", "wahoo_systm_mcp"],
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/joaodrp/wahoo-systm-mcp.git", "wahoo-systm-mcp"],
       "env": {
         "WAHOO_USERNAME": "your_email@example.com",
         "WAHOO_PASSWORD": "your_password"
@@ -96,45 +88,119 @@ Update the configuration file with the absolute path to the project:
 }
 ```
 
-#### 3. 1Password Setup (if using Option A)
+Docs: [Claude Desktop MCP setup](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop)
 
-- Install [1Password CLI](https://1password.com/downloads/command-line)
-- Enable [CLI desktop app integration](https://developer.1password.com/docs/cli/app-integration/)
-- Store Wahoo SYSTM credentials in 1Password
-- Find your vault/item: `op vault list` and `op item list`
+</details>
 
-#### 4. Restart Claude
+<details>
+<summary><strong>Claude Code</strong></summary>
 
-Restart Claude Desktop to load the configuration.
+Add the server with credentials:
 
-### Environment Variables
+```bash
+claude mcp add wahoo-systm \
+  -e WAHOO_USERNAME=your_email@example.com \
+  -e WAHOO_PASSWORD=your_password \
+  -- uvx --from git+https://github.com/joaodrp/wahoo-systm-mcp.git wahoo-systm-mcp
+```
 
-#### Option A (1Password)
+Verify the configuration:
+
+```bash
+claude mcp get wahoo-systm
+```
+
+Alternatively, if you installed via Claude Desktop, you can import servers:
+
+```bash
+claude mcp add-from-claude-desktop
+```
+
+Docs: [Claude Code MCP](https://docs.anthropic.com/en/docs/claude-code/mcp)
+
+</details>
+
+<details>
+<summary><strong>ChatGPT</strong> (remote MCP only)</summary>
+
+ChatGPT currently supports only remote MCP servers (not local). Run the HTTP
+server mode and host it somewhere reachable, then add it via Settings →
+Apps & Connectors → Create.
+
+Docs: [Developer Mode + MCP connectors](https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt-beta)
+and [Apps & Connectors](https://help.openai.com/en/articles/11487775/)
+
+</details>
+
+<details>
+<summary><strong>OpenCode</strong></summary>
+
+Add an MCP server under `mcp` in your OpenCode config:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "wahoo-systm": {
+      "type": "local",
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/joaodrp/wahoo-systm-mcp.git", "wahoo-systm-mcp"],
+      "env": {
+        "WAHOO_USERNAME": "your_email@example.com",
+        "WAHOO_PASSWORD": "your_password"
+      }
+    }
+  }
+}
+```
+
+Docs: [OpenCode MCP servers](https://opencode.ai/docs/mcp-servers/)
+
+</details>
+
+### HTTP server mode (optional)
+
+If you want to run this server over HTTP (for web-based or remote MCP clients), use the
+HTTP entrypoint:
+
+```bash
+uv run wahoo-systm-mcp-server
+```
+
+If you did not clone the repo, you can run it directly with `uvx`:
+
+```bash
+uvx --from git+https://github.com/joaodrp/wahoo-systm-mcp.git wahoo-systm-mcp-server
+```
+
+You can override the host/port or transport using environment variables:
+
+```bash
+HTTP_HOST=0.0.0.0 HTTP_PORT=9000 uv run wahoo-systm-mcp-server
+```
+
+### Environment variables
 
 | Variable | Purpose |
 |----------|---------|
-| `WAHOO_USERNAME_1P_REF` | 1Password reference for Wahoo SYSTM username (use this or Option B) |
-| `WAHOO_PASSWORD_1P_REF` | 1Password reference for Wahoo SYSTM password (use this or Option B) |
-
-#### Option B (Plain Environment Variables)
-
-| Variable | Purpose |
-|----------|---------|
-| `WAHOO_USERNAME` | Wahoo SYSTM email address (use this or Option A) |
-| `WAHOO_PASSWORD` | Wahoo SYSTM password (use this or Option A) |
+| `WAHOO_USERNAME` | Wahoo SYSTM email address |
+| `WAHOO_PASSWORD` | Wahoo SYSTM password |
+| `HTTP_HOST` | HTTP bind host (HTTP mode only, default: `127.0.0.1`) |
+| `HTTP_PORT` | HTTP bind port (HTTP mode only, default: `8000`) |
+| `HTTP_TRANSPORT` | HTTP transport (`http`, `streamable-http`, `sse`) |
 
 The server automatically authenticates on startup and maintains the session for the duration of the process.
 
-## Available Tools
+## Available tools
 
-### Calendar & Scheduling
+### Calendar and scheduling
 
 - `get_calendar`: Retrieve planned workouts for a date range with full workout details and agenda IDs
 - `schedule_workout`: Add a workout from the library to your calendar for a specific date
 - `reschedule_workout`: Move a scheduled workout to a different date
 - `remove_workout`: Cancel/remove a scheduled workout from your calendar
 
-### Workout Library
+### Workout library
 
 > [!NOTE]
 > Currently, only cycling has a specialized workout search tool (`get_cycling_workouts`) with sport-specific filters like 4DP focus and cycling categories. For other sports (Running, Strength, Yoga, Swimming), use the general `get_workouts` tool.
@@ -143,7 +209,7 @@ The server automatically authenticates on startup and maintains the session for 
 - `get_cycling_workouts`: Specialized cycling workout search with 4DP focus, channel, category, and intensity filters
 - `get_workout_details`: Get complete workout information including interval targets, equipment, and TSS
 
-### Rider Profile
+### Rider profile
 
 - `get_rider_profile`: Retrieve current 4DP values (NM, AC, MAP, FTP), rider type classification, strengths/weaknesses, cTHR, and heart rate zones
 
@@ -151,33 +217,33 @@ The server automatically authenticates on startup and maintains the session for 
 > Heart rate zones are computed from cTHR to match the athlete profile UI.
 > The response includes the last test date for context.
 
-### Fitness Tests
+### Fitness tests
 
 - `get_fitness_test_history`: List all completed Full Frontal and Half Monty tests with 4DP results, rider type, and dates
 - `get_fitness_test_details`: Access detailed test data including second-by-second power/cadence/HR, power curve bests, and analysis
 
-## Example Usage
+## Example usage
 
-### Calendar Management
+### Calendar management
 
 - "What's on my SYSTM calendar this week?"
 - "Schedule Nine Hammers for Saturday"
 - "Move tomorrow's workout to Thursday"
 - "Remove Friday's workout from SYSTM"
 
-### Workout Discovery
+### Workout discovery
 
 - "Find a 45-60 minute sweet spot workout"
 - "What SYSTM workouts target MAP?"
 - "Show me Sufferfest cycling workouts under 1 hour"
 - "Find a low intensity recovery ride"
 
-### Workout Details
+### Workout details
 
 - "Tell me about The Omnium workout"
 - "What's the structure of Half Monty?"
 
-### 4DP Profile & Testing
+### 4DP profile and testing
 
 - "What's my current 4DP profile?"
 - "Show my fitness test history"
@@ -185,84 +251,121 @@ The server automatically authenticates on startup and maintains the session for 
 
 ## Development
 
-### Project Structure
+### Project structure
 
 ```
 wahoo-systm-mcp/
 ├── src/
 │   └── wahoo_systm_mcp/
-│       ├── __init__.py        # Package init
-│       ├── __main__.py        # Entry point for python -m
-│       ├── server.py          # FastMCP server + tool registrations
-│       ├── client.py          # WahooClient (GraphQL API)
-│       ├── models.py          # Pydantic models
-│       └── onepassword.py     # 1Password credential retrieval
+│       ├── __init__.py
+│       ├── __main__.py        # Stdio entry point
+│       ├── main.py            # HTTP entry point
+│       ├── models.py          # MCP tool response models
+│       ├── types.py           # Shared typing aliases
+│       ├── server/
+│       │   ├── __init__.py
+│       │   ├── app.py         # FastMCP app builder
+│       │   ├── config.py      # HTTP config
+│       │   ├── lifecycle.py   # Lifespan management
+│       │   └── register.py    # Tool registration
+│       ├── tools/
+│       │   ├── __init__.py
+│       │   ├── calendar.py
+│       │   ├── library.py
+│       │   └── profile.py
+│       └── client/
+│           ├── __init__.py
+│           ├── api.py         # WahooClient (GraphQL)
+│           ├── config.py      # API configuration
+│           ├── models.py      # API response models
+│           └── queries.py     # GraphQL queries
 ├── tests/
+│   ├── __init__.py
 │   ├── conftest.py            # Shared fixtures
-│   ├── test_client.py         # WahooClient tests
-│   ├── test_models.py         # Pydantic model tests
-│   ├── test_onepassword.py    # 1Password tests
-│   └── test_server.py         # MCP tool tests
-├── pyproject.toml             # Project config (PEP 621)
-└── README.md                  # This file
+│   ├── test_client.py
+│   ├── test_entrypoints.py    # CLI entry point tests
+│   ├── test_integration.py    # Integration tests
+│   ├── test_models.py
+│   └── test_server.py
+├── docs/
+│   └── wahoo-graphql-spec.md  # API specification
+├── .github/
+│   └── workflows/             # CI/CD pipelines
+├── .env.example               # Environment template
+├── .mcpbignore                # MCPB bundle exclusions
+├── justfile                   # Development commands
+├── manifest.json              # MCPB bundle manifest
+├── pyproject.toml
+├── CHANGELOG.md
+└── README.md
 ```
 
-### Setup Development Environment
+### Setup development environment
 
 ```bash
-# Install all dependencies including dev
-uv sync --dev
+# Install all dependencies
+just install
 
-# Run the server
-uv run python -m wahoo_systm_mcp
+# Or manually with uv
+uv sync --dev
+```
+
+Copy `.env.example` to `.env` and fill in your Wahoo SYSTM credentials for local development.
+
+### Development commands
+
+Run `just` to see all available commands:
+
+```bash
+just           # List all commands
+just test      # Run unit tests
+just test-cov  # Run tests with coverage
+just lint      # Lint with ruff
+just typecheck # Type check with mypy
+just check     # Run all checks (lint + typecheck)
+just format    # Format code
+just fix       # Fix lint issues and format
+just serve     # Run the MCP server
 ```
 
 ### Testing
 
 ```bash
-# Run all tests with coverage
-uv run pytest
+# Unit tests (no credentials needed)
+just test
 
-# Run tests without coverage
-uv run pytest --no-cov
+# Unit tests with coverage
+just test-cov
 
-# Run specific test file
-uv run pytest tests/test_client.py
+# Integration tests (requires .env with credentials)
+just test-integration
 
-# Verbose output
-uv run pytest -v
+# All tests (unit + integration)
+just test-all
 ```
 
-### Linting & Type Checking
+### Linting and type checking
 
 ```bash
-# Lint with ruff
-uv run ruff check .
-
-# Auto-fix lint issues
-uv run ruff check --fix .
-
-# Format code
-uv run ruff format .
-
-# Type check with mypy
-uv run mypy src
+just lint      # Lint with ruff
+just typecheck # Type check with mypy
+just check     # Run both
+just fix       # Auto-fix issues and format
 ```
 
-## API Information
+## API information
 
 This server uses the Wahoo SYSTM GraphQL API at `https://api.thesufferfest.com/graphql`. The implementation is based on reverse-engineering the web app's API calls.
 
-## Security Notes
+## Security notes
 
 - Credentials are only stored in memory during the session
 - Authentication tokens are not persisted between server restarts
-- 1Password integration provides the most secure credential management
 
 ## Acknowledgments
 
 This project was inspired by [suffersync](https://github.com/bakermat/suffersync) by bakermat, which syncs Wahoo SYSTM workouts to intervals.icu.
 
-## Contributing & License
+## Contributing and license
 
 Contributions are welcome via pull requests. Licensed under the MIT License.

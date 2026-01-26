@@ -1,5 +1,5 @@
 {
-  "manifest_version": "0.3",
+  "manifest_version": "0.4",
   "name": "wahoo-systm-mcp",
   "display_name": "Wahoo SYSTM MCP",
   "version": "1.0.0",
@@ -12,20 +12,26 @@
   "documentation": "https://github.com/joaodrp/wahoo-systm-mcp/blob/main/README.md",
   "support": "https://github.com/joaodrp/wahoo-systm-mcp/issues",
   "server": {
-    "type": "python",
+    "type": "uv",
     "entry_point": "src/wahoo_systm_mcp/__main__.py",
     "mcp_config": {
-      "command": "python",
+      "command": "uv",
       "args": [
+        "run",
+        "--directory",
+        "${__dirname}",
+        "--with",
+        ".",
+        "--python",
+        "3.12",
+        "python",
         "-m",
         "wahoo_systm_mcp"
       ],
       "env": {
-        "PYTHONPATH": "${__dirname}/src",
-        "WAHOO_USERNAME_1P_REF": "${user_config.WAHOO_USERNAME_1P_REF}",
-        "WAHOO_PASSWORD_1P_REF": "${user_config.WAHOO_PASSWORD_1P_REF}",
         "WAHOO_USERNAME": "${user_config.WAHOO_USERNAME}",
-        "WAHOO_PASSWORD": "${user_config.WAHOO_PASSWORD}"
+        "WAHOO_PASSWORD": "${user_config.WAHOO_PASSWORD}",
+        "PYTHONIOENCODING": "utf-8"
       }
     }
   },
@@ -72,51 +78,27 @@
     }
   ],
   "user_config": {
-    "WAHOO_USERNAME_1P_REF": {
-      "type": "string",
-      "title": "1Password Username Reference",
-      "description": "1Password secret reference for the Wahoo SYSTM username (use 1Password refs or plain credentials, not both)",
-      "required": false,
-      "sensitive": true
-    },
-    "WAHOO_PASSWORD_1P_REF": {
-      "type": "string",
-      "title": "1Password Password Reference",
-      "description": "1Password secret reference for the Wahoo SYSTM password (use 1Password refs or plain credentials, not both)",
-      "required": false,
-      "sensitive": true
-    },
     "WAHOO_USERNAME": {
       "type": "string",
       "title": "Wahoo SYSTM Username",
-      "description": "Wahoo SYSTM account email address (use plain credentials or 1Password refs, not both)",
-      "required": false,
+      "description": "Wahoo SYSTM account email address",
+      "required": true,
       "sensitive": true
     },
     "WAHOO_PASSWORD": {
       "type": "string",
       "title": "Wahoo SYSTM Password",
-      "description": "Wahoo SYSTM account password (use plain credentials or 1Password refs, not both)",
-      "required": false,
+      "description": "Wahoo SYSTM account password",
+      "required": true,
       "sensitive": true
     }
   },
-  "keywords": [
-    "wahoo",
-    "systm",
-    "cycling",
-    "training",
-    "workouts"
-  ],
+  "keywords": ["wahoo", "systm", "cycling", "training", "workouts"],
   "license": "MIT",
   "compatibility": {
-    "platforms": [
-      "darwin",
-      "win32",
-      "linux"
-    ],
+    "platforms": ["darwin", "win32", "linux"],
     "runtimes": {
-      "python": ">=3.11,<4.0"
+      "python": ">=3.11"
     }
   },
   "repository": {

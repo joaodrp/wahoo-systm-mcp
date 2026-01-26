@@ -1,6 +1,6 @@
 """Tests for Pydantic models."""
 
-from wahoo_systm_mcp.models import (
+from wahoo_systm_mcp.client.models import (
     AddAgendaResponse,
     DeleteAgendaResponse,
     EnhancedRiderProfile,
@@ -20,20 +20,10 @@ from wahoo_systm_mcp.models import (
     RiderWeaknessInfo,
     SearchActivitiesResponse,
     UserPlanItem,
-    WahooCredentials,
     WorkoutDetails,
     WorkoutIntensity,
     WorkoutProspect,
 )
-
-
-class TestWahooCredentials:
-    """Tests for WahooCredentials model."""
-
-    def test_basic_credentials(self) -> None:
-        creds = WahooCredentials(username="test@example.com", password="secret")
-        assert creds.username == "test@example.com"
-        assert creds.password == "secret"
 
 
 class TestRiderProfile:
@@ -192,7 +182,9 @@ class TestWorkoutProspect:
         prospect = WorkoutProspect.model_validate(data)
         assert prospect.name == "Nine Hammers"
         assert prospect.planned_duration == 3600
-        assert prospect.intensity.map_ == 4
+        intensity = prospect.intensity
+        assert intensity is not None
+        assert intensity.map_ == 4
 
     def test_with_notes(self) -> None:
         data = {
@@ -249,8 +241,12 @@ class TestUserPlanItem:
         assert item.day == 1
         assert item.planned_date == "2024-01-15"
         assert item.agenda_id == "agenda123"
-        assert len(item.prospects) == 1
-        assert item.plan.name == "Base Training"
+        prospects = item.prospects
+        assert prospects is not None
+        assert len(prospects) == 1
+        plan = item.plan
+        assert plan is not None
+        assert plan.name == "Base Training"
 
 
 class TestWorkoutDetails:
@@ -276,8 +272,12 @@ class TestWorkoutDetails:
         details = WorkoutDetails.model_validate(data)
         assert details.name == "Nine Hammers"
         assert details.duration_seconds == 3600
-        assert details.metrics.tss == 95
-        assert details.metrics.ratings.map_ == 4
+        metrics = details.metrics
+        assert metrics is not None
+        assert metrics.tss == 95
+        ratings = metrics.ratings
+        assert ratings is not None
+        assert ratings.map_ == 4
         assert details.graph_triggers is not None
 
     def test_graph_triggers(self) -> None:
@@ -433,10 +433,16 @@ class TestFitnessTestDetails:
         }
         details = FitnessTestDetails.model_validate(data)
         assert details.notes == "Felt strong"
-        assert details.profile.map_ == 310
-        assert len(details.power) == 3
-        assert len(details.power_bests) == 2
-        assert details.power_bests[0].value == 850
+        profile = details.profile
+        assert profile is not None
+        assert profile.map_ == 310
+        power = details.power
+        assert power is not None
+        assert len(power) == 3
+        power_bests = details.power_bests
+        assert power_bests is not None
+        assert len(power_bests) == 2
+        assert power_bests[0].value == 850
 
 
 class TestGraphQLResponses:

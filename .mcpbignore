@@ -1,0 +1,36 @@
+# Virtual environments and caches
+.venv/
+.uv-cache/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+
+# Test and development files
+tests/
+.coverage
+.env
+.env.example
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# Documentation (not needed for runtime)
+docs/
+
+# CI/CD (not needed for runtime)
+.github/
+
+# Local settings
+.claude/

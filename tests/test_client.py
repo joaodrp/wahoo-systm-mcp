@@ -5,24 +5,28 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncIterator, Mapping
 
-    from wahoo_systm_mcp.types import JSONObject
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
 
 from wahoo_systm_mcp.client import (
-    API_URL,
     CHANNEL_ID_TO_NAME,
+    DEFAULT_API_URL,
+    DEFAULT_APP_PLATFORM,
+    DEFAULT_APP_VERSION,
+    DEFAULT_LOCALE,
+    DEFAULT_TIMEOUT,
     FULL_FRONTAL_ID,
     HALF_MONTY_ID,
     AuthenticationError,
     WahooAPIError,
     WahooClient,
-    _calculate_heart_rate_zones,
 )
+from wahoo_systm_mcp.client.api import _calculate_heart_rate_zones
+from wahoo_systm_mcp.client.config import ClientConfig
 
 # =============================================================================
 # Fixtures
@@ -50,20 +54,20 @@ async def authenticated_client() -> AsyncIterator[WahooClient]:
         await client.close()
 
 
-def mock_response(data: JSONObject, status_code: int = 200) -> httpx.Response:
+def mock_response(data: Mapping[str, object], status_code: int = 200) -> httpx.Response:
     """Create a mock httpx.Response."""
     response = MagicMock(spec=httpx.Response)
     response.status_code = status_code
-    response.json.return_value = {"data": data}
+    response.json.return_value = {"data": dict(data)}
     response.text = ""
     return response
 
 
-def mock_error_response(errors: list[JSONObject]) -> httpx.Response:
+def mock_error_response(errors: list[Mapping[str, object]]) -> httpx.Response:
     """Create a mock httpx.Response with GraphQL errors."""
     response = MagicMock(spec=httpx.Response)
     response.status_code = 200
-    response.json.return_value = {"errors": errors}
+    response.json.return_value = {"errors": [dict(error) for error in errors]}
     response.text = ""
     return response
 
@@ -140,7 +144,7 @@ class TestAuthentication:
             # Verify request
             mock_post.assert_called_once()
             call_args = mock_post.call_args
-            assert call_args.args[0] == API_URL
+            assert call_args.args[0] == DEFAULT_API_URL
             body = call_args.kwargs["json"]
             assert body["variables"]["username"] == "test@example.com"
             assert body["variables"]["password"] == "password123"
@@ -244,7 +248,9 @@ class TestGetCalendar:
             assert len(items) == 1
             assert items[0].agenda_id == "agenda123"
             assert items[0].planned_date == "2024-01-15"
-            assert items[0].prospects[0].name == "Nine Hammers"
+            prospects = items[0].prospects
+            assert prospects is not None
+            assert prospects[0].name == "Nine Hammers"
 
     async def test_get_calendar_empty(self, authenticated_client: WahooClient) -> None:
         """Test fetching empty calendar."""
@@ -277,7 +283,7 @@ class TestGetWorkoutLibrary:
                         "id": "content1",
                         "name": "Nine Hammers",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",  # Sufferfest ID
+                        "channel": "MvDmhsvEBR",  # Sufferfest ID
                         "workoutType": "Cycling",
                         "category": "threshold",
                         "level": "advanced",
@@ -293,7 +299,7 @@ class TestGetWorkoutLibrary:
                         "id": "content2",
                         "name": "Yoga Session",
                         "mediaType": "video",
-                        "channel": "LuAEHZcJSj",  # Wahoo Fitness ID
+                        "channel": "y11gocEkS1",  # Inspiration ID
                         "workoutType": "Yoga",
                         "category": "recovery",
                         "level": "beginner",
@@ -316,7 +322,7 @@ class TestGetWorkoutLibrary:
             assert len(content) == 2
             # Channel IDs should be converted to names
             assert content[0].channel == "The Sufferfest"
-            assert content[1].channel == "Wahoo Fitness"
+            assert content[1].channel == "Inspiration"
 
     async def test_get_library_with_sport_filter(self, authenticated_client: WahooClient) -> None:
         """Test filtering by sport type."""
@@ -327,7 +333,7 @@ class TestGetWorkoutLibrary:
                         "id": "content1",
                         "name": "Nine Hammers",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",
+                        "channel": "MvDmhsvEBR",
                         "workoutType": "Cycling",
                         "category": "threshold",
                         "level": "advanced",
@@ -338,7 +344,7 @@ class TestGetWorkoutLibrary:
                         "id": "content2",
                         "name": "Yoga Session",
                         "mediaType": "video",
-                        "channel": "LuAEHZcJSj",
+                        "channel": "y11gocEkS1",
                         "workoutType": "Yoga",
                         "category": "recovery",
                         "level": "beginner",
@@ -372,7 +378,7 @@ class TestGetWorkoutLibrary:
                         "id": "content1",
                         "name": "Short Workout",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",
+                        "channel": "MvDmhsvEBR",
                         "workoutType": "Cycling",
                         "category": "threshold",
                         "level": "advanced",
@@ -383,7 +389,7 @@ class TestGetWorkoutLibrary:
                         "id": "content2",
                         "name": "Long Workout",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",
+                        "channel": "MvDmhsvEBR",
                         "workoutType": "Cycling",
                         "category": "endurance",
                         "level": "intermediate",
@@ -417,7 +423,7 @@ class TestGetWorkoutLibrary:
                         "id": "content1",
                         "name": "Easy Ride",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",
+                        "channel": "MvDmhsvEBR",
                         "workoutType": "Cycling",
                         "category": "recovery",
                         "level": "beginner",
@@ -429,7 +435,7 @@ class TestGetWorkoutLibrary:
                         "id": "content2",
                         "name": "Hard Ride",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",
+                        "channel": "MvDmhsvEBR",
                         "workoutType": "Cycling",
                         "category": "threshold",
                         "level": "advanced",
@@ -468,7 +474,7 @@ class TestGetWorkoutLibrary:
                         "id": "content1",
                         "name": "Nine Hammers",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",
+                        "channel": "MvDmhsvEBR",
                         "workoutType": "Cycling",
                         "category": "threshold",
                         "level": "advanced",
@@ -479,7 +485,7 @@ class TestGetWorkoutLibrary:
                         "id": "content2",
                         "name": "The Shovel",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",
+                        "channel": "MvDmhsvEBR",
                         "workoutType": "Cycling",
                         "category": "endurance",
                         "level": "intermediate",
@@ -511,7 +517,7 @@ class TestGetWorkoutLibrary:
                         "id": "content1",
                         "name": "B Workout",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",
+                        "channel": "MvDmhsvEBR",
                         "workoutType": "Cycling",
                         "category": "threshold",
                         "level": "advanced",
@@ -522,7 +528,7 @@ class TestGetWorkoutLibrary:
                         "id": "content2",
                         "name": "A Workout",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",
+                        "channel": "MvDmhsvEBR",
                         "workoutType": "Cycling",
                         "category": "endurance",
                         "level": "intermediate",
@@ -561,7 +567,7 @@ class TestGetWorkoutLibrary:
                         "id": f"content{i}",
                         "name": f"Workout {i}",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",
+                        "channel": "MvDmhsvEBR",
                         "workoutType": "Cycling",
                         "category": "threshold",
                         "level": "advanced",
@@ -597,7 +603,7 @@ class TestGetCyclingWorkouts:
                         "id": "content1",
                         "name": "Nine Hammers",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",
+                        "channel": "MvDmhsvEBR",
                         "workoutType": "Cycling",
                         "category": "threshold",
                         "level": "advanced",
@@ -608,7 +614,7 @@ class TestGetCyclingWorkouts:
                         "id": "content2",
                         "name": "Yoga Session",
                         "mediaType": "video",
-                        "channel": "LuAEHZcJSj",
+                        "channel": "y11gocEkS1",
                         "workoutType": "Yoga",
                         "category": "recovery",
                         "level": "beginner",
@@ -643,7 +649,7 @@ class TestGetCyclingWorkouts:
                         "id": "content1",
                         "name": "High MAP Workout",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",
+                        "channel": "MvDmhsvEBR",
                         "workoutType": "Cycling",
                         "category": "threshold",
                         "level": "advanced",
@@ -659,7 +665,7 @@ class TestGetCyclingWorkouts:
                         "id": "content2",
                         "name": "FTP Builder",
                         "mediaType": "video",
-                        "channel": "x7jJSqJlR2",
+                        "channel": "MvDmhsvEBR",
                         "workoutType": "Cycling",
                         "category": "endurance",
                         "level": "intermediate",
@@ -834,7 +840,7 @@ class TestGetRiderProfile:
 
     async def test_get_current_profile_after_auth(self, authenticated_client: WahooClient) -> None:
         """Test getting current profile after authentication."""
-        from wahoo_systm_mcp.models import RiderProfile
+        from wahoo_systm_mcp.client.models import RiderProfile
 
         authenticated_client._rider_profile = RiderProfile(nm=850, ac=420, map=310, ftp=260)
 
@@ -966,8 +972,8 @@ class TestGetFitnessTestHistory:
 
     async def test_get_history_success(self, authenticated_client: WahooClient) -> None:
         """Test fetching fitness test history."""
-        search_response = {
-            "searchActivities": {
+        response = {
+            "getWorkoutActivities": {
                 "activities": [
                     {
                         "id": "test1",
@@ -990,35 +996,59 @@ class TestGetFitnessTestHistory:
                                 "icon": "a.png",
                             },
                         },
-                    }
+                    },
+                    {
+                        "id": "test2",
+                        "name": "Half Monty",
+                        "completedDate": "2024-01-05T10:00:00Z",
+                        "durationSeconds": 2400,
+                        "distanceKm": 20.0,
+                        "tss": 60,
+                        "intensityFactor": 0.75,
+                        "workoutId": HALF_MONTY_ID,
+                        "testResults": {
+                            "power5s": {"status": "ok", "graphValue": 80, "value": 800},
+                            "power1m": {"status": "ok", "graphValue": 75, "value": 400},
+                            "power5m": {"status": "ok", "graphValue": 70, "value": 300},
+                            "power20m": {"status": "ok", "graphValue": 65, "value": 250},
+                            "lactateThresholdHeartRate": 165,
+                            "riderType": {
+                                "name": "Rouleur",
+                                "description": "Balanced",
+                                "icon": "r.png",
+                            },
+                        },
+                    },
                 ],
-                "count": 1,
+                "count": 2,
             }
         }
 
         with patch.object(
             authenticated_client._client, "post", new_callable=AsyncMock
         ) as mock_post:
-            mock_post.return_value = mock_response(search_response)
+            mock_post.return_value = mock_response(response)
 
             results, total = await authenticated_client.get_fitness_test_history()
 
-            assert len(results) == 1
-            assert total == 1
+            assert len(results) == 2
+            assert total == 2
             assert results[0].name == "Full Frontal"
             assert results[0].test_results is not None
             assert results[0].test_results.power_5s.value == 850
+            assert results[1].name == "Half Monty"
 
-            # Verify workout IDs filter
+            # Verify correct query variables
             call_args = mock_post.call_args
             body = call_args.kwargs["json"]
-            assert FULL_FRONTAL_ID in body["variables"]["search"]["workoutIds"]
-            assert HALF_MONTY_ID in body["variables"]["search"]["workoutIds"]
+            assert body["operationName"] == "GetWorkoutActivities"
+            assert FULL_FRONTAL_ID in body["variables"]["workoutIds"]
+            assert HALF_MONTY_ID in body["variables"]["workoutIds"]
 
-    async def test_get_history_pagination(self, authenticated_client: WahooClient) -> None:
-        """Test pagination parameters."""
-        search_response = {
-            "searchActivities": {
+    async def test_get_history_empty(self, authenticated_client: WahooClient) -> None:
+        """Test fetching empty fitness test history."""
+        response = {
+            "getWorkoutActivities": {
                 "activities": [],
                 "count": 0,
             }
@@ -1027,14 +1057,60 @@ class TestGetFitnessTestHistory:
         with patch.object(
             authenticated_client._client, "post", new_callable=AsyncMock
         ) as mock_post:
-            mock_post.return_value = mock_response(search_response)
+            mock_post.return_value = mock_response(response)
 
-            await authenticated_client.get_fitness_test_history(page=3, page_size=10)
+            results, total = await authenticated_client.get_fitness_test_history()
 
+            assert len(results) == 0
+            assert total == 0
+
+    async def test_get_history_pagination(self, authenticated_client: WahooClient) -> None:
+        """Test pagination parameters are passed correctly."""
+        response = {
+            "getWorkoutActivities": {
+                "activities": [
+                    {
+                        "id": "test1",
+                        "name": "Test 1",
+                        "completedDate": "2024-02-01T10:00:00Z",
+                        "durationSeconds": 3600,
+                        "distanceKm": 30.0,
+                        "tss": 80,
+                        "intensityFactor": 0.85,
+                        "workoutId": FULL_FRONTAL_ID,
+                        "testResults": {
+                            "power5s": {"status": "ok", "graphValue": 80, "value": 800},
+                            "power1m": {"status": "ok", "graphValue": 75, "value": 400},
+                            "power5m": {"status": "ok", "graphValue": 70, "value": 300},
+                            "power20m": {"status": "ok", "graphValue": 65, "value": 250},
+                            "lactateThresholdHeartRate": 165,
+                            "riderType": {"name": "R", "description": "D", "icon": "i"},
+                        },
+                    },
+                ],
+                "count": 5,
+            }
+        }
+
+        with patch.object(
+            authenticated_client._client, "post", new_callable=AsyncMock
+        ) as mock_post:
+            mock_post.return_value = mock_response(response)
+
+            # Request page 2 with page_size 10
+            results, total = await authenticated_client.get_fitness_test_history(
+                page=2, page_size=10
+            )
+
+            # Verify pagination parameters passed correctly
             call_args = mock_post.call_args
             body = call_args.kwargs["json"]
-            assert body["variables"]["page"]["page"] == 3
-            assert body["variables"]["page"]["pageSize"] == 10
+            assert body["variables"]["pageInformation"]["page"] == 2
+            assert body["variables"]["pageInformation"]["pageSize"] == 10
+
+            # Results should match response
+            assert total == 5
+            assert len(results) == 1
 
 
 class TestGetFitnessTestDetails:
@@ -1086,9 +1162,15 @@ class TestGetFitnessTestDetails:
             assert details.id == "test1"
             assert details.name == "Full Frontal"
             assert details.notes == "Felt strong"
-            assert len(details.power) == 4
-            assert len(details.power_bests) == 2
-            assert details.profile.ftp == 260
+            power = details.power
+            assert power is not None
+            assert len(power) == 4
+            power_bests = details.power_bests
+            assert power_bests is not None
+            assert len(power_bests) == 2
+            profile = details.profile
+            assert profile is not None
+            assert profile.ftp == 260
 
 
 # =============================================================================
@@ -1155,6 +1237,35 @@ class TestClientLifecycle:
 
     def test_channel_id_mapping(self) -> None:
         """Test channel ID to name mapping is complete."""
-        assert len(CHANNEL_ID_TO_NAME) == 8
-        assert "x7jJSqJlR2" in CHANNEL_ID_TO_NAME
-        assert CHANNEL_ID_TO_NAME["x7jJSqJlR2"] == "The Sufferfest"
+        assert len(CHANNEL_ID_TO_NAME) == 9
+        assert "MvDmhsvEBR" in CHANNEL_ID_TO_NAME
+        assert CHANNEL_ID_TO_NAME["MvDmhsvEBR"] == "The Sufferfest"
+
+
+class TestClientConfigFromEnv:
+    """Tests for ClientConfig.from_env."""
+
+    def test_uses_env_overrides(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("WAHOO_APP_VERSION", "9.9.9-test")
+        monkeypatch.setenv("WAHOO_INSTALL_ID", "install-123")
+        monkeypatch.setenv("WAHOO_LOCALE", "pt")
+
+        config = ClientConfig.from_env()
+
+        assert config.app_version == "9.9.9-test"
+        assert config.install_id == "install-123"
+        assert config.default_locale == "pt"
+        assert config.api_url == DEFAULT_API_URL
+        assert config.app_platform == DEFAULT_APP_PLATFORM
+        assert config.timeout == DEFAULT_TIMEOUT
+
+    def test_uses_defaults_when_env_missing(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("WAHOO_APP_VERSION", raising=False)
+        monkeypatch.delenv("WAHOO_INSTALL_ID", raising=False)
+        monkeypatch.delenv("WAHOO_LOCALE", raising=False)
+
+        config = ClientConfig.from_env()
+
+        assert config.app_version == DEFAULT_APP_VERSION
+        assert config.install_id is None
+        assert config.default_locale == DEFAULT_LOCALE
