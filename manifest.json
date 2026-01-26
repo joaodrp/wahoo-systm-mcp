@@ -2,7 +2,7 @@
   "manifest_version": "0.4",
   "name": "wahoo-systm-mcp",
   "display_name": "Wahoo SYSTM MCP",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "description": "MCP server for Wahoo SYSTM training data and workout management",
   "author": {
     "name": "João Pereira",
