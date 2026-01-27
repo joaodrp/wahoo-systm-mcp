@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 @asynccontextmanager
-async def app_lifespan(server: FastMCP) -> AsyncIterator[dict[str, WahooClient]]:
+async def app_lifespan(_server: FastMCP) -> AsyncIterator[dict[str, WahooClient]]:
     """Initialize shared resources for the server lifetime.
 
     Credentials are validated in entry points before the server starts.

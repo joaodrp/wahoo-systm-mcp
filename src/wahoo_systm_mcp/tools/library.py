@@ -49,6 +49,7 @@ async def get_workouts(
         sort_by: Sort field (default: name)
         sort_direction: Sort order (default: asc)
         limit: Maximum number of results (default: 50)
+
     """
     client = get_client(ctx)
     filters = _build_filters(
@@ -104,6 +105,7 @@ async def get_cycling_workouts(
         sort_by: Sort field
         sort_direction: Sort order
         limit: Maximum results (default: 50)
+
     """
     client = get_client(ctx)
     filters = _build_filters(
@@ -133,6 +135,7 @@ async def get_workout_details(ctx: Context, workout_id: str) -> WorkoutDetailsOu
 
     Args:
         workout_id: Workout ID from calendar or library (accepts both id and workoutId)
+
     """
     client = get_client(ctx)
     details = await client.get_workout_details(workout_id)

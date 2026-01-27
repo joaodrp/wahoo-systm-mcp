@@ -215,6 +215,7 @@ def _validate_graphql_response(result: object) -> JSONObject:
 
     Raises:
         WahooAPIError: If response is invalid or contains errors.
+
     """
     if not isinstance(result, dict):
         msg = "API response was not a JSON object"
@@ -265,6 +266,7 @@ class WahooClient:
 
         Raises:
             AuthenticationError: If not authenticated.
+
         """
         if self._token is None:
             msg = "Not authenticated. Call authenticate() first."
@@ -303,6 +305,7 @@ class WahooClient:
         Raises:
             AuthenticationError: If auth required but not authenticated.
             WahooAPIError: If the API returns an error.
+
         """
         headers: dict[str, str] = {
             "Content-Type": "application/json",
@@ -351,6 +354,7 @@ class WahooClient:
 
         Raises:
             AuthenticationError: If authentication fails.
+
         """
         variables: JSONObject = {
             "username": username,
@@ -391,6 +395,7 @@ class WahooClient:
 
         Returns:
             List of scheduled workout items.
+
         """
         query_params: JSONObject = {"limit": 1000}
         variables: JSONObject = {
@@ -423,6 +428,7 @@ class WahooClient:
 
         Raises:
             WahooAPIError: If workout not found or API error.
+
         """
         workout = await self._get_workout_details_by_id(workout_id)
         if workout:
@@ -478,6 +484,7 @@ class WahooClient:
 
         Returns:
             List of matching library content.
+
         """
         variables: JSONObject = {
             "locale": self._config.default_locale,
@@ -527,6 +534,7 @@ class WahooClient:
 
         Returns:
             List of matching cycling workouts.
+
         """
         cycling_filters: FilterParams = {"sport": "Cycling", **(filters or {})}
         content = await self.get_workout_library(cycling_filters)
@@ -568,6 +576,7 @@ class WahooClient:
 
         Raises:
             WahooAPIError: If scheduling fails.
+
         """
         variables: JSONObject = {
             "contentId": content_id,
@@ -601,6 +610,7 @@ class WahooClient:
 
         Raises:
             WahooAPIError: If rescheduling fails.
+
         """
         variables: JSONObject = {
             "agendaId": agenda_id,
@@ -628,6 +638,7 @@ class WahooClient:
 
         Raises:
             WahooAPIError: If removal fails.
+
         """
         variables: JSONObject = {
             "agendaId": agenda_id,
@@ -650,6 +661,7 @@ class WahooClient:
 
         Returns:
             The rider's 4DP profile (NM, AC, MAP, FTP) or None if not available.
+
         """
         if self._rider_profile:
             return self._rider_profile
@@ -691,6 +703,7 @@ class WahooClient:
         Returns:
             Enhanced profile including rider type, weakness analysis,
             and heart rate zones, or None if no test has been completed.
+
         """
         data = await self._call_api(
             MOST_RECENT_TEST_QUERY,
@@ -737,6 +750,7 @@ class WahooClient:
 
         Returns:
             Tuple of (list of test results, total count of fitness tests).
+
         """
         variables: JSONObject = {
             "workoutIds": [FULL_FRONTAL_ID, HALF_MONTY_ID],
@@ -766,6 +780,7 @@ class WahooClient:
 
         Raises:
             WahooAPIError: If activity not found or API error.
+
         """
         variables: JSONObject = {
             "activityId": activity_id,

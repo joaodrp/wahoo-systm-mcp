@@ -43,7 +43,9 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "D",       # pydocstyle - no enforced docstrings
+    "D1",      # missing docstrings - project decision
+    "D203",    # blank line before class - conflicts with D211
+    "D213",    # multi-line summary second line - conflicts with D212
     "COM812",  # trailing comma - conflicts with formatter
     "ISC001",  # implicit string concat - conflicts with formatter
 ]
@@ -51,14 +53,12 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "src/**/__main__.py" = ["T201"]    # print allowed in CLI entry
 "src/**/main.py" = ["T201"]        # print allowed in CLI entry
-"src/**/lifecycle.py" = ["ARG001"] # unused server arg in lifespan
-"src/**/tools/*.py" = ["PLR0913"]  # MCP tools need many parameters
+"src/**/tools/*.py" = ["PLR0913", "D417"]  # MCP tools: many params, ctx is framework-injected
 "tests/**" = [
     "S101",    # assert allowed in tests
     "S105",    # hardcoded passwords in test fixtures
     "ARG",     # unused arguments (fixtures)
     "SLF001",  # private member access (testing internals)
-    "DTZ005",  # datetime without tz - test fixtures
     "PLC0415", # imports in tests - test isolation
     "PLR2004", # magic values in test assertions
 ]
