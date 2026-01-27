@@ -24,9 +24,9 @@ test-all:
 lint:
     uv run ruff check
 
-# Type check with mypy
+# Type check with ty
 typecheck:
-    uv run mypy src/
+    uv run ty check src/
 
 # Run all checks (lint + typecheck)
 check: lint typecheck

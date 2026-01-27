@@ -49,11 +49,15 @@ known-first-party = ["wahoo_systm_mcp"]
 [tool.ruff.lint.flake8-type-checking]
 runtime-evaluated-base-classes = ["pydantic.BaseModel"]
 
-[tool.mypy]
-python_version = "3.11"
-strict = true
-packages = ["wahoo_systm_mcp"]
-mypy_path = "src"
+[tool.ty.terminal]
+error-on-warning = true
+
+[tool.ty.environment]
+python-version = "3.11"
+
+[tool.ty.rules]
+possibly-unresolved-reference = "error"
+unused-ignore-comment = "warn"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -85,5 +89,5 @@ dev = [
     "pytest-asyncio>=1.3.0,<2.0.0",
     "pytest-cov>=7.0.0,<8.0.0",
     "ruff>=0.14.14,<1.0.0",
-    "mypy>=1.19.1,<2.0.0",
+    "ty>=0.0.1a17",
 ]
