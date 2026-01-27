@@ -85,8 +85,6 @@ class WahooAPIError(Exception):
 class AuthenticationError(WahooAPIError):
     """Raised when authentication fails or token is missing."""
 
-    pass
-
 
 # =============================================================================
 # Helper Functions

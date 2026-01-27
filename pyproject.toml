@@ -41,7 +41,33 @@ target-version = "py311"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "TCH"]
+select = ["ALL"]
+ignore = [
+    "D",       # pydocstyle - no enforced docstrings
+    "COM812",  # trailing comma - conflicts with formatter
+    "ISC001",  # implicit string concat - conflicts with formatter
+    "EM",      # exception messages - too verbose
+    "TRY003",  # long exception messages - allow inline
+    "FBT",     # boolean traps - too strict
+    "PLR2004", # magic values - too noisy
+    "C901",    # complexity - allow some complex functions
+    "PLR0912", # too many branches - allow complex functions
+    "PLR0915", # too many statements - allow complex functions
+    "PLR0913", # too many arguments - MCP tools need many params
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/**/__main__.py" = ["T201"]    # print allowed in CLI entry
+"src/**/main.py" = ["T201"]        # print allowed in CLI entry
+"src/**/lifecycle.py" = ["ARG001"] # unused server arg in lifespan
+"tests/**" = [
+    "S101",    # assert allowed in tests
+    "S105",    # hardcoded passwords in test fixtures
+    "ARG",     # unused arguments (fixtures)
+    "SLF001",  # private member access (testing internals)
+    "DTZ005",  # datetime without tz - test fixtures
+    "PLC0415", # imports in tests - test isolation
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["wahoo_systm_mcp"]
