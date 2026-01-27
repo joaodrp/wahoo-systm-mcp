@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from httpx import AsyncClient, HTTPError, TimeoutException
 
@@ -67,6 +67,11 @@ CHANNEL_ID_TO_NAME: dict[str, str] = {
 # Human-readable name to channel ID mapping
 CHANNEL_NAME_TO_ID: dict[str, str] = {v: k for k, v in CHANNEL_ID_TO_NAME.items()}
 
+# HTTP status codes
+HTTP_OK = 200
+
+# 4DP rating threshold for focus filtering
+FOUR_DP_RATING_THRESHOLD = 4
 
 # =============================================================================
 # Exceptions
@@ -120,6 +125,119 @@ def _calculate_heart_rate_zones(lthr: float) -> list[HeartRateZone]:
     ]
 
 
+def _apply_string_filter(
+    content: list[LibraryContent],
+    filters: FilterParams,
+    key: str,
+    attr: str,
+) -> list[LibraryContent]:
+    """Apply a case-insensitive string equality filter."""
+    value = filters.get(key)
+    if isinstance(value, str):
+        value_lower = value.lower()
+        return [c for c in content if getattr(c, attr) and getattr(c, attr).lower() == value_lower]
+    return content
+
+
+def _apply_filters(content: list[LibraryContent], filters: FilterParams) -> list[LibraryContent]:
+    """Apply all filters to library content."""
+    filtered = content
+
+    # String equality filters
+    filtered = _apply_string_filter(filtered, filters, "sport", "workout_type")
+    filtered = _apply_string_filter(filtered, filters, "channel", "channel")
+    filtered = _apply_string_filter(filtered, filters, "category", "category")
+    filtered = _apply_string_filter(filtered, filters, "intensity", "intensity")
+
+    # Duration filters (convert minutes to seconds)
+    min_duration = filters.get("min_duration")
+    if isinstance(min_duration, (int, float)):
+        min_seconds = min_duration * 60
+        filtered = [c for c in filtered if c.duration and c.duration >= min_seconds]
+
+    max_duration = filters.get("max_duration")
+    if isinstance(max_duration, (int, float)):
+        max_seconds = max_duration * 60
+        filtered = [c for c in filtered if c.duration and c.duration <= max_seconds]
+
+    # TSS filters
+    min_tss = filters.get("min_tss")
+    if isinstance(min_tss, (int, float)):
+        filtered = [
+            c
+            for c in filtered
+            if c.metrics and c.metrics.tss is not None and c.metrics.tss >= min_tss
+        ]
+
+    max_tss = filters.get("max_tss")
+    if isinstance(max_tss, (int, float)):
+        filtered = [
+            c
+            for c in filtered
+            if c.metrics and c.metrics.tss is not None and c.metrics.tss <= max_tss
+        ]
+
+    # Search filter
+    search = filters.get("search")
+    if isinstance(search, str):
+        filtered = [c for c in filtered if search.lower() in c.name.lower()]
+
+    return filtered
+
+
+def _apply_sorting(content: list[LibraryContent], filters: FilterParams) -> list[LibraryContent]:
+    """Apply sorting to library content."""
+    sort_by_value = filters.get("sort_by", "name")
+    sort_by = sort_by_value if isinstance(sort_by_value, str) else "name"
+    sort_direction_value = filters.get("sort_direction", "asc")
+    sort_desc = (
+        sort_direction_value.lower() == "desc" if isinstance(sort_direction_value, str) else False
+    )
+
+    if sort_by == "name":
+        content.sort(key=lambda c: c.name.lower(), reverse=sort_desc)
+    elif sort_by == "duration":
+        content.sort(key=lambda c: c.duration or 0, reverse=sort_desc)
+    elif sort_by == "tss":
+        content.sort(
+            key=lambda c: (c.metrics.tss if c.metrics and c.metrics.tss else 0),
+            reverse=sort_desc,
+        )
+
+    return content
+
+
+def _validate_graphql_response(result: object) -> JSONObject:
+    """Validate a parsed GraphQL response and extract data.
+
+    Returns:
+        The data field from the GraphQL response.
+
+    Raises:
+        WahooAPIError: If response is invalid or contains errors.
+    """
+    if not isinstance(result, dict):
+        msg = "API response was not a JSON object"
+        raise WahooAPIError(msg)
+
+    d = cast("JSONObject", result)
+    errors_value = d.get("errors")
+    if isinstance(errors_value, list) and errors_value:
+        first_error = errors_value[0]
+        error_message = (
+            first_error.get("message", "Unknown error")
+            if isinstance(first_error, dict)
+            else "Unknown error"
+        )
+        msg = f"GraphQL error: {error_message}"
+        raise WahooAPIError(msg)
+
+    data_value = d.get("data")
+    if isinstance(data_value, dict):
+        return cast("JSONObject", data_value)
+    return {}
+
+
 # =============================================================================
 # Client
 # =============================================================================
@@ -149,7 +267,8 @@ class WahooClient:
             AuthenticationError: If not authenticated.
         """
         if self._token is None:
-            raise AuthenticationError("Not authenticated. Call authenticate() first.")
+            msg = "Not authenticated. Call authenticate() first."
+            raise AuthenticationError(msg)
         return self._token
 
     def _app_information(self) -> JSONObject:
@@ -167,6 +286,7 @@ class WahooClient:
         query: str,
         variables: JSONObject | None = None,
         operation_name: str | None = None,
+        *,
         require_auth: bool = True,
     ) -> JSONObject:
         """Make a GraphQL API call.
@@ -204,34 +324,23 @@ class WahooClient:
         try:
             response = await self._client.post(self._config.api_url, json=body, headers=headers)
         except TimeoutException as e:
-            raise WahooAPIError("API request timed out") from e
+            msg = "API request timed out"
+            raise WahooAPIError(msg) from e
         except HTTPError as e:
-            raise WahooAPIError(f"HTTP error while calling API: {e}") from e
+            msg = f"HTTP error while calling API: {e}"
+            raise WahooAPIError(msg) from e
 
-        if response.status_code != 200:
-            raise WahooAPIError(
-                f"API request failed: {response.text}",
-                status_code=response.status_code,
-            )
+        if response.status_code != HTTP_OK:
+            msg = f"API request failed: {response.text}"
+            raise WahooAPIError(msg, status_code=response.status_code)
 
         try:
             result = response.json()
         except ValueError as e:
-            raise WahooAPIError("API response was not valid JSON") from e
+            msg = "API response was not valid JSON"
+            raise WahooAPIError(msg) from e
 
-        if not isinstance(result, dict):
-            raise WahooAPIError("API response was not a JSON object")
-
-        errors_value = result.get("errors")
-        if isinstance(errors_value, list) and errors_value:
-            errors = errors_value
-            error_message = errors[0].get("message", "Unknown error") if errors else "Unknown error"
-            raise WahooAPIError(f"GraphQL error: {error_message}")
-
-        data_value = result.get("data")
-        if isinstance(data_value, dict):
-            return data_value
-        return {}
+        return _validate_graphql_response(result)
 
     async def authenticate(self, username: str, password: str) -> None:
         """Authenticate with Wahoo SYSTM.
@@ -257,14 +366,14 @@ class WahooClient:
                 require_auth=False,
             )
         except WahooAPIError as e:
-            raise AuthenticationError(f"Authentication failed: {e.message}") from e
+            msg = f"Authentication failed: {e.message}"
+            raise AuthenticationError(msg) from e
 
         response = LoginResponse.model_validate(data)
 
         if response.login_user.status.lower() != "success":
-            raise AuthenticationError(
-                f"Authentication failed: {response.login_user.message or 'Unknown error'}"
-            )
+            msg = f"Authentication failed: {response.login_user.message or 'Unknown error'}"
+            raise AuthenticationError(msg)
 
         self._token = response.login_user.token
 
@@ -327,7 +436,8 @@ class WahooClient:
             if mapped:
                 return mapped
 
-        raise WahooAPIError(f"Workout not found: {workout_id}")
+        msg = f"Workout not found: {workout_id}"
+        raise WahooAPIError(msg)
 
     async def _get_workout_details_by_id(self, workout_id: str) -> WorkoutDetails | None:
         """Fetch workout details by workoutId, returning None when not found."""
@@ -391,99 +501,14 @@ class WahooClient:
         if filters is None:
             return content
 
-        # Apply filters client-side
-        filtered = content
-
-        if "sport" in filters:
-            sport = filters["sport"]
-            if isinstance(sport, str):
-                filtered = [
-                    c
-                    for c in filtered
-                    if c.workout_type and c.workout_type.lower() == sport.lower()
-                ]
-
-        if "channel" in filters:
-            channel = filters["channel"]
-            if isinstance(channel, str):
-                filtered = [
-                    c for c in filtered if c.channel and c.channel.lower() == channel.lower()
-                ]
-
-        if "category" in filters:
-            category = filters["category"]
-            if isinstance(category, str):
-                filtered = [
-                    c for c in filtered if c.category and c.category.lower() == category.lower()
-                ]
-
-        if "intensity" in filters:
-            intensity = filters["intensity"]
-            if isinstance(intensity, str):
-                filtered = [
-                    c for c in filtered if c.intensity and c.intensity.lower() == intensity.lower()
-                ]
-
-        if "min_duration" in filters:
-            min_duration = filters["min_duration"]
-            if isinstance(min_duration, (int, float)):
-                min_seconds = min_duration * 60
-                filtered = [c for c in filtered if c.duration and c.duration >= min_seconds]
-
-        if "max_duration" in filters:
-            max_duration = filters["max_duration"]
-            if isinstance(max_duration, (int, float)):
-                max_seconds = max_duration * 60
-                filtered = [c for c in filtered if c.duration and c.duration <= max_seconds]
-
-        if "min_tss" in filters:
-            min_tss = filters["min_tss"]
-            if isinstance(min_tss, (int, float)):
-                filtered = [
-                    c
-                    for c in filtered
-                    if c.metrics and c.metrics.tss is not None and c.metrics.tss >= min_tss
-                ]
-
-        if "max_tss" in filters:
-            max_tss = filters["max_tss"]
-            if isinstance(max_tss, (int, float)):
-                filtered = [
-                    c
-                    for c in filtered
-                    if c.metrics and c.metrics.tss is not None and c.metrics.tss <= max_tss
-                ]
-
-        if "search" in filters:
-            search = filters["search"]
-            if isinstance(search, str):
-                filtered = [c for c in filtered if search.lower() in c.name.lower()]
-
-        # Apply sorting
-        sort_by_value = filters.get("sort_by", "name")
-        sort_by = sort_by_value if isinstance(sort_by_value, str) else "name"
-        sort_direction_value = filters.get("sort_direction", "asc")
-        sort_desc = (
-            sort_direction_value.lower() == "desc"
-            if isinstance(sort_direction_value, str)
-            else False
-        )
-
-        if sort_by == "name":
-            filtered.sort(key=lambda c: c.name.lower(), reverse=sort_desc)
-        elif sort_by == "duration":
-            filtered.sort(key=lambda c: c.duration or 0, reverse=sort_desc)
-        elif sort_by == "tss":
-            filtered.sort(
-                key=lambda c: (c.metrics.tss if c.metrics and c.metrics.tss else 0),
-                reverse=sort_desc,
-            )
+        # Apply filters and sorting
+        filtered = _apply_filters(content, filters)
+        filtered = _apply_sorting(filtered, filters)
 
         # Apply limit
-        if "limit" in filters:
-            limit = filters["limit"]
-            if isinstance(limit, int):
-                filtered = filtered[:limit]
+        limit = filters.get("limit")
+        if isinstance(limit, int):
+            filtered = filtered[:limit]
 
         return filtered
 
@@ -524,7 +549,7 @@ class WahooClient:
                         rating = c.metrics.ratings.map_ or 0
                     elif focus == "FTP":
                         rating = c.metrics.ratings.ftp or 0
-                    if rating >= 4:
+                    if rating >= FOUR_DP_RATING_THRESHOLD:
                         result.append(c)
             return result
 
@@ -559,9 +584,8 @@ class WahooClient:
         response = AddAgendaResponse.model_validate(data)
 
         if response.add_agenda.status.lower() != "success":
-            raise WahooAPIError(
-                f"Failed to schedule workout: {response.add_agenda.message or 'Unknown error'}"
-            )
+            msg = f"Failed to schedule workout: {response.add_agenda.message or 'Unknown error'}"
+            raise WahooAPIError(msg)
 
         return response.add_agenda.agenda_id
 
@@ -593,7 +617,8 @@ class WahooClient:
         response = MoveAgendaResponse.model_validate(data)
 
         if response.move_agenda.status.lower() != "success":
-            raise WahooAPIError("Failed to reschedule workout")
+            msg = "Failed to reschedule workout"
+            raise WahooAPIError(msg)
 
     async def remove_workout(self, agenda_id: str) -> None:
         """Remove a scheduled workout from the calendar.
@@ -617,7 +642,8 @@ class WahooClient:
         response = DeleteAgendaResponse.model_validate(data)
 
         if response.delete_agenda.status.lower() != "success":
-            raise WahooAPIError("Failed to remove workout")
+            msg = "Failed to remove workout"
+            raise WahooAPIError(msg)
 
     async def get_current_profile(self) -> RiderProfile | None:
         """Get the current rider 4DP profile used for workout targets.

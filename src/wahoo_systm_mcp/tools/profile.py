@@ -58,7 +58,8 @@ async def get_rider_profile(ctx: Context) -> RiderProfileOut:
     current_profile = await client.get_current_profile()
 
     if not enhanced:
-        raise ToolError("No rider profile found. Complete a Full Frontal or Half Monty test first.")
+        msg = "No rider profile found. Complete a Full Frontal or Half Monty test first."
+        raise ToolError(msg)
 
     watts_profile = current_profile or enhanced
     lthr_value = (

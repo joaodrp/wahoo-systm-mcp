@@ -1,6 +1,6 @@
 """Workout library tools for Wahoo SYSTM MCP."""
 
-from typing import TYPE_CHECKING, Literal, TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias, cast
 
 from fastmcp import Context, FastMCP
 
@@ -11,6 +11,13 @@ if TYPE_CHECKING:
     from wahoo_systm_mcp.types import FilterParams
 else:
     FilterParams: TypeAlias = dict[str, object]
+
+
+def _build_filters(
+    **kwargs: str | int | None,
+) -> FilterParams:
+    """Build a filter dictionary from keyword arguments, excluding None values."""
+    return cast("FilterParams", {k: v for k, v in kwargs.items() if v is not None})
 
 
 async def get_workouts(
@@ -44,28 +51,18 @@ async def get_workouts(
         limit: Maximum number of results (default: 50)
     """
     client = get_client(ctx)
-
-    filters: FilterParams = {}
-    if sport:
-        filters["sport"] = sport
-    if search:
-        filters["search"] = search
-    if min_duration is not None:
-        filters["min_duration"] = min_duration
-    if max_duration is not None:
-        filters["max_duration"] = max_duration
-    if min_tss is not None:
-        filters["min_tss"] = min_tss
-    if max_tss is not None:
-        filters["max_tss"] = max_tss
-    if channel:
-        filters["channel"] = channel
-    if sort_by:
-        filters["sort_by"] = sort_by
-    if sort_direction:
-        filters["sort_direction"] = sort_direction
-    if limit is not None:
-        filters["limit"] = limit
+    filters = _build_filters(
+        sport=sport,
+        search=search,
+        min_duration=min_duration,
+        max_duration=max_duration,
+        min_tss=min_tss,
+        max_tss=max_tss,
+        channel=channel,
+        sort_by=sort_by,
+        sort_direction=sort_direction,
+        limit=limit,
+    )
 
     workouts = await client.get_workout_library(filters if filters else None)
     output = [LibraryContentOut.model_validate(w.model_dump()) for w in workouts]
@@ -109,32 +106,20 @@ async def get_cycling_workouts(
         limit: Maximum results (default: 50)
     """
     client = get_client(ctx)
-
-    filters: FilterParams = {}
-    if search:
-        filters["search"] = search
-    if min_duration is not None:
-        filters["min_duration"] = min_duration
-    if max_duration is not None:
-        filters["max_duration"] = max_duration
-    if min_tss is not None:
-        filters["min_tss"] = min_tss
-    if max_tss is not None:
-        filters["max_tss"] = max_tss
-    if channel:
-        filters["channel"] = channel
-    if category:
-        filters["category"] = category
-    if four_dp_focus:
-        filters["four_dp_focus"] = four_dp_focus
-    if intensity:
-        filters["intensity"] = intensity
-    if sort_by:
-        filters["sort_by"] = sort_by
-    if sort_direction:
-        filters["sort_direction"] = sort_direction
-    if limit is not None:
-        filters["limit"] = limit
+    filters = _build_filters(
+        search=search,
+        min_duration=min_duration,
+        max_duration=max_duration,
+        min_tss=min_tss,
+        max_tss=max_tss,
+        channel=channel,
+        category=category,
+        four_dp_focus=four_dp_focus,
+        intensity=intensity,
+        sort_by=sort_by,
+        sort_direction=sort_direction,
+        limit=limit,
+    )
 
     workouts = await client.get_cycling_workouts(filters if filters else None)
     output = [LibraryContentOut.model_validate(w.model_dump()) for w in workouts]
