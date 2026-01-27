@@ -1,6 +1,6 @@
 [project]
 name = "wahoo-systm-mcp"
-dynamic = ["version"]
+version = "1.0.0"
 description = "MCP server for Wahoo SYSTM workout platform"
 readme = "README.md"
 license = "MIT"
@@ -30,9 +30,6 @@ wahoo-systm-mcp-server = "wahoo_systm_mcp.main:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.hatch.version]
-path = "src/wahoo_systm_mcp/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/wahoo_systm_mcp"]
@@ -78,10 +75,9 @@ exclude_lines = [
 
 [tool.semantic_release]
 commit_message = "chore(release): {version}"
-version_variables = [
-    "src/wahoo_systm_mcp/__init__.py:__version__",
-    "manifest.json:version",
-]
+version_toml = ["pyproject.toml:project.version"]
+version_variables = ["manifest.json:version"]
+build_command = "uv lock --upgrade-package wahoo-systm-mcp"
 
 [dependency-groups]
 dev = [
