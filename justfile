@@ -1,59 +1,81 @@
-# Wahoo SYSTM MCP - Development Commands
+set dotenv-load
 
-# Default recipe: show available commands
+# Show available commands
 default:
     @just --list
 
-# Run unit tests
-test:
-    uv run pytest
-
-# Run unit tests with coverage
-test-cov:
-    uv run pytest --cov=src/wahoo_systm_mcp --cov-report=term-missing
-
-# Run integration tests (requires .env with credentials)
-test-integration:
-    uv run --env-file .env pytest -m integration
-
-# Run all tests (unit + integration)
-test-all:
-    uv run --env-file .env pytest -m "" --cov=src/wahoo_systm_mcp --cov-report=term-missing
-
-# Lint code with ruff
-lint:
-    uv run ruff check
-
-# Type check with mypy
-typecheck:
-    uv run mypy src/
-
-# Run all checks (lint + typecheck)
-check: lint typecheck
-
-# Format code with ruff
-format:
-    uv run ruff format
-
-# Format and fix lint issues
-fix:
-    uv run ruff check --fix
-    uv run ruff format
-
 # Install dependencies
+[group('dev')]
 install:
     uv sync
 
+# Install pre-commit hooks
+[group('dev')]
+hooks:
+    uv run prek install
+
 # Update dependencies
+[group('dev')]
 update:
     uv lock --upgrade
     uv sync
 
-# Clean build artifacts
-clean:
-    rm -rf .pytest_cache .mypy_cache .ruff_cache .coverage htmlcov dist build *.egg-info
-    find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-
-# Run the MCP server (requires .env with credentials)
+# Run the MCP server
+[group('dev')]
 serve:
-    uv run --env-file .env wahoo-systm-mcp
+    uv run wahoo-systm-mcp
+
+# Run unit tests
+[group('test')]
+test:
+    uv run pytest
+
+# Run unit tests with coverage
+[group('test')]
+test-cov:
+    uv run pytest --cov=src/wahoo_systm_mcp --cov-report=term-missing
+
+# Run integration tests
+[group('test')]
+test-integration:
+    uv run pytest -m integration
+
+# Run all tests (unit + integration)
+[group('test')]
+test-all:
+    uv run pytest -m "" --cov=src/wahoo_systm_mcp --cov-report=term-missing
+
+# Lint code with ruff
+[group('lint')]
+lint:
+    uv run ruff check
+
+# Type check with ty
+[group('lint')]
+typecheck:
+    uv run ty check src/
+
+# Format code with ruff
+[group('lint')]
+format:
+    uv run ruff format
+
+# Format and fix lint issues
+[group('lint')]
+fix:
+    uv run ruff check --fix
+    uv run ruff format
+
+# Run all lint checks
+[group('lint')]
+check: lint typecheck
+
+# Security audit dependencies
+audit:
+    uv run python -m pip_audit
+
+# Clean build artifacts
+[confirm("Delete all build artifacts?")]
+clean:
+    rm -rf .pytest_cache .ruff_cache .coverage htmlcov dist build *.egg-info
+    find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

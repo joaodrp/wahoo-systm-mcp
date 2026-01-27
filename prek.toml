@@ -1,0 +1,19 @@
+[[hook]]
+id = "ruff-check"
+command = "uv run ruff check --fix"
+stages = ["pre-commit"]
+
+[[hook]]
+id = "ruff-format"
+command = "uv run ruff format"
+stages = ["pre-commit"]
+
+[[hook]]
+id = "ty-check"
+command = "uv run ty check src/"
+stages = ["pre-commit"]
+
+[[hook]]
+id = "test"
+command = "uv run pytest"
+stages = ["pre-push"]

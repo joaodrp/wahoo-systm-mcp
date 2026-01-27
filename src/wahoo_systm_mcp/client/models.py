@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from pydantic import BaseModel, Field
 from pydantic.functional_validators import field_validator
 
@@ -123,9 +125,10 @@ def _normalize_graph_triggers(value: object) -> object:
     if isinstance(value, list):
         return value
     if isinstance(value, dict):
-        times = value.get("time")
-        values = value.get("value")
-        types = value.get("type")
+        d = cast("dict[str, object]", value)
+        times = d.get("time")
+        values = d.get("value")
+        types = d.get("type")
         if (
             not isinstance(times, list)
             or not isinstance(values, list)

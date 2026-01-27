@@ -31,7 +31,7 @@ def _format_date(iso_date: str | None) -> str | None:
     if not iso_date:
         return None
     try:
-        dt = datetime.fromisoformat(iso_date.replace("Z", "+00:00"))
+        dt = datetime.fromisoformat(iso_date)
         return dt.strftime("%B %d, %Y")
     except (ValueError, AttributeError):
         return None
