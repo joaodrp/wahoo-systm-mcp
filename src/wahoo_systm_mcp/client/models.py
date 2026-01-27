@@ -125,7 +125,7 @@ def _normalize_graph_triggers(value: object) -> object:
     if isinstance(value, list):
         return value
     if isinstance(value, dict):
-        d = cast(dict[str, object], value)
+        d = cast("dict[str, object]", value)
         times = d.get("time")
         values = d.get("value")
         types = d.get("type")
