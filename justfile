@@ -44,6 +44,10 @@ fix:
 install:
     uv sync
 
+# Install pre-commit hooks
+hooks:
+    uv run prek install
+
 # Update dependencies
 update:
     uv lock --upgrade
