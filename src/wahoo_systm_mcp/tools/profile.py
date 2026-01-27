@@ -58,7 +58,8 @@ async def get_rider_profile(ctx: Context) -> RiderProfileOut:
     current_profile = await client.get_current_profile()
 
     if not enhanced:
-        raise ToolError("No rider profile found. Complete a Full Frontal or Half Monty test first.")
+        msg = "No rider profile found. Complete a Full Frontal or Half Monty test first."
+        raise ToolError(msg)
 
     watts_profile = current_profile or enhanced
     lthr_value = (
@@ -106,6 +107,7 @@ async def get_fitness_test_history(
     Args:
         page: Page number for pagination (default: 1)
         page_size: Results per page (default: 15)
+
     """
     client = get_client(ctx)
     activities, total = await client.get_fitness_test_history(page, page_size)
@@ -156,6 +158,7 @@ async def get_fitness_test_details(ctx: Context, activity_id: str) -> FitnessTes
 
     Args:
         activity_id: Activity ID from get_fitness_test_history
+
     """
     client = get_client(ctx)
     details = await client.get_fitness_test_details(activity_id)

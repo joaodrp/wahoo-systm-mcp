@@ -11,7 +11,7 @@ Required environment variables:
 from __future__ import annotations
 
 import os
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
@@ -80,14 +80,14 @@ async def mock_context(client: WahooClient) -> MagicMock:
 @pytest.fixture
 def future_test_date() -> str:
     """Get a date 60 days in the future for safe calendar operations."""
-    future = datetime.now() + timedelta(days=60)
+    future = datetime.now(UTC) + timedelta(days=60)
     return future.strftime("%Y-%m-%d")
 
 
 @pytest.fixture
 def future_reschedule_date() -> str:
     """Get a date 61 days in the future for rescheduling tests."""
-    future = datetime.now() + timedelta(days=61)
+    future = datetime.now(UTC) + timedelta(days=61)
     return future.strftime("%Y-%m-%d")
 
 
@@ -447,7 +447,7 @@ class TestGetCalendar:
 
     async def test_returns_calendar_items(self, mock_context: MagicMock) -> None:
         """Should return calendar items for date range."""
-        today = datetime.now()
+        today = datetime.now(UTC)
         start = today.strftime("%Y-%m-%d")
         end = (today + timedelta(days=30)).strftime("%Y-%m-%d")
 
@@ -458,7 +458,7 @@ class TestGetCalendar:
 
     async def test_with_timezone(self, mock_context: MagicMock) -> None:
         """Should handle different timezones."""
-        today = datetime.now()
+        today = datetime.now(UTC)
         start = today.strftime("%Y-%m-%d")
         end = (today + timedelta(days=7)).strftime("%Y-%m-%d")
 
@@ -476,7 +476,7 @@ class TestGetCalendar:
         rather than scheduling a new workout, due to API propagation delays.
         """
         # Query a broad date range to find any existing calendar items
-        today = datetime.now()
+        today = datetime.now(UTC)
         start = (today - timedelta(days=30)).strftime("%Y-%m-%d")
         end = (today + timedelta(days=90)).strftime("%Y-%m-%d")
 
