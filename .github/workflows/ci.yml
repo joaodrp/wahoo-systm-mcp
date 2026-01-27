@@ -28,5 +28,7 @@ jobs:
         run: uv run ty check src/
       - name: Test
         run: uv run pytest
+      - name: Security audit
+        run: uv run pip-audit
       - name: Validate MCPB manifest
         run: npx @anthropic-ai/mcpb validate manifest.json
