@@ -6,4 +6,4 @@ from wahoo_systm_mcp.client import WahooClient
 from wahoo_systm_mcp.server import mcp
 
 __version__ = version("wahoo-systm-mcp")
-__all__ = ["WahooClient", "mcp", "__version__"]
+__all__ = ["WahooClient", "__version__", "mcp"]
