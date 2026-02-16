@@ -529,7 +529,7 @@ wheels = [
 
 [[package]]
 name = "fastmcp"
-version = "3.0.0b1"
+version = "3.0.0rc2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "authlib" },
@@ -547,14 +547,15 @@ dependencies = [
     { name = "pydantic", extra = ["email"] },
     { name = "pyperclip" },
     { name = "python-dotenv" },
+    { name = "pyyaml" },
     { name = "rich" },
     { name = "uvicorn" },
     { name = "watchfiles" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b6/b4/8b44030f3697ed1d106c79eedcf640451b8060cb52cc4f079d8ad3a2ef76/fastmcp-3.0.0b1.tar.gz", hash = "sha256:adeda5562a23cde8b3607b73ebccfe27efa3c2955eb2c03b0cdd551128b7eaaf", size = 11817449, upload-time = "2026-01-20T05:00:49.872Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8b/3a/afa90e3646b754d52cd8a436490ffed38bc9fd0d605f479d04de38af1dee/fastmcp-3.0.0rc2.tar.gz", hash = "sha256:81cc408b13a0ab2e7701abaa04c8a64597e13bb2fec2a7fc92fd324e08855ef2", size = 14258553, upload-time = "2026-02-14T03:57:09.199Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f2/23/9836025d2b8070cae295c805f51d9fd9da9228584c85290d8fef44d1cb34/fastmcp-3.0.0b1-py3-none-any.whl", hash = "sha256:e64dd54e94411ccc6ff63459eace8e55c79d15647917bc0c178414a642089750", size = 533457, upload-time = "2026-01-20T05:00:52.153Z" },
+    { url = "https://files.pythonhosted.org/packages/56/7b/556317e567956fb6108f981d63a48be69e5e0014ae745f4feb3f50a1da4e/fastmcp-3.0.0rc2-py3-none-any.whl", hash = "sha256:0596b372c4b6b193f02619a874dca3550b153b085827e82133ccfef2bb687a3d", size = 601390, upload-time = "2026-02-14T03:57:07.277Z" },
 ]
 
 [[package]]
@@ -1036,15 +1037,15 @@ wheels = [
 
 [[package]]
 name = "py-key-value-aio"
-version = "0.3.0"
+version = "0.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "beartype" },
-    { name = "py-key-value-shared" },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/93/ce/3136b771dddf5ac905cc193b461eb67967cf3979688c6696e1f2cdcde7ea/py_key_value_aio-0.3.0.tar.gz", hash = "sha256:858e852fcf6d696d231266da66042d3355a7f9871650415feef9fca7a6cd4155", size = 50801, upload-time = "2025-11-17T16:50:04.711Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/66/6b/fc3524e6ea04f5a00cb4cc8c09216fcb0fa0546267e07895ba87f8f7ffb2/py_key_value_aio-0.4.2.tar.gz", hash = "sha256:7bbe31d3ce8ee4f7802f34dcc12df23f0a9715c9660b7db34973bb28727dee1b", size = 91129, upload-time = "2026-02-16T02:02:39.796Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/99/10/72f6f213b8f0bce36eff21fda0a13271834e9eeff7f9609b01afdc253c79/py_key_value_aio-0.3.0-py3-none-any.whl", hash = "sha256:1c781915766078bfd608daa769fefb97e65d1d73746a3dfb640460e322071b64", size = 96342, upload-time = "2025-11-17T16:50:03.801Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/00/e280faf3b15a10eca20a8b68a1cbf1f9b42635a19b350a67ed7db02d3b28/py_key_value_aio-0.4.2-py3-none-any.whl", hash = "sha256:04dd01caec58819834f1256e56e4547da4b4f4fecad8784d5574fa5cba15ff82", size = 150703, upload-time = "2026-02-16T02:02:37.603Z" },
 ]
 
 [package.optional-dependencies]
@@ -1057,19 +1058,6 @@ keyring = [
 ]
 memory = [
     { name = "cachetools" },
-]
-
-[[package]]
-name = "py-key-value-shared"
-version = "0.3.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "beartype" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7b/e4/1971dfc4620a3a15b4579fe99e024f5edd6e0967a71154771a059daff4db/py_key_value_shared-0.3.0.tar.gz", hash = "sha256:8fdd786cf96c3e900102945f92aa1473138ebe960ef49da1c833790160c28a4b", size = 11666, upload-time = "2025-11-17T16:50:06.849Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/51/e4/b8b0a03ece72f47dce2307d36e1c34725b7223d209fc679315ffe6a4e2c3/py_key_value_shared-0.3.0-py3-none-any.whl", hash = "sha256:5b0efba7ebca08bb158b1e93afc2f07d30b8f40c2fc12ce24a4c0d84f42f9298", size = 19560, upload-time = "2025-11-17T16:50:05.954Z" },
 ]
 
 [[package]]
