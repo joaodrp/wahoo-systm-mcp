@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Wahoo SYSTM MCP server for claude.ai custom connectors; each person signs in with their own Wahoo SYSTM account
+
+Parameters:
+  SsmPrefix:
+    Type: String
+    Default: /wahoo-systm-mcp
+    AllowedPattern: ^/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*$
+    Description: SSM Parameter Store path for the settings (allowlist and signing secret are managed with the admin CLI)
+  RedirectUris:
+    Type: String
+    Default: https://claude.ai/api/mcp/auth_callback
+    Description: Comma-separated OAuth redirect URIs that clients may register
+  PublicUrl:
+    Type: String
+    Default: ""
+    Description: Public origin if a custom domain fronts the function (e.g. https://mcp.example.com); empty to use the function URL
+
+Conditions:
+  HasPublicUrl: !Not [!Equals [!Ref PublicUrl, ""]]
+
+Resources:
+  McpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: wahoo-systm-mcp
+      # Built by scripts/build_lambda.py; sam deploy uploads the zip as-is (no sam build)
+      CodeUri: build/lambda.zip
+      # run.sh starts uvicorn; the Lambda Web Adapter layer turns invocations into HTTP requests
+      Handler: run.sh
+      Runtime: python3.13
+      Architectures: [arm64]
+      MemorySize: 1024
+      Timeout: 60
+      Layers:
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerArm64:30
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_PORT: "8080"
+          SSM_PREFIX: !Ref SsmPrefix
+          OAUTH_REDIRECT_URIS: !Ref RedirectUris
+      # Public URL; every route except OAuth discovery and the sign-in page requires a token.
+      # SAM adds both resource-policy statements (InvokeFunctionUrl and InvokeFunction) for this.
+      FunctionUrlConfig:
+        AuthType: NONE
+      LoggingConfig:
+        LogGroup: !Ref McpLogGroup
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: ssm:GetParameters
+              Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SsmPrefix}/*
+
+  # The function reads its own public URL from here at cold start: its environment can't
+  # reference the function URL, which depends on the function (a circular reference)
+  PublicUrlParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub ${SsmPrefix}/PUBLIC_URL
+      Type: String
+      Value: !If [HasPublicUrl, !Ref PublicUrl, !GetAtt McpFunctionUrl.FunctionUrl]
+      Description: Public origin of the Wahoo SYSTM MCP server, for its OAuth metadata
+
+  McpLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/wahoo-systm-mcp
+      RetentionInDays: 14
+
+Outputs:
+  McpServerUrl:
+    Description: Paste into claude.ai > Settings > Connectors > Add custom connector
+    Value: !If
+      - HasPublicUrl
+      - !Sub ${PublicUrl}/mcp
+      - !Sub ${McpFunctionUrl.FunctionUrl}mcp

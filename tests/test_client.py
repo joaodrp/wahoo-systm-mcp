@@ -22,6 +22,7 @@ from wahoo_systm_mcp.client import (
     FULL_FRONTAL_ID,
     HALF_MONTY_ID,
     AuthenticationError,
+    InvalidCredentialsError,
     WahooAPIError,
     WahooClient,
 )
@@ -164,10 +165,40 @@ class TestAuthentication:
         with patch.object(client._client, "post", new_callable=AsyncMock) as mock_post:
             mock_post.return_value = mock_response(login_response)
 
-            with pytest.raises(AuthenticationError) as exc_info:
+            with pytest.raises(InvalidCredentialsError) as exc_info:
                 await client.authenticate("test@example.com", "wrong-password")
 
             assert "Invalid credentials" in str(exc_info.value)
+            assert client._token is None
+
+    async def test_authenticate_bad_password(self, client: WahooClient) -> None:
+        """Test the response Wahoo SYSTM actually sends for a wrong email or password."""
+        login_response = {
+            "loginUser": {
+                "status": "GeneralError",
+                "message": "Bad Username/Password",
+                "token": None,
+                "user": None,
+            }
+        }
+
+        with patch.object(client._client, "post", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = mock_response(login_response)
+
+            with pytest.raises(InvalidCredentialsError, match="Bad Username/Password"):
+                await client.authenticate("test@example.com", "wrong-password")
+
+    async def test_authenticate_success_without_token(self, client: WahooClient) -> None:
+        """Test a successful status that somehow carries no token."""
+        login_response = {"loginUser": {"status": "Success", "token": None, "user": None}}
+
+        with patch.object(client._client, "post", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = mock_response(login_response)
+
+            with pytest.raises(AuthenticationError, match="no token") as exc_info:
+                await client.authenticate("test@example.com", "password")
+
+            assert not isinstance(exc_info.value, InvalidCredentialsError)
             assert client._token is None
 
     async def test_authenticate_graphql_error(self, client: WahooClient) -> None:
@@ -179,6 +210,8 @@ class TestAuthentication:
                 await client.authenticate("test@example.com", "password")
 
             assert "Rate limit exceeded" in str(exc_info.value)
+            # Not a rejected password, so the remote server doesn't end the user's grant
+            assert not isinstance(exc_info.value, InvalidCredentialsError)
 
     async def test_require_auth_without_token(self, client: WahooClient) -> None:
         """Test that methods requiring auth fail without authentication."""

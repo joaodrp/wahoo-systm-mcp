@@ -408,8 +408,9 @@ class LoginUserData(BaseModel):
 
     status: str
     message: str | None = None
-    token: str
-    user: dict[str, JSONValue]  # Contains nested profiles
+    # Both null when the sign-in is rejected (status "GeneralError", "Bad Username/Password")
+    token: str | None = None
+    user: dict[str, JSONValue] | None = None  # Contains nested profiles
 
 
 class LoginResponse(BaseModel):

@@ -15,7 +15,7 @@ from wahoo_systm_mcp.client.models import (
     UserPlanItem,
     WorkoutDetails,
 )
-from wahoo_systm_mcp.server.lifecycle import app_lifespan
+from wahoo_systm_mcp.server.lifecycle import StaticClient, app_lifespan
 from wahoo_systm_mcp.tools.calendar import (
     get_calendar,
     remove_workout,
@@ -50,7 +50,7 @@ def mock_client() -> MagicMock:
 def mock_context(mock_client: MagicMock) -> MagicMock:
     """Create a mock Context with client in lifespan_context."""
     ctx = MagicMock()
-    ctx.lifespan_context = {"client": mock_client}
+    ctx.lifespan_context = {"clients": StaticClient(mock_client)}
     return ctx
 
 

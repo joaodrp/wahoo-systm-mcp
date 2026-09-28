@@ -91,6 +91,10 @@ class AuthenticationError(WahooAPIError):
     """Raised when authentication fails or token is missing."""
 
 
+class InvalidCredentialsError(AuthenticationError):
+    """Raised when Wahoo SYSTM rejects the email and password (not for network or API errors)."""
+
+
 # =============================================================================
 # Helper Functions
 # =============================================================================
@@ -377,6 +381,9 @@ class WahooClient:
 
         if response.login_user.status.lower() != "success":
             msg = f"Authentication failed: {response.login_user.message or 'Unknown error'}"
+            raise InvalidCredentialsError(msg)
+        if not response.login_user.token:
+            msg = "Authentication failed: no token in the response"
             raise AuthenticationError(msg)
 
         self._token = response.login_user.token

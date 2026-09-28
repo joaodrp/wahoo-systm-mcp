@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 from wahoo_systm_mcp.client import WahooClient
 
@@ -14,8 +14,24 @@ if TYPE_CHECKING:
     from fastmcp import Context, FastMCP
 
 
+class ClientSource(Protocol):
+    """Provides the WahooClient for the user making the current request."""
+
+    async def get(self) -> WahooClient: ...
+
+
+class StaticClient:
+    """A single client shared by every request (stdio and single-user HTTP)."""
+
+    def __init__(self, client: WahooClient) -> None:
+        self._client = client
+
+    async def get(self) -> WahooClient:
+        return self._client
+
+
 @asynccontextmanager
-async def app_lifespan(_server: FastMCP) -> AsyncIterator[dict[str, WahooClient]]:
+async def app_lifespan(_server: FastMCP) -> AsyncIterator[dict[str, ClientSource]]:
     """Initialize shared resources for the server lifetime.
 
     Credentials are validated in entry points before the server starts.
@@ -25,12 +41,12 @@ async def app_lifespan(_server: FastMCP) -> AsyncIterator[dict[str, WahooClient]
     client = WahooClient()
     await client.authenticate(username, password)
     try:
-        yield {"client": client}
+        yield {"clients": StaticClient(client)}
     finally:
         await client.close()
 
 
-def get_client(ctx: Context) -> WahooClient:
-    """Get the authenticated WahooClient from context."""
-    client: WahooClient = ctx.lifespan_context["client"]
-    return client
+async def get_client(ctx: Context) -> WahooClient:
+    """Get the authenticated WahooClient for the current request's user."""
+    clients: ClientSource = ctx.lifespan_context["clients"]
+    return await clients.get()

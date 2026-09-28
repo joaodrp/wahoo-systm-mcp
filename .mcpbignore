@@ -34,3 +34,9 @@ docs/
 
 # Local settings
 .claude/
+
+# AWS Lambda hosting (not part of the local bundle)
+template.yaml
+samconfig.toml
+scripts/
+.aws-sam/

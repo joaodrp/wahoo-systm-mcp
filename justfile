@@ -25,6 +25,26 @@ update:
 serve:
     uv run wahoo-systm-mcp
 
+# Run the multi-user OAuth server locally, as on AWS Lambda (needs MCP_* in .env)
+[group('dev')]
+serve-remote:
+    uv run wahoo-systm-mcp-server
+
+# Build the AWS Lambda package (build/lambda.zip)
+[group('aws')]
+build-lambda:
+    uv run python scripts/build_lambda.py
+
+# Build and deploy to AWS Lambda
+[group('aws')]
+deploy: build-lambda
+    sam deploy
+
+# Manage who can sign in on AWS: list, allow EMAIL..., deny EMAIL..., sign-out-all
+[group('aws')]
+users *args:
+    uv run python -m wahoo_systm_mcp.remote.admin {{args}}
+
 # Run unit tests
 [group('test')]
 test:

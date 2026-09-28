@@ -129,3 +129,36 @@ class TestHttpEntrypoint:
             assert "transport" in call_kwargs
             assert "host" in call_kwargs
             assert "port" in call_kwargs
+
+
+class TestMultiUserHttpEntrypoint:
+    """Tests for main.py with MCP_SIGNING_SECRET set (the Lambda setup, run locally)."""
+
+    @pytest.fixture(autouse=True)
+    def env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MCP_SIGNING_SECRET", "s" * 32)
+        monkeypatch.setenv("MCP_ALLOWED_EMAILS", "rider@example.com")
+        for name in ("PUBLIC_URL", "HTTP_PORT", "OAUTH_REDIRECT_URIS", "WAHOO_USERNAME"):
+            monkeypatch.delenv(name, raising=False)
+        importlib.reload(http_main)
+
+    def test_runs_remote_app(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """Serve the OAuth-protected app without needing WAHOO_USERNAME."""
+        with patch("uvicorn.run") as run:
+            http_main.main()
+
+        run.assert_called_once()
+        assert run.call_args.kwargs == {"host": "127.0.0.1", "port": 8000}
+        assert "http://localhost:8000/mcp" in capsys.readouterr().err
+
+    def test_invalid_settings_exit_with_error(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Exit with error when the allowlist is missing."""
+        monkeypatch.delenv("MCP_ALLOWED_EMAILS")
+
+        with pytest.raises(SystemExit) as exc_info:
+            http_main.main()
+
+        assert exc_info.value.code == 1
+        assert "MCP_ALLOWED_EMAILS" in capsys.readouterr().err

@@ -23,6 +23,7 @@
 - **Rider Profile**: Retrieve current 4DP values, rider type classification, strengths/weaknesses, cTHR, and heart rate zones
 - **Fitness Test History**: Access Full Frontal and Half Monty test results with complete 4DP analysis
 - **AI Integration**: Returns structured JSON responses optimized for LLM consumption via MCP standard
+- **Remote hosting**: Optionally runs on AWS Lambda for claude.ai web and mobile, shared by several people who each sign in with their own Wahoo SYSTM account
 
 ## Compatible clients
 
@@ -121,8 +122,9 @@ Docs: [Claude Code MCP](https://docs.anthropic.com/en/docs/claude-code/mcp)
 <details>
 <summary><strong>ChatGPT</strong> (remote MCP only)</summary>
 
-ChatGPT currently supports only remote MCP servers (not local). Run the HTTP
-server mode and host it somewhere reachable, then add it via Settings →
+ChatGPT currently supports only remote MCP servers (not local). Host the server
+on AWS Lambda (see [Remote hosting on AWS Lambda](#remote-hosting-on-aws-lambda-claudeai-web-and-mobile))
+or run the HTTP server mode somewhere reachable, then add it via Settings →
 Apps & Connectors → Create.
 
 Docs: [Developer Mode + MCP connectors](https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt-beta)
@@ -186,8 +188,74 @@ HTTP_HOST=0.0.0.0 HTTP_PORT=9000 uv run wahoo-systm-mcp-server
 | `HTTP_HOST` | HTTP bind host (HTTP mode only, default: `127.0.0.1`) |
 | `HTTP_PORT` | HTTP bind port (HTTP mode only, default: `8000`) |
 | `HTTP_TRANSPORT` | HTTP transport (`http`, `streamable-http`, `sse`) |
+| `MCP_SIGNING_SECRET` | HTTP mode only: switches to the multi-user OAuth server, as on AWS Lambda (at least 32 characters) |
+| `MCP_ALLOWED_EMAILS` | Multi-user mode: comma-separated Wahoo SYSTM emails allowed to sign in |
+| `PUBLIC_URL` | Multi-user mode: public origin (default: `http://localhost:<HTTP_PORT>`) |
+| `OAUTH_REDIRECT_URIS` | Multi-user mode: OAuth callbacks clients may register (default: claude.ai's) |
 
 The server automatically authenticates on startup and maintains the session for the duration of the process.
+
+## Remote hosting on AWS Lambda (claude.ai web and mobile)
+
+claude.ai custom connectors, which also appear in the Claude mobile app, need a public HTTPS server. The same code can run on AWS Lambda behind a function URL, shared by several people:
+
+- **Sign-in:** each person signs in with their own Wahoo SYSTM email and password, on a page the server shows the first time they connect. The server checks the password with Wahoo SYSTM before granting access. claude.ai connectors only support OAuth or no authentication, so the server includes a small OAuth server.
+- **Who can connect:** only the Wahoo SYSTM emails on your allowlist. You manage it with `just users`, and nobody has to send you their password.
+- **Data:** each person's tools act on their own Wahoo SYSTM account, so they only see their own calendar, profile and tests.
+- **Secrets:** nothing is stored per person. Their Wahoo credentials travel inside the OAuth tokens Claude holds for their connection, encrypted (AES-GCM) with a key that only the server has. That signing secret and the allowlist are encrypted SSM Parameter Store values, so they never appear in the function's configuration or in the repo.
+- **Cost:** normally $0, within Lambda's always-free allowance (1M requests and 400,000 GB-seconds a month). Set up an AWS budget alert anyway.
+
+### One-time setup
+
+1. Install uv, the AWS CLI and the SAM CLI, then sign in with a default region:
+   ```bash
+   winget install astral-sh.uv
+   winget install Amazon.AWSCLI
+   winget install Amazon.SAM-CLI
+   aws configure        # or: aws login
+   ```
+2. Allow your own Wahoo SYSTM email. The first time, this also creates the signing secret.
+   ```bash
+   just users allow you@example.com
+   ```
+3. Build and deploy. Confirm the changeset when asked; the output ends with `McpServerUrl`.
+   ```bash
+   just deploy
+   ```
+4. In claude.ai, go to **Settings → Connectors → Add custom connector** and paste the `McpServerUrl` exactly (it ends in `/mcp`). Click **Connect**, then sign in with your Wahoo SYSTM email and password on the page that opens. The connector then works on web and mobile. Claude renews its access automatically, and you'll only be asked to sign in again after 90 days without use or after changing your Wahoo SYSTM password.
+
+Without `just`, run `uv run python -m wahoo_systm_mcp.remote.admin <command>` instead of `just users <command>`, and `uv run python scripts/build_lambda.py` followed by `sam deploy` instead of `just deploy`.
+
+### Adding someone
+
+1. Allow the email they use for Wahoo SYSTM:
+   ```bash
+   just users allow their_email@example.com
+   ```
+2. Send them the `McpServerUrl` (`sam list stack-outputs` shows it again). They add the connector in their own claude.ai account (step 4 above) and sign in with their own Wahoo SYSTM email and password. On the Free plan, claude.ai allows one custom connector.
+
+Their password passes through your server each time Claude uses the connector, so only add people who trust you to run it.
+
+### Day to day
+
+| Task | Command |
+|------|---------|
+| Deploy code changes | `just deploy` |
+| List who can sign in | `just users list` |
+| Let someone sign in | `just users allow <email>` |
+| Remove someone (signs them out) | `just users deny <email>` |
+| Sign everyone out | `just users sign-out-all` |
+| Show the connector URL | `sam list stack-outputs` |
+| Remove everything | `sam delete`, then `aws ssm delete-parameters --names /wahoo-systm-mcp/SIGNING_SECRET /wahoo-systm-mcp/ALLOWED_EMAILS` |
+
+Lambda reads the settings once per cold start, so every `users` change also replaces the function's running instances. That way a change takes effect immediately.
+
+### Differences from the local server
+
+- The server keeps no sessions, so any Lambda instance can answer any request. Each instance signs in to Wahoo SYSTM once per person and reuses that sign-in for up to an hour.
+- Failed sign-ins are limited to 5 per email per 15 minutes on each instance.
+- The function runs uvicorn under the [AWS Lambda Web Adapter](https://github.com/awslabs/aws-lambda-web-adapter). `scripts/build_lambda.py` packages Linux arm64 wheels from `uv.lock`, so it builds on Windows, macOS or Linux without Docker.
+- To test the remote setup locally, set `MCP_SIGNING_SECRET` and `MCP_ALLOWED_EMAILS` in `.env` and run `just serve-remote`. The server listens on `http://localhost:8000/mcp`. To connect MCP Inspector, add its callback to `OAUTH_REDIRECT_URIS` (see `.env.example`).
 
 ## Available tools
 
@@ -266,6 +334,14 @@ wahoo-systm-mcp/
 │       │   ├── config.py      # HTTP config
 │       │   ├── lifecycle.py   # Lifespan management
 │       │   └── register.py    # Tool registration
+│       ├── remote/            # Multi-user server (AWS Lambda)
+│       │   ├── __init__.py
+│       │   ├── admin.py       # Allowlist CLI (just users)
+│       │   ├── app.py         # OAuth-protected ASGI app
+│       │   ├── clients.py     # A Wahoo client per signed-in person
+│       │   ├── lambda_app.py  # Lambda entry point (settings from SSM)
+│       │   ├── oauth.py       # OAuth server and Wahoo sign-in page
+│       │   └── settings.py    # Configuration from env or SSM
 │       ├── tools/
 │       │   ├── __init__.py
 │       │   ├── calendar.py
@@ -280,11 +356,15 @@ wahoo-systm-mcp/
 ├── tests/
 │   ├── __init__.py
 │   ├── conftest.py            # Shared fixtures
+│   ├── test_admin.py          # Allowlist CLI tests
 │   ├── test_client.py
 │   ├── test_entrypoints.py    # CLI entry point tests
 │   ├── test_integration.py    # Integration tests
 │   ├── test_models.py
+│   ├── test_remote.py         # OAuth flow and multi-user tests
 │   └── test_server.py
+├── scripts/
+│   └── build_lambda.py        # Builds build/lambda.zip for AWS Lambda
 ├── docs/
 │   └── wahoo-graphql-spec.md  # API specification
 ├── .github/
@@ -293,6 +373,8 @@ wahoo-systm-mcp/
 ├── .mcpbignore                # MCPB bundle exclusions
 ├── justfile                   # Development commands
 ├── manifest.json              # MCPB bundle manifest
+├── template.yaml              # AWS SAM template (Lambda + function URL)
+├── samconfig.toml             # sam deploy defaults
 ├── pyproject.toml
 ├── CHANGELOG.md
 └── README.md
@@ -359,6 +441,7 @@ This server uses the Wahoo SYSTM GraphQL API at `https://api.thesufferfest.com/g
 
 - Credentials are only stored in memory during the session
 - Authentication tokens are not persisted between server restarts
+- On AWS Lambda, Wahoo SYSTM passwords are never written to disk or a database. They exist only inside the OAuth tokens Claude holds for each connection, encrypted with a key derived from the signing secret in SSM. Anyone holding both a token and the signing secret could read the password inside it, so keep your AWS account secure; `just users sign-out-all` replaces the secret.
 
 ## Acknowledgments
 

@@ -18,6 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
+    "cryptography>=50.0.0",
     "fastmcp>=3.0.0b1,<4.0.0",
     "httpx>=0.28.1,<1.0.0",
     "pydantic>=2.12.5,<3.0.0",
@@ -53,10 +54,13 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "src/**/__main__.py" = ["T201"]    # print allowed in CLI entry
 "src/**/main.py" = ["T201"]        # print allowed in CLI entry
+"src/**/remote/admin.py" = ["T201"]  # print allowed in CLI entry
 "src/**/tools/*.py" = ["PLR0913", "D417"]  # MCP tools: many params, ctx is framework-injected
+"scripts/*.py" = ["INP001", "S603"]  # standalone scripts running uv
 "tests/**" = [
     "S101",    # assert allowed in tests
     "S105",    # hardcoded passwords in test fixtures
+    "S106",    # hardcoded passwords in test fixtures
     "ARG",     # unused arguments (fixtures)
     "SLF001",  # private member access (testing internals)
     "PLC0415", # imports in tests - test isolation
@@ -101,10 +105,20 @@ exclude_lines = [
 commit_message = "chore(release): {version}"
 version_toml = ["pyproject.toml:project.version"]
 version_variables = ["manifest.json:version"]
-build_command = "uv lock --upgrade-package wahoo-systm-mcp"
+# Runs in the python-semantic-release action's container, which has no uv. Building here,
+# after the version bump, gives release artifacts the new version; git add puts the bumped
+# uv.lock in the release commit.
+build_command = """
+    set -e
+    python -m pip install --quiet uv
+    uv lock --upgrade-package wahoo-systm-mcp
+    git add uv.lock
+    uv build
+"""
 
 [dependency-groups]
 dev = [
+    "boto3[crt]>=1.40.0,<2.0.0",  # admin CLI (crt: for `aws login` credentials) and Lambda entry point
     "pip-audit>=2.9.0",
     "prek>=0.2.0",
     "pytest>=9.0.2,<10.0.0",

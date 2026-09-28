@@ -53,7 +53,7 @@ async def get_rider_profile(ctx: Context) -> RiderProfileOut:
 
     Includes rider type classification, strengths/weaknesses, and heart rate zones.
     """
-    client = get_client(ctx)
+    client = await get_client(ctx)
     enhanced = await client.get_latest_test_profile()
     current_profile = await client.get_current_profile()
 
@@ -109,7 +109,7 @@ async def get_fitness_test_history(
         page_size: Results per page (default: 15)
 
     """
-    client = get_client(ctx)
+    client = await get_client(ctx)
     activities, total = await client.get_fitness_test_history(page, page_size)
 
     formatted_tests: list[FitnessTestSummaryOut] = []
@@ -160,7 +160,7 @@ async def get_fitness_test_details(ctx: Context, activity_id: str) -> FitnessTes
         activity_id: Activity ID from get_fitness_test_history
 
     """
-    client = get_client(ctx)
+    client = await get_client(ctx)
     details = await client.get_fitness_test_details(activity_id)
 
     # Parse analysis JSON if present

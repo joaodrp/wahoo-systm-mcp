@@ -5,6 +5,7 @@ from wahoo_systm_mcp.client.api import (
     FULL_FRONTAL_ID,
     HALF_MONTY_ID,
     AuthenticationError,
+    InvalidCredentialsError,
     WahooAPIError,
     WahooClient,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "HALF_MONTY_ID",
     "AuthenticationError",
     "ClientConfig",
+    "InvalidCredentialsError",
     "WahooAPIError",
     "WahooClient",
 ]

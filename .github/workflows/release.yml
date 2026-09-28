@@ -24,8 +24,8 @@ jobs:
           node-version: "20"
       - name: Install dependencies
         run: uv sync --all-extras
-      - name: Build
-        run: uv build
+      # Semantic release builds the package (build_command in pyproject.toml) after bumping
+      # the version; building here would attach artifacts with the old version to the release
       - name: Python Semantic Release
         id: release
         uses: python-semantic-release/python-semantic-release@v10

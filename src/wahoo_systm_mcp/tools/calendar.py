@@ -24,7 +24,7 @@ async def get_calendar(
         time_zone: Timezone for the calendar (default: UTC)
 
     """
-    client = get_client(ctx)
+    client = await get_client(ctx)
     workouts = await client.get_calendar(start_date, end_date, time_zone)
     return [UserPlanItemOut.model_validate(w.model_dump()) for w in workouts]
 
@@ -43,7 +43,7 @@ async def schedule_workout(
         time_zone: Timezone for the workout (default: UTC). Example: Europe/Lisbon, America/New_York
 
     """
-    client = get_client(ctx)
+    client = await get_client(ctx)
     agenda_id = await client.schedule_workout(content_id, date, time_zone)
     return ScheduleWorkoutResultOut(
         success=True,
@@ -67,7 +67,7 @@ async def reschedule_workout(
         time_zone: Timezone for the rescheduled workout (default: UTC)
 
     """
-    client = get_client(ctx)
+    client = await get_client(ctx)
     await client.reschedule_workout(agenda_id, new_date, time_zone)
     return RescheduleWorkoutResultOut(
         success=True,
@@ -85,7 +85,7 @@ async def remove_workout(ctx: Context, agenda_id: str) -> RemoveWorkoutResultOut
         agenda_id: Agenda ID from get_calendar or schedule_workout
 
     """
-    client = get_client(ctx)
+    client = await get_client(ctx)
     await client.remove_workout(agenda_id)
     return RemoveWorkoutResultOut(
         success=True,

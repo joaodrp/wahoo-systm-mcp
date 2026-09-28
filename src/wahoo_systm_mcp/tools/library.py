@@ -51,7 +51,7 @@ async def get_workouts(
         limit: Maximum number of results (default: 50)
 
     """
-    client = get_client(ctx)
+    client = await get_client(ctx)
     filters = _build_filters(
         sport=sport,
         search=search,
@@ -107,7 +107,7 @@ async def get_cycling_workouts(
         limit: Maximum results (default: 50)
 
     """
-    client = get_client(ctx)
+    client = await get_client(ctx)
     filters = _build_filters(
         search=search,
         min_duration=min_duration,
@@ -137,7 +137,7 @@ async def get_workout_details(ctx: Context, workout_id: str) -> WorkoutDetailsOu
         workout_id: Workout ID from calendar or library (accepts both id and workoutId)
 
     """
-    client = get_client(ctx)
+    client = await get_client(ctx)
     details = await client.get_workout_details(workout_id)
     return WorkoutDetailsOut.model_validate(details.model_dump())
 

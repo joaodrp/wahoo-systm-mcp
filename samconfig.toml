@@ -1,0 +1,8 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "wahoo-systm-mcp"
+resolve_s3 = true
+s3_prefix = "wahoo-systm-mcp"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true

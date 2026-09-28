@@ -48,6 +48,9 @@ htmlcov/
 .DS_Store
 *.log
 
+# AWS SAM
+.aws-sam/
+
 # Environment
 .env
 .env.local
